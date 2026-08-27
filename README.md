@@ -15,11 +15,15 @@ built in — for EHR, behavioural-health, clinical, operational and billing work
 
 ---
 
-> ### ⚠️ There is no code here yet
+> ### ⚠️ Wave 1 has started. Nothing is published.
 >
-> This repository is in the **design phase**. It contains the research and the
-> architecture that the implementation will be built from, and nothing else.
-> Nothing is published to npm. Nothing runs.
+> The six architecture decisions that gate code are
+> [written and accepted](docs/decisions/). The workspace is scaffolded and its
+> gates run: the **type contracts** those records make binding exist and are
+> tested; the renderer, the virtualiser and the row models do not.
+>
+> Every package is `private: true` and nothing is on npm — publication is
+> blocked on the licence and support posture ([`HANDOVER.md` §7](HANDOVER.md)).
 >
 > **Start with [`HANDOVER.md`](HANDOVER.md)** — it is the complete context,
 > written to be read cold.
@@ -79,12 +83,28 @@ labelled that way.
 
 ```
 HANDOVER.md              the seed context — read this first
+packages/
+├─ grid-signals/         engine · the reactivity façade            ADR 0003
+├─ grid-core/            engine · query, filter, columns, keymap   ADR 0001 0002 0005
+├─ grid-dom/             render · cell + ARIA contracts
+├─ grid-healthcare/      domain · coverage, absence, disclosure    ADR 0005
+└─ grid-react/           adapter · binding only
 docs/
-├─ decisions/            ADRs (five to write before code)
+├─ decisions/            six ADRs, accepted — the ones that gate code
 └─ research/
    ├─ 2026-08-27-product-brief.html         product research · partly superseded
    ├─ 2026-08-27-architecture-review.html   architecture review · current
    └─ generators/        the Python sources both reports are generated from
+```
+
+The layer names — `foundation / engine / render / domain / adapter / plugin` —
+are [ADR 0006](docs/decisions/0006-the-grids-layers-are-named-not-numbered.md)
+and are enforced by `dependency-cruiser`; every rule in
+[`.dependency-cruiser.cjs`](.dependency-cruiser.cjs) names the record it
+implements. `L0`–`L4` is not used in this repository.
+
+```bash
+pnpm install && pnpm gate
 ```
 
 ## Related
