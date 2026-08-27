@@ -7,15 +7,34 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc --build",
     "test": "vitest run --passWithNoTests",
     "size": "size-limit"
   },
-  "oxygen": { "layer": "render", "budget": "18 KB", "wave": 1 },
-  "size-limit": [{ "path": "dist/index.js", "limit": "18 KB" }],
-  "dependencies": { "@oxygenui-design/grid-core": "workspace:*" }
+  "oxygen": {
+    "layer": "render",
+    "budget": "18 KB",
+    "wave": 1
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "18 KB",
+      "ignore": [
+        "@oxygenui-design/grid-core"
+      ]
+    }
+  ],
+  "dependencies": {
+    "@oxygenui-design/grid-core": "workspace:*"
+  }
 }

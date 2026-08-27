@@ -28,7 +28,13 @@
   "size-limit": [
     {
       "path": "dist/index.js",
-      "limit": "4 KB"
+      "limit": "4 KB",
+      "ignore": [
+        "@oxygenui-design/grid-core",
+        "@oxygenui-design/grid-dom",
+        "react",
+        "react-dom"
+      ]
     }
   ],
   "dependencies": {

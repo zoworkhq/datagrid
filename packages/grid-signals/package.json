@@ -7,15 +7,31 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc --build",
     "test": "vitest run --passWithNoTests",
     "size": "size-limit"
   },
-  "oxygen": { "layer": "engine", "budget": "3 KB", "wave": 1 },
-  "size-limit": [{ "path": "dist/index.js", "limit": "3 KB" }],
-  "dependencies": { "alien-signals": "3.2.1" }
+  "oxygen": {
+    "layer": "engine",
+    "budget": "3 KB",
+    "wave": 1
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "3 KB"
+    }
+  ],
+  "dependencies": {
+    "alien-signals": "3.2.1"
+  }
 }

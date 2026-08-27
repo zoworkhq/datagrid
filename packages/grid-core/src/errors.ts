@@ -29,6 +29,8 @@ export type GridPhase =
   | "reduce"
   | "measure"
   | "render"
+  /** The live-region read — one of the eight cell obligations, and its own failure site. */
+  | "read"
   | "compare"
   | "export"
   | "print"

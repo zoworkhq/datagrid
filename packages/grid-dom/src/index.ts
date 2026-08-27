@@ -7,3 +7,6 @@
  */
 export * from "./aria.js";
 export * from "./cell.js";
+export * from "./focus.js";
+export * from "./keyboard.js";
+export * from "./renderer.js";
