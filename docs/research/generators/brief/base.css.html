@@ -1,0 +1,2751 @@
+<style>
+  /* ------------------------------------------------------------------ */
+  /* Document tokens — Oxygen's own identity, shared with the other      */
+  /* component briefs so the set reads as one series.                    */
+  /* The mockups further down deliberately do NOT use these: they use    */
+  /* Ant Design v6's real token values, so what you are judging is antd, */
+  /* not a teal impression of it.                                        */
+  /* ------------------------------------------------------------------ */
+  :root {
+    --paper: #f6faf8;
+    --surface: #ffffff;
+    --surface-2: #eef4f2;
+    --ink: #0e1c19;
+    --ink-2: #33473f;
+    --muted: #5d716b;
+    --rule: #d8e4df;
+    --rule-2: #c3d3cd;
+    --accent: #059478;
+    --accent-2: #0bb08f;
+    --accent-soft: #e6f7f1;
+    --accent-ink: #045b4b;
+    --stage: #0b1716;
+    --stage-rule: #1c3230;
+    --warn: #b7791f;
+    --warn-soft: #fbf3e0;
+    --warn-rule: #e4c98a;
+    --bad: #b4423a;
+    --bad-soft: #fbeceb;
+    --bad-rule: #e8b5b0;
+    --ok: #1f8f5f;
+    --ok-soft: #e6f6ee;
+    --ok-rule: #a9dcc3;
+    --code-bg: #0f1e1c;
+    --code-fg: #d9ece6;
+    --code-k: #7ee0cd;
+    --code-s: #f2c98a;
+    --code-c: #7f9c94;
+    --shadow: 0 1px 2px rgb(14 28 25 / 0.06), 0 8px 24px -12px rgb(14 28 25 / 0.18);
+    --font-display: "Avenir Next", "Segoe UI Variable Display", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0b1514;
+      --surface: #101d1b;
+      --surface-2: #142522;
+      --ink: #e7f2ee;
+      --ink-2: #c3d6d0;
+      --muted: #93aca5;
+      --rule: #1f312e;
+      --rule-2: #2c423e;
+      --accent: #5fe0c9;
+      --accent-2: #8aeedd;
+      --accent-soft: #10302b;
+      --accent-ink: #b8f3e7;
+      --stage: #070f0e;
+      --stage-rule: #1a2d2b;
+      --warn: #e2b04a;
+      --warn-soft: #2a2410;
+      --warn-rule: #4d4020;
+      --bad: #f0928a;
+      --bad-soft: #2c1614;
+      --bad-rule: #552a26;
+      --ok: #5fd39a;
+      --ok-soft: #10281d;
+      --ok-rule: #23503a;
+      --code-bg: #0a1413;
+      --code-fg: #d9ece6;
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px -14px rgb(0 0 0 / 0.6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0b1514;
+    --surface: #101d1b;
+    --surface-2: #142522;
+    --ink: #e7f2ee;
+    --ink-2: #c3d6d0;
+    --muted: #93aca5;
+    --rule: #1f312e;
+    --rule-2: #2c423e;
+    --accent: #5fe0c9;
+    --accent-2: #8aeedd;
+    --accent-soft: #10302b;
+    --accent-ink: #b8f3e7;
+    --stage: #070f0e;
+    --stage-rule: #1a2d2b;
+    --warn: #e2b04a;
+    --warn-soft: #2a2410;
+    --warn-rule: #4d4020;
+    --bad: #f0928a;
+    --bad-soft: #2c1614;
+    --bad-rule: #552a26;
+    --ok: #5fd39a;
+    --ok-soft: #10281d;
+    --ok-rule: #23503a;
+    --code-bg: #0a1413;
+    --code-fg: #d9ece6;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px -14px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  a { color: var(--accent-ink); text-decoration-color: color-mix(in oklab, var(--accent) 50%, transparent); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.015em; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(2.2rem, 4.5vw, 3.4rem); line-height: 1.05; font-weight: 600; }
+  h2 { font-size: 1.75rem; line-height: 1.2; font-weight: 600; }
+  h3 { font-size: 1.2rem; line-height: 1.3; font-weight: 600; margin-top: 2rem; }
+  h4 { font-size: 1rem; line-height: 1.35; font-weight: 600; }
+  p { margin: 0 0 1rem; }
+  ul, ol { margin: 0 0 1rem; padding-inline-start: 1.35rem; }
+  li { margin-bottom: 0.4rem; }
+  li::marker { color: var(--accent); }
+  strong { font-weight: 600; color: var(--ink); }
+  code { font-family: var(--font-mono); font-size: 0.86em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 4px; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 2.5rem); }
+  .prose { max-width: 68ch; }
+
+  header.hero {
+    padding: clamp(3rem, 9vw, 6.5rem) 0 clamp(2rem, 5vw, 3.5rem);
+    border-bottom: 1px solid var(--rule);
+    background:
+      radial-gradient(1100px 420px at 12% -12%, color-mix(in oklab, var(--accent) 11%, transparent), transparent 62%),
+      var(--paper);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    margin-bottom: 1.1rem;
+  }
+  .hero .lede { font-size: clamp(1.05rem, 2vw, 1.3rem); color: var(--ink-2); max-width: 62ch; margin-top: 1.25rem; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 2rem; }
+  .pill {
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.05em;
+    padding: 0.35rem 0.7rem; border-radius: 999px;
+    border: 1px solid var(--rule-2); background: var(--surface); color: var(--muted);
+  }
+  .pill.on { border-color: color-mix(in oklab, var(--accent) 45%, transparent); background: var(--accent-soft); color: var(--accent-ink); }
+
+  nav.toc { border-bottom: 1px solid var(--rule); background: var(--surface); position: sticky; top: 0; z-index: 40; }
+  nav.toc .wrap { display: flex; gap: 0.25rem; overflow-x: auto; padding-block: 0.5rem; scrollbar-width: thin; }
+  nav.toc a {
+    flex: 0 0 auto; font-size: 0.8rem; padding: 0.35rem 0.65rem; border-radius: 6px;
+    color: var(--muted); text-decoration: none; white-space: nowrap;
+  }
+  nav.toc a:hover { background: var(--surface-2); color: var(--ink); }
+
+  section { padding: clamp(2.75rem, 6vw, 4.5rem) 0; border-bottom: 1px solid var(--rule); scroll-margin-top: 3.5rem; }
+  section > .wrap > .sec-head { margin-bottom: 2rem; }
+  .sec-num {
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em;
+    color: var(--accent); text-transform: uppercase; display: block; margin-bottom: 0.5rem;
+  }
+  .sec-head p { color: var(--ink-2); max-width: 66ch; margin-top: 0.75rem; }
+
+  .grid { display: grid; gap: 1rem; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+  .g4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 12px; padding: 1.25rem 1.35rem; box-shadow: var(--shadow);
+  }
+  .card h4 { margin-bottom: 0.5rem; }
+  .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+  .card .k { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 0.4rem; }
+
+  .note {
+    border-inline-start: 3px solid var(--accent);
+    background: var(--accent-soft); color: var(--accent-ink);
+    padding: 1rem 1.15rem; border-radius: 0 10px 10px 0; margin: 1.5rem 0;
+  }
+  .note.warn { border-color: var(--warn); background: var(--warn-soft); color: var(--ink); }
+  .note.bad { border-color: var(--bad); background: var(--bad-soft); color: var(--ink); }
+  .note.ok { border-color: var(--ok); background: var(--ok-soft); color: var(--ink); }
+  .note p:last-child { margin-bottom: 0; }
+  .note .lbl { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; display: block; margin-bottom: 0.4rem; opacity: 0.85; }
+
+  .tw { overflow-x: auto; border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); margin: 1.5rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; min-width: 560px; }
+  th, td { text-align: start; padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); position: sticky; top: 0; }
+  tr:last-child td { border-bottom: 0; }
+  td code { white-space: nowrap; }
+  .num { font-variant-numeric: tabular-nums; }
+  .yes { color: var(--ok); font-weight: 600; }
+  .no { color: var(--bad); font-weight: 600; }
+  .meh { color: var(--warn); font-weight: 600; }
+
+  pre {
+    background: var(--code-bg); color: var(--code-fg); border-radius: 12px;
+    padding: 1.1rem 1.25rem; overflow-x: auto; font-family: var(--font-mono);
+    font-size: 0.8rem; line-height: 1.65; margin: 1.25rem 0; border: 1px solid var(--stage-rule);
+  }
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+  .c-k { color: var(--code-k); }
+  .c-s { color: var(--code-s); }
+  .c-c { color: var(--code-c); font-style: italic; }
+
+  figure { margin: 1.75rem 0; }
+  figcaption {
+    font-size: 0.82rem; color: var(--muted); margin-top: 0.75rem;
+    padding-inline-start: 0.9rem; border-inline-start: 2px solid var(--rule-2);
+  }
+  figcaption b { color: var(--ink-2); font-weight: 600; }
+  .stage {
+    background: linear-gradient(var(--surface-2) 0 0) padding-box, var(--surface);
+    border: 1px solid var(--rule); border-radius: 14px;
+    padding: clamp(1rem, 3vw, 2rem); overflow-x: auto;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* ANT DESIGN mockup primitives — real antd v6 default token values.   */
+  /* Kept in their own namespace so the document's teal never leaks in.  */
+  /* ------------------------------------------------------------------ */
+  .antd {
+    --a-primary: #1677ff;
+    --a-primary-bg: #e6f4ff;
+    --a-primary-border: #91caff;
+    --a-success: #52c41a;
+    --a-success-bg: #f6ffed;
+    --a-success-border: #b7eb8f;
+    --a-warning: #faad14;
+    --a-warning-bg: #fffbe6;
+    --a-warning-border: #ffe58f;
+    --a-error: #ff4d4f;
+    --a-error-bg: #fff2f0;
+    --a-error-border: #ffccc7;
+    --a-purple: #722ed1;
+    --a-purple-bg: #f9f0ff;
+    --a-purple-border: #d3adf7;
+    --a-cyan: #13c2c2;
+    --a-cyan-bg: #e6fffb;
+    --a-cyan-border: #87e8de;
+    --a-magenta: #eb2f96;
+    --a-magenta-bg: #fff0f6;
+    --a-magenta-border: #ffadd2;
+    --a-text: rgba(0, 0, 0, 0.88);
+    --a-text-2: rgba(0, 0, 0, 0.65);
+    --a-text-3: rgba(0, 0, 0, 0.45);
+    --a-text-4: rgba(0, 0, 0, 0.25);
+    --a-border: #d9d9d9;
+    --a-border-2: #f0f0f0;
+    --a-bg: #ffffff;
+    --a-bg-layout: #f5f5f5;
+    --a-fill-3: rgba(0, 0, 0, 0.04);
+    --a-fill-2: rgba(0, 0, 0, 0.06);
+    --a-radius: 6px;
+    --a-radius-lg: 8px;
+    --a-radius-sm: 4px;
+    --a-h: 32px;
+    --a-h-sm: 24px;
+    --a-shadow: 0 6px 16px 0 rgb(0 0 0 / 0.08), 0 3px 6px -4px rgb(0 0 0 / 0.12), 0 9px 28px 8px rgb(0 0 0 / 0.05);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    font-size: 14px;
+    line-height: 1.5714;
+    color: var(--a-text);
+  }
+  .antd code {
+    background: var(--a-fill-3); color: var(--a-text);
+    border: 1px solid var(--a-border-2); border-radius: var(--a-radius-sm);
+    padding: 1px 5px; font-size: 12px;
+  }
+  .a-card {
+    background: var(--a-bg); border-radius: var(--a-radius-lg);
+    box-shadow: var(--a-shadow); width: 100%; max-width: 560px; margin: 0 auto;
+  }
+  .a-card.wide { max-width: 860px; }
+  .a-card.xwide { max-width: 1040px; }
+  .a-card.pins { overflow: visible; }
+  .a-card-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+    padding: 16px 20px; border-bottom: 1px solid var(--a-border-2);
+  }
+  .a-card-title { font-size: 16px; font-weight: 600; line-height: 1.5; color: var(--a-text); }
+  .a-card-sub { font-size: 12px; color: var(--a-text-3); margin-top: 2px; }
+  .a-card-body { padding: 16px 20px; }
+  .a-card-body.flush { padding: 0; }
+  .a-card-foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    padding: 11px 20px; border-top: 1px solid var(--a-border-2);
+    font-size: 12px; color: var(--a-text-3);
+  }
+  .a-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: var(--a-h); padding: 0 15px; border-radius: var(--a-radius);
+    border: 1px solid var(--a-border); background: var(--a-bg); color: var(--a-text);
+    font-size: 14px; font-weight: 400; white-space: nowrap;
+  }
+  .a-btn.primary { background: var(--a-primary); border-color: var(--a-primary); color: #fff; }
+  .a-btn.text { border-color: transparent; background: transparent; color: var(--a-text-2); }
+  .a-btn.link { border-color: transparent; background: transparent; color: var(--a-primary); padding: 0; height: auto; }
+  .a-btn.sm { height: var(--a-h-sm); padding: 0 9px; font-size: 12px; }
+  .a-btn.on { color: var(--a-primary); border-color: var(--a-primary); background: var(--a-primary-bg); }
+  .a-alert {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 9px 12px; border-radius: var(--a-radius); font-size: 13px;
+    border: 1px solid var(--a-primary-border); background: var(--a-primary-bg); color: var(--a-text);
+  }
+  .a-alert.warning { border-color: var(--a-warning-border); background: var(--a-warning-bg); }
+  .a-alert.error { border-color: var(--a-error-border); background: var(--a-error-bg); }
+  .a-alert .ic { flex: 0 0 auto; margin-top: 2px; }
+  .a-alert b { font-weight: 600; }
+  .a-tag {
+    display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px;
+    font-size: 11px; line-height: 18px; border-radius: var(--a-radius-sm);
+    border: 1px solid var(--a-border); background: var(--a-fill-3); color: var(--a-text-2);
+    white-space: nowrap;
+  }
+  .a-tag.blue { border-color: var(--a-primary-border); background: var(--a-primary-bg); color: var(--a-primary); }
+  .a-tag.green { border-color: var(--a-success-border); background: var(--a-success-bg); color: #389e0d; }
+  .a-tag.gold { border-color: var(--a-warning-border); background: var(--a-warning-bg); color: #d48806; }
+  .a-tag.red { border-color: var(--a-error-border); background: var(--a-error-bg); color: var(--a-error); }
+  .a-tag.purple { border-color: var(--a-purple-border); background: var(--a-purple-bg); color: var(--a-purple); }
+  .a-tag.cyan { border-color: var(--a-cyan-border); background: var(--a-cyan-bg); color: #08979c; }
+  .a-tag.magenta { border-color: var(--a-magenta-border); background: var(--a-magenta-bg); color: #c41d7f; }
+  .a-tag.plain { border-color: var(--a-border-2); background: transparent; color: var(--a-text-3); }
+
+  /* ------------------------------------------------------------------ */
+  /* Icons — Lucide geometry: 24px grid, 2px stroke, round caps.         */
+  /* ------------------------------------------------------------------ */
+  .i {
+    width: 16px; height: 16px; flex: 0 0 auto; display: block;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+  .i-14 { width: 14px; height: 14px; stroke-width: 2.15; }
+  .i-18 { width: 18px; height: 18px; stroke-width: 1.9; }
+  .i-20 { width: 20px; height: 20px; stroke-width: 1.85; }
+
+  /* ------------------------------------------------------------------ */
+  /* Timeline mockup primitives.                                         */
+  /* The rail is a real grid column, not an absolutely positioned line —  */
+  /* so it survives reflow, zoom and a long title wrapping to 4 lines.   */
+  /* ------------------------------------------------------------------ */
+  .tl { list-style: none; margin: 0; padding: 0; }
+  .tl > li { display: grid; grid-template-columns: 32px 1fr; gap: 12px; position: relative; }
+  .tl > li > .rail { display: grid; grid-template-rows: auto 1fr; justify-items: center; }
+  .antd .node {
+    width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--a-bg); border: 1px solid var(--a-border); color: var(--a-text-2); flex: 0 0 auto;
+  }
+  .antd .node.clinical { border-color: var(--a-primary-border); background: var(--a-primary-bg); color: var(--a-primary); }
+  .antd .node.admin { border-color: var(--a-border); background: var(--a-fill-3); color: var(--a-text-2); }
+  .antd .node.comms { border-color: var(--a-cyan-border); background: var(--a-cyan-bg); color: #08979c; }
+  .antd .node.reported { border-color: var(--a-magenta-border); background: var(--a-magenta-bg); color: #c41d7f; }
+  .antd .node.critical { border-color: var(--a-error-border); background: var(--a-error-bg); color: var(--a-error); }
+  .antd .node.planned { border-style: dashed; border-color: var(--a-border); background: transparent; color: var(--a-text-3); }
+  .tl .line { width: 1px; background: var(--a-border-2); margin: 6px 0 0; min-height: 8px; align-self: stretch; }
+  /* A DOTTED rail segment is not decoration: it means records may be
+     missing between the two events it joins. Paired with a worded label. */
+  .tl .line.gap { background: none; border-inline-start: 1px dashed var(--a-warning); width: 0; }
+  .tl > li:last-child .line { display: none; }
+  .tl .body { padding-bottom: 18px; min-width: 0; }
+  .tl > li:last-child .body { padding-bottom: 0; }
+  .antd .kind {
+    font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--a-text-3); font-weight: 600; margin-bottom: 2px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .antd .ttl { font-size: 14px; font-weight: 600; color: var(--a-text); line-height: 1.45; }
+  .antd .ttl a { color: var(--a-text); text-decoration: none; border-bottom: 1px solid var(--a-border); }
+  .antd .det { font-size: 13px; color: var(--a-text-2); margin-top: 3px; line-height: 1.5; }
+  .antd .who { font-size: 12.5px; color: var(--a-text-2); margin-top: 4px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .antd .when {
+    font-size: 12px; color: var(--a-text-3); margin-top: 5px;
+    font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  }
+  .antd .when .ago { color: var(--a-text-4); }
+  .antd .when .src { color: var(--a-text-4); }
+  .antd .struck .ttl, .antd .struck .det { text-decoration: line-through; text-decoration-thickness: 1px; color: var(--a-text-3); }
+  .antd .box {
+    margin-top: 8px; border: 1px solid var(--a-border-2); border-radius: var(--a-radius);
+    padding: 8px 11px; font-size: 12.5px; color: var(--a-text-2); background: var(--a-fill-3);
+  }
+  .antd .box.err { border-color: var(--a-error-border); background: var(--a-error-bg); }
+  .antd .box.warnb { border-color: var(--a-warning-border); background: var(--a-warning-bg); }
+  .antd .steps { margin: 7px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+  .antd .steps li {
+    display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: baseline;
+    font-size: 12.5px; color: var(--a-text-2); margin: 0;
+  }
+  .antd .steps .t { color: var(--a-text-4); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .antd .steps .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--a-border); margin-top: 6px; }
+  .antd .steps .dot.done { background: var(--a-success); }
+  .antd .steps .dot.open { background: transparent; box-shadow: inset 0 0 0 1.5px var(--a-warning); }
+
+  /* Month / group header, sticky inside a scrolling chart pane */
+  .tl-grp {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--a-text-3); font-weight: 600; padding: 10px 0 8px;
+    background: var(--a-bg);
+  }
+  .tl-grp .rule { flex: 1 1 auto; height: 1px; background: var(--a-border-2); }
+  .tl-grp .n { color: var(--a-text-4); font-weight: 400; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+
+  /* The divider that answers "what is new since I last looked" */
+  .tl-since {
+    display: flex; align-items: center; gap: 10px; padding: 6px 0 12px;
+    font-size: 11.5px; color: var(--a-primary); font-weight: 600;
+  }
+  .tl-since .rule { flex: 1 1 auto; height: 1px; background: var(--a-primary-border); }
+  .tl-now { color: #d48806; }
+  .tl-now .rule { background: var(--a-warning-border); }
+
+  /* The coverage statement. Always rendered, always printed. */
+  .cov {
+    display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap;
+    font-size: 12px; color: var(--a-text-2); line-height: 1.55;
+  }
+  .cov .lead { font-weight: 600; color: var(--a-text); }
+  .cov-srcs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .srcpill {
+    display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px;
+    border-radius: 999px; font-size: 11.5px; color: var(--a-text-2);
+    box-shadow: inset 0 0 0 1px var(--a-border-2); background: var(--a-bg);
+  }
+  .srcpill .d { width: 7px; height: 7px; border-radius: 50%; background: var(--a-success); flex: 0 0 auto; }
+  .srcpill.partial .d { background: var(--a-warning); }
+  .srcpill.down { box-shadow: inset 0 0 0 1px var(--a-error-border); background: var(--a-error-bg); color: var(--a-error); }
+  .srcpill.down .d { background: var(--a-error); }
+  .srcpill.excluded { color: var(--a-text-4); }
+  .srcpill.excluded .d { background: var(--a-text-4); }
+
+  /* Two-column register mode */
+  .tl-reg { display: grid; grid-template-columns: 1fr 33px 1fr; gap: 0 12px; }
+  .tl-reg .col-h {
+    font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600;
+    color: var(--a-text-3); padding-bottom: 8px;
+  }
+  .tl-reg .col-h.r { text-align: end; }
+  .tl-reg .spine { grid-column: 2; border-inline-start: 1px solid var(--a-border-2); margin-inline-start: 16px; }
+  .tl-reg .ev { padding: 0 0 16px; }
+  .tl-reg .ev.r { grid-column: 3; }
+  .tl-reg .ev.l { grid-column: 1; text-align: end; }
+  .tl-reg .mid { grid-column: 2; display: grid; place-items: center; position: relative; }
+  /* the rail, drawn behind the node rather than as a sibling element */
+  .tl-reg .mid::before {
+    content: ""; position: absolute; top: 0; bottom: -16px;
+    inset-inline-start: 50%; width: 1px; background: var(--a-border-2); transform: translateX(-50%);
+  }
+  .tl-reg .mid.last::before { bottom: 50%; }
+  .tl-reg .mid > .node { position: relative; z-index: 1; }
+
+  /* Compact density */
+  .tl.compact > li { grid-template-columns: 22px 1fr; gap: 9px; }
+  .tl.compact .node { width: 22px; height: 22px; }
+  .tl.compact .body { padding-bottom: 9px; }
+  .tl.compact .ttl { font-size: 13px; font-weight: 500; }
+  .tl.compact .kind { margin-bottom: 0; }
+  .tl.compact .when { margin-top: 1px; }
+
+  .cluster {
+    display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--a-text-2);
+    border: 1px dashed var(--a-border); border-radius: var(--a-radius); padding: 7px 11px;
+    background: var(--a-fill-3);
+  }
+  .cluster b { font-weight: 600; color: var(--a-text); }
+
+  /* ------------------------------------------------------------------ */
+  /* Annotation pins — anchored to the element they describe.            */
+  /* ------------------------------------------------------------------ */
+  .rel { position: relative; }
+  .pin {
+    position: absolute; z-index: 6;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+    display: grid; place-items: center; line-height: 1;
+    box-shadow: 0 0 0 2px var(--a-bg), 0 0 0 3.5px color-mix(in oklab, var(--accent) 40%, transparent);
+  }
+  .pin.bad { background: var(--bad); box-shadow: 0 0 0 2px var(--a-bg), 0 0 0 3.5px color-mix(in oklab, var(--bad) 40%, transparent); }
+  .pin-tl { top: -10px; inset-inline-start: -10px; }
+  .pin-tr { top: -10px; inset-inline-end: -10px; }
+  .pin-bl { bottom: -10px; inset-inline-start: -10px; }
+  .pin-br { bottom: -10px; inset-inline-end: -10px; }
+  .pin-l  { top: 50%; inset-inline-start: -10px; transform: translateY(-50%); }
+  .pin-r  { top: 50%; inset-inline-end: -10px; transform: translateY(-50%); }
+
+  .anno-key { margin-top: 1.5rem; display: grid; gap: 0.6rem; padding: 0; }
+  .anno-key li { display: flex; gap: 0.65rem; align-items: flex-start; font-size: 0.88rem; color: var(--ink-2); list-style: none; margin: 0; }
+  .anno-key .n {
+    flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-family: var(--font-mono);
+    font-size: 10px; font-weight: 700; display: grid; place-items: center; margin-top: 2px;
+  }
+  .anno-key .n.bad { background: var(--bad); }
+
+  .feat { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: var(--surface); margin: 1.5rem 0; }
+  .feat > div { display: grid; grid-template-columns: 2.5rem 1fr; gap: 0.9rem; padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--rule); }
+  .feat > div:last-child { border-bottom: 0; }
+  .feat .n { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); padding-top: 0.15rem; }
+  .feat .t { font-weight: 600; margin-bottom: 0.15rem; }
+  .feat .d { font-size: 0.9rem; color: var(--ink-2); }
+  .badge { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.1rem 0.4rem; border-radius: 4px; margin-inline-start: 0.5rem; vertical-align: 0.1em; white-space: nowrap; }
+  .badge.v1 { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent); }
+  .badge.v2 { background: var(--surface-2); color: var(--muted); border: 1px solid var(--rule-2); }
+  .badge.host { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-rule); }
+  .badge.never { background: var(--bad-soft); color: var(--bad); border: 1px solid var(--bad-rule); }
+  .grp-h { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 2rem 0 0.5rem; }
+
+  .phases { display: grid; gap: 1rem; }
+  .phase { display: grid; grid-template-columns: auto 1fr; gap: 1.1rem; }
+  .phase .prail { display: grid; grid-template-rows: auto 1fr; justify-items: center; }
+  .phase .dot { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); border: 2px solid var(--accent); color: var(--accent-ink); font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; display: grid; place-items: center; }
+  .phase .pline { width: 2px; background: var(--rule); margin-top: 4px; min-height: 1rem; }
+  .phase:last-child .pline { display: none; }
+  .phase .body { padding-bottom: 1.25rem; }
+  .phase .body h4 { margin-bottom: 0.3rem; }
+  .phase .meta { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+
+  .layers { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; font-family: var(--font-mono); font-size: 0.8rem; }
+  .layers > div { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--rule); background: var(--surface); display: grid; grid-template-columns: 5.5rem 1fr; gap: 1rem; align-items: baseline; }
+  .layers > div:last-child { border-bottom: 0; }
+  .layers .l { color: var(--accent); font-weight: 700; }
+  .layers .d { color: var(--ink-2); font-family: var(--font-body); font-size: 0.88rem; }
+
+  footer { padding: 3rem 0 4rem; color: var(--muted); font-size: 0.85rem; }
+  footer .wrap > div + div { margin-top: 0.5rem; }
+
+  @media (max-width: 760px) {
+    .tl-reg { grid-template-columns: 1fr; }
+    .tl-reg .spine, .tl-reg .mid, .tl-reg .col-h.r { display: none; }
+    .tl-reg .ev, .tl-reg .ev.l, .tl-reg .ev.r { grid-column: 1; text-align: start; }
+  }
+  @media print {
+    nav.toc { display: none; }
+    section { break-inside: avoid; }
+  }
+
+  /* ==================================================================== */
+  /* REPORT CHROME — additions specific to the 50-component brief.        */
+  /* ==================================================================== */
+
+  .kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; margin: 1.75rem 0; }
+  .kpi > div { background: var(--surface); padding: 1.05rem 1.15rem; }
+  .kpi .v { font-family: var(--font-display); font-size: 1.75rem; font-weight: 600; line-height: 1; letter-spacing: -0.02em; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+  .kpi .l { font-size: 0.78rem; color: var(--muted); margin-top: 0.45rem; line-height: 1.35; }
+
+  /* Component entry -------------------------------------------------- */
+  .comp { border-top: 1px solid var(--rule); padding: 2.5rem 0 0.5rem; scroll-margin-top: 3.5rem; }
+  .comp:first-of-type { border-top: 0; }
+  .comp-head { display: grid; grid-template-columns: auto 1fr; gap: 1.1rem; align-items: start; margin-bottom: 1.25rem; }
+  .comp-n { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; color: var(--accent); background: var(--accent-soft); border: 1px solid color-mix(in oklab, var(--accent) 30%, transparent); border-radius: 8px; width: 2.6rem; height: 2.6rem; display: grid; place-items: center; }
+  .comp-head h3 { margin: 0; font-size: 1.32rem; letter-spacing: -0.02em; }
+  .comp-head h3 .api { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-inline-start: 0.5rem; }
+  .comp-line { margin: 0.45rem 0 0; color: var(--ink-2); max-width: 74ch; font-size: 1.02rem; }
+  .tagrow { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.6rem; }
+  .tg { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.2rem 0.5rem; border-radius: 5px; border: 1px solid var(--rule-2); color: var(--muted); background: var(--surface); }
+  .tg.core { border-color: #9bb7cf; color: #2b5f86; background: #eef5fa; }
+  .tg.pro { border-color: #b7a6d8; color: #5b3f96; background: #f4f0fb; }
+  .tg.ai { border-color: #8fd0c6; color: #0f6f62; background: #e8f7f4; }
+  .tg.bh { border-color: #d9b0c4; color: #8f3d69; background: #fbeff5; }
+  .tg.viz { border-color: #cbbb92; color: #7a5c1c; background: #faf4e6; }
+  .tg.ent { border-color: #a9b0bb; color: #3d4653; background: #f1f3f6; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .tg.core { border-color: #2f4a5e; color: #9dcdf0; background: #12242f; }
+    :root:not([data-theme="light"]) .tg.pro { border-color: #463a63; color: #c9b2f2; background: #1e1830; }
+    :root:not([data-theme="light"]) .tg.ai { border-color: #24544c; color: #7fe3d1; background: #0e2723; }
+    :root:not([data-theme="light"]) .tg.bh { border-color: #5c3247; color: #efaecd; background: #2a1522; }
+    :root:not([data-theme="light"]) .tg.viz { border-color: #55492a; color: #ded0a1; background: #241f10; }
+    :root:not([data-theme="light"]) .tg.ent { border-color: #3a4048; color: #c3ccd8; background: #1a1e23; }
+  }
+  :root[data-theme="dark"] .tg.core { border-color: #2f4a5e; color: #9dcdf0; background: #12242f; }
+  :root[data-theme="dark"] .tg.pro { border-color: #463a63; color: #c9b2f2; background: #1e1830; }
+  :root[data-theme="dark"] .tg.ai { border-color: #24544c; color: #7fe3d1; background: #0e2723; }
+  :root[data-theme="dark"] .tg.bh { border-color: #5c3247; color: #efaecd; background: #2a1522; }
+  :root[data-theme="dark"] .tg.viz { border-color: #55492a; color: #ded0a1; background: #241f10; }
+  :root[data-theme="dark"] .tg.ent { border-color: #3a4048; color: #c3ccd8; background: #1a1e23; }
+
+  .comp-cols { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 1.75rem; align-items: start; }
+  @media (max-width: 900px) { .comp-cols { grid-template-columns: 1fr; } }
+  .comp-body > .blk { margin-bottom: 1.15rem; }
+  .comp-body .blk:last-child { margin-bottom: 0; }
+  .blk > .k { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.11em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 0.3rem; }
+  .blk p { margin: 0 0 0.5rem; color: var(--ink-2); }
+  .blk p:last-child { margin-bottom: 0; }
+  .blk ul { margin: 0; padding-inline-start: 1.15rem; }
+  .blk li { color: var(--ink-2); margin-bottom: 0.25rem; }
+
+  .spec { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 1rem 1.1rem; box-shadow: var(--shadow); position: sticky; top: 3.75rem; }
+  .spec h5 { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.11em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.7rem; font-weight: 600; }
+  .spec + .spec { margin-top: 0.85rem; }
+  .score { display: grid; grid-template-columns: 5.6rem 1fr 1.2rem; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem; font-size: 0.76rem; color: var(--ink-2); }
+  .score .bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--rule); }
+  .score .bar i { display: block; height: 100%; background: var(--accent); }
+  .score .bar.hi i { background: var(--accent); }
+  .score .n { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); text-align: end; font-variant-numeric: tabular-nums; }
+  .spec dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 0.7rem; font-size: 0.78rem; }
+  .spec dt { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding-top: 0.12rem; }
+  .spec dd { margin: 0; color: var(--ink-2); }
+  .spec .rankline { font-family: var(--font-mono); font-size: 0.7rem; color: var(--accent-ink); background: var(--accent-soft); border-radius: 6px; padding: 0.35rem 0.5rem; text-align: center; margin-top: 0.6rem; letter-spacing: 0.04em; }
+
+  /* Matrix ------------------------------------------------------------ */
+  .matrix { position: relative; border: 1px solid var(--rule); border-radius: 14px; background: var(--surface); padding: 2.4rem 1.2rem 2.6rem 3rem; margin: 1.75rem 0; overflow-x: auto; }
+  .mx-plot { position: relative; height: 560px; min-width: 620px; border-inline-start: 2px solid var(--rule-2); border-bottom: 2px solid var(--rule-2); }
+  .mx-q { position: absolute; inset: auto; font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 0.3rem 0.45rem; }
+  .mx-cell { position: absolute; width: 50%; height: 50%; }
+  .mx-cell.tl { left: 0; top: 0; } .mx-cell.tr { left: 50%; top: 0; background: color-mix(in oklab, var(--accent) 7%, transparent); }
+  .mx-cell.bl { left: 0; top: 50%; } .mx-cell.br { left: 50%; top: 50%; }
+  .mx-cell b { position: absolute; inset-block-start: 0.5rem; inset-inline-start: 0.6rem; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .mx-cell.tr b { color: var(--accent-ink); }
+  .mx-dot { position: absolute; transform: translate(-50%, 50%); width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--surface); }
+  .mx-dot::after { content: attr(data-n); position: absolute; inset-inline-start: 13px; inset-block-start: -6px; font-family: var(--font-mono); font-size: 0.6rem; color: var(--ink-2); white-space: nowrap; }
+  .mx-ax { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .mx-ax.x { text-align: center; margin-top: 0.7rem; }
+  .mx-ax.y { position: absolute; inset-inline-start: 0.55rem; inset-block-start: 50%; transform: rotate(180deg) translateY(50%); writing-mode: vertical-rl; }
+  .mx-key { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; font-size: 0.76rem; color: var(--muted); }
+  .mx-key span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .mx-key i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  /* Rank lists --------------------------------------------------------- */
+  .ranks { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .rank { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 1.1rem 1.2rem; box-shadow: var(--shadow); }
+  .rank h4 { margin-bottom: 0.15rem; }
+  .rank .why { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.8rem; }
+  .rank ol { margin: 0; padding-inline-start: 1.4rem; font-size: 0.87rem; }
+  .rank ol li { margin-bottom: 0.35rem; color: var(--ink-2); }
+  .rank ol li b { color: var(--ink); font-weight: 600; }
+  .rank ol li .sc { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); }
+
+  /* Engine map --------------------------------------------------------- */
+  .eng { border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); overflow: hidden; margin-bottom: 0.85rem; }
+  .eng-h { display: flex; align-items: center; gap: 0.65rem; padding: 0.8rem 1.05rem; border-bottom: 1px solid var(--rule); background: var(--surface-2); flex-wrap: wrap; }
+  .eng-h b { font-family: var(--font-mono); font-size: 0.82rem; letter-spacing: -0.01em; }
+  .eng-h .st { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.15rem 0.42rem; border-radius: 4px; border: 1px solid var(--rule-2); color: var(--muted); }
+  .eng-h .st.ship { border-color: color-mix(in oklab, var(--ok) 45%, transparent); background: var(--ok-soft); color: var(--ok); }
+  .eng-h .st.part { border-color: color-mix(in oklab, var(--warn) 45%, transparent); background: var(--warn-soft); color: var(--warn); }
+  .eng-h .st.new { border-color: color-mix(in oklab, var(--accent) 40%, transparent); background: var(--accent-soft); color: var(--accent-ink); }
+  .eng-b { padding: 0.8rem 1.05rem; font-size: 0.86rem; color: var(--ink-2); }
+  .eng-b .feeds { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem; }
+  .eng-b .feeds a { font-family: var(--font-mono); font-size: 0.68rem; padding: 0.16rem 0.42rem; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--rule); color: var(--ink-2); text-decoration: none; }
+  .eng-b .feeds a:hover { border-color: var(--accent); color: var(--accent-ink); }
+
+  .idx { columns: 3 200px; column-gap: 1.5rem; font-size: 0.85rem; }
+  .idx a { display: block; padding: 0.18rem 0; text-decoration: none; color: var(--ink-2); break-inside: avoid; }
+  .idx a:hover { color: var(--accent-ink); }
+  .idx a i { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); font-style: normal; margin-inline-end: 0.4rem; }
+
+  /* ==================================================================== */
+  /* MOCKUP PRIMITIVES — all inside .antd, real Ant Design v6 tokens.     */
+  /* ==================================================================== */
+  .antd * { box-sizing: border-box; }
+  .antd .row { display: flex; align-items: center; gap: 8px; }
+  .antd .row.wrap { flex-wrap: wrap; }
+  .antd .col { display: flex; flex-direction: column; gap: 6px; }
+  .antd .grow { flex: 1 1 auto; min-width: 0; }
+  .antd .sp { justify-content: space-between; }
+  .antd .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .antd .num { font-variant-numeric: tabular-nums; }
+  .antd .t3 { color: var(--a-text-3); }
+  .antd .t2 { color: var(--a-text-2); }
+  .antd .sm { font-size: 12px; }
+  .antd .xs { font-size: 11px; }
+  .antd .b { font-weight: 600; }
+  .antd .trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .antd hr { border: 0; border-top: 1px solid var(--a-border-2); margin: 12px 0; }
+  .antd .lbl { font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--a-text-3); font-weight: 600; }
+
+  .a-app { background: var(--a-bg-layout); border: 1px solid var(--a-border); border-radius: var(--a-radius-lg); overflow: hidden; box-shadow: var(--a-shadow); }
+  .a-app-bar { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--a-bg); border-bottom: 1px solid var(--a-border-2); }
+  .a-app-bar .dots { display: flex; gap: 5px; }
+  .a-app-bar .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--a-fill-2); display: block; }
+  .a-app-bar .url { flex: 1 1 auto; text-align: center; font-size: 11px; color: var(--a-text-3); }
+
+  .a-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; background: var(--a-fill-2); color: var(--a-text-2); flex: 0 0 auto; border: 1px solid var(--a-border-2); }
+  .a-avatar.lg { width: 44px; height: 44px; font-size: 15px; }
+  .a-avatar.sm { width: 24px; height: 24px; font-size: 10px; }
+  .a-avatar.xs { width: 20px; height: 20px; font-size: 9px; }
+  .a-avatar.b1 { background: #e6f4ff; color: #0958d9; border-color: #91caff; }
+  .a-avatar.b2 { background: #f9f0ff; color: #531dab; border-color: #d3adf7; }
+  .a-avatar.b3 { background: #e6fffb; color: #08979c; border-color: #87e8de; }
+  .a-avatar.b4 { background: #fff7e6; color: #d46b08; border-color: #ffd591; }
+  .a-avatar.b5 { background: #fff0f6; color: #c41d7f; border-color: #ffadd2; }
+  .a-stackav { display: flex; }
+  .a-stackav .a-avatar + .a-avatar { margin-inline-start: -8px; box-shadow: 0 0 0 2px var(--a-bg); }
+
+  .a-seg { display: inline-flex; background: var(--a-fill-3); border-radius: var(--a-radius); padding: 2px; gap: 2px; }
+  .a-seg span { padding: 3px 10px; border-radius: 4px; font-size: 12px; color: var(--a-text-2); white-space: nowrap; }
+  .a-seg span.on { background: var(--a-bg); color: var(--a-text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06); font-weight: 500; }
+
+  .a-input { display: flex; align-items: center; gap: 7px; height: var(--a-h); padding: 0 11px; border: 1px solid var(--a-border); border-radius: var(--a-radius); background: var(--a-bg); font-size: 14px; color: var(--a-text-3); }
+  .a-input.focus { border-color: var(--a-primary); box-shadow: 0 0 0 2px rgb(5 145 255 / 0.1); }
+  .a-input.lg { height: 40px; font-size: 15px; }
+  .a-input .val { color: var(--a-text); }
+  .a-caret { display: inline-block; width: 1px; height: 15px; background: var(--a-text); vertical-align: -2px; }
+
+  .a-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--a-border-2); }
+  .a-tabs span { padding: 9px 14px; font-size: 13px; color: var(--a-text-2); border-bottom: 2px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+  .a-tabs span.on { color: var(--a-primary); border-bottom-color: var(--a-primary); font-weight: 500; }
+
+  .a-prog { height: 6px; border-radius: 3px; background: var(--a-fill-2); overflow: hidden; }
+  .a-prog i { display: block; height: 100%; background: var(--a-primary); border-radius: 3px; }
+  .a-prog i.ok { background: var(--a-success); } .a-prog i.warn { background: var(--a-warning); } .a-prog i.err { background: var(--a-error); }
+  .a-prog.thin { height: 4px; }
+
+  /* Data table --------------------------------------------------------- */
+  .a-tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; min-width: 0; }
+  .a-tbl th { text-align: start; font-weight: 600; font-size: 12px; color: var(--a-text-2); background: var(--a-fill-3); padding: 8px 10px; border-bottom: 1px solid var(--a-border-2); white-space: nowrap; position: sticky; top: 0; }
+  .a-tbl td { padding: 9px 10px; border-bottom: 1px solid var(--a-border-2); color: var(--a-text); vertical-align: middle; }
+  .a-tbl tr:last-child td { border-bottom: 0; }
+  .a-tbl tr.sel td { background: var(--a-primary-bg); }
+  .a-tbl tr.hov td { background: var(--a-fill-3); }
+  .a-tbl td.r, .a-tbl th.r { text-align: end; }
+  .a-tbl td.c, .a-tbl th.c { text-align: center; }
+  .a-tbl .stat { border-inline-start: 3px solid transparent; }
+  .a-tbl .stat.crit { border-inline-start-color: var(--a-error); }
+  .a-tbl .stat.warn { border-inline-start-color: var(--a-warning); }
+  .a-tbl .stat.ok { border-inline-start-color: var(--a-success); }
+  .a-tbl .stat.info { border-inline-start-color: var(--a-primary); }
+  .a-scroll { overflow: auto; }
+
+  /* Clinical status chip system --------------------------------------- */
+  .cs { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 7px 0 5px; border-radius: var(--a-radius-sm); font-size: 11.5px; font-weight: 500; border: 1px solid; white-space: nowrap; }
+  .cs .gl { width: 8px; height: 8px; flex: 0 0 auto; }
+  .cs-crit { border-color: #ffa39e; background: #fff1f0; color: #a8071a; }
+  .cs-warn { border-color: #ffd591; background: #fff7e6; color: #ad4e00; }
+  .cs-cau  { border-color: #ffe58f; background: #fffbe6; color: #874d00; }
+  .cs-ok   { border-color: #b7eb8f; background: #f6ffed; color: #237804; }
+  .cs-info { border-color: #91caff; background: #e6f4ff; color: #0958d9; }
+  .cs-none { border-color: #d9d9d9; background: #fafafa; color: rgba(0,0,0,0.55); }
+  .cs-unk  { border-color: #d9d9d9; background: repeating-linear-gradient(135deg, #fafafa 0 5px, #f0f0f0 5px 10px); color: rgba(0,0,0,0.6); }
+  .cs-pend { border-color: #d3adf7; background: #f9f0ff; color: #531dab; }
+  .cs-ai   { border-color: #87e8de; background: #e6fffb; color: #006d75; }
+  .cs-rest { border-color: #adc6ff; background: #f0f5ff; color: #1d39c4; }
+  .cs.lg { height: 26px; font-size: 12.5px; padding: 0 9px 0 6px; }
+  .cs.sq { border-radius: 3px; }
+
+  /* Shape glyphs — the second, non-colour cue on every status. */
+  .gl-x { position: relative; }
+  .gl-x::before, .gl-x::after { content: ""; position: absolute; inset-inline-start: 0; inset-block-start: 3px; width: 8px; height: 2px; background: currentColor; }
+  .gl-x::before { transform: rotate(45deg); } .gl-x::after { transform: rotate(-45deg); }
+  .gl-tri { width: 0 !important; height: 0 !important; border-inline: 4.5px solid transparent; border-block-end: 8px solid currentColor; }
+  .gl-sq { background: currentColor; }
+  .gl-dot { background: currentColor; border-radius: 50%; }
+  .gl-ring { border: 2px solid currentColor; border-radius: 50%; }
+  .gl-dash { height: 2px !important; background: currentColor; }
+  .gl-hex { background: currentColor; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
+  .gl-hatch { background: repeating-linear-gradient(45deg, currentColor 0 1.5px, transparent 1.5px 3.5px); border: 1px solid currentColor; }
+  .gl-lock { border: 1.5px solid currentColor; border-radius: 1px; position: relative; }
+  .gl-lock::before { content: ""; position: absolute; inset-inline-start: 1.5px; inset-block-start: -3px; width: 3px; height: 3px; border: 1.5px solid currentColor; border-block-end: 0; border-radius: 2px 2px 0 0; }
+
+  /* Trend arrows / sparkline ------------------------------------------ */
+  .spark { display: inline-block; vertical-align: middle; }
+  .spark path { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .spark .area { fill: currentColor; opacity: 0.1; stroke: none; }
+  .arrw { display: inline-block; width: 0; height: 0; }
+  .arrw.up { border-inline: 4px solid transparent; border-block-end: 7px solid currentColor; }
+  .arrw.dn { border-inline: 4px solid transparent; border-block-start: 7px solid currentColor; }
+  .arrw.flat { width: 9px; height: 2px; background: currentColor; border: 0; }
+
+  /* Reference range bar ------------------------------------------------ */
+  .rng { position: relative; height: 26px; }
+  .rng .track { position: absolute; inset-block-start: 9px; inset-inline: 0; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #fff1f0 0 12%, #fff7e6 12% 26%, #f6ffed 26% 74%, #fff7e6 74% 88%, #fff1f0 88% 100%); border: 1px solid var(--a-border-2); }
+  .rng .band { position: absolute; inset-block-start: 9px; height: 8px; background: #d9f7be; border-inline: 1px solid #95de64; }
+  .rng .pin { position: absolute; inset-block-start: 2px; width: 3px; height: 22px; border-radius: 2px; background: var(--a-text); transform: translateX(-50%); }
+  .rng .pin.crit { background: var(--a-error); box-shadow: 0 0 0 3px rgb(255 77 79 / 0.15); }
+  .rng .pin.warn { background: #d46b08; }
+  .rng .pin.prev { background: var(--a-text-4); width: 2px; height: 16px; inset-block-start: 5px; }
+  .rng .cap { position: absolute; inset-block-start: 20px; font-size: 10px; color: var(--a-text-3); transform: translateX(-50%); white-space: nowrap; }
+
+  /* Chart frame -------------------------------------------------------- */
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart .gridline { stroke: var(--a-border-2); stroke-width: 1; }
+  .chart .axis { stroke: var(--a-border); stroke-width: 1; }
+  .chart .axlabel { font-size: 10px; fill: var(--a-text-3); font-family: ui-monospace, Menlo, monospace; }
+  .chart .series { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .chart .refband { fill: #f6ffed; }
+  .chart .critband { fill: #fff1f0; }
+  .chart .warnband { fill: #fffbe6; }
+  .chart .pt { stroke: #fff; stroke-width: 1.5; }
+  .chart .marker { stroke: var(--a-text-4); stroke-width: 1; stroke-dasharray: 3 3; }
+  .chart .tip { fill: rgba(0,0,0,0.85); }
+  .chart .tiptxt { fill: #fff; font-size: 11px; }
+
+  /* Waveform ----------------------------------------------------------- */
+  .wave { display: flex; align-items: center; gap: 2px; height: 34px; }
+  .wave i { width: 3px; border-radius: 2px; background: var(--a-primary); display: block; opacity: 0.85; }
+  .wave i.q { background: var(--a-border); }
+
+  /* Panel / dock chrome ------------------------------------------------ */
+  .dock { border: 1px solid var(--a-border); border-radius: var(--a-radius-lg) var(--a-radius-lg) 0 0; background: var(--a-bg); box-shadow: 0 -4px 16px rgb(0 0 0 / 0.09); overflow: hidden; }
+  .dock-h { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 12px; background: #fafafa; border-bottom: 1px solid var(--a-border-2); }
+  .dock-h .ttl { font-size: 13px; font-weight: 600; flex: 1 1 auto; min-width: 0; }
+  .win-btn { width: 22px; height: 22px; border-radius: 4px; display: grid; place-items: center; color: var(--a-text-3); }
+  .win-btn:hover { background: var(--a-fill-3); }
+
+  /* Kanban / column layout --------------------------------------------- */
+  .cols { display: grid; gap: 10px; }
+  .cols.c2 { grid-template-columns: 1fr 1fr; }
+  .cols.c3 { grid-template-columns: repeat(3, 1fr); }
+  .cols.c4 { grid-template-columns: repeat(4, 1fr); }
+  .colh { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--a-text-3); font-weight: 600; padding-bottom: 6px; border-bottom: 1px solid var(--a-border-2); margin-bottom: 8px; display: flex; justify-content: space-between; }
+
+  /* Generic tile ------------------------------------------------------- */
+  .tile { border: 1px solid var(--a-border-2); border-radius: var(--a-radius); padding: 9px 11px; background: var(--a-bg); }
+  .tile.sel { border-color: var(--a-primary); box-shadow: 0 0 0 2px rgb(5 145 255 / 0.09); }
+  .tile.crit { border-color: var(--a-error-border); background: var(--a-error-bg); }
+  .tile.warn { border-color: var(--a-warning-border); background: var(--a-warning-bg); }
+  .tile.ok { border-color: var(--a-success-border); background: var(--a-success-bg); }
+  .tile.ai { border-color: var(--a-cyan-border); background: linear-gradient(180deg, #f0fdfc, #fff); }
+  .tile.ghost { border-style: dashed; background: transparent; color: var(--a-text-3); }
+  .tile.flat { box-shadow: none; background: var(--a-fill-3); border-color: transparent; }
+
+  /* Skeleton ----------------------------------------------------------- */
+  .sk { background: linear-gradient(90deg, var(--a-fill-2) 25%, var(--a-fill-3) 37%, var(--a-fill-2) 63%); border-radius: 4px; display: block; }
+  .sk.t { height: 12px; } .sk.t2 { height: 10px; } .sk.h { height: 18px; } .sk.av { border-radius: 50%; }
+
+  /* Diff / draft review ------------------------------------------------ */
+  .diff { font-size: 13px; line-height: 1.6; }
+  .diff .ins { background: #f6ffed; border-block-end: 1px solid #b7eb8f; }
+  .diff .del { background: #fff1f0; text-decoration: line-through; text-decoration-color: #ff7875; color: var(--a-text-3); }
+  .diff .unv { background: #fffbe6; border-block-end: 1px dashed #ffd666; }
+  .diff mark.cite { background: #e6f4ff; border-radius: 3px; padding: 0 3px; color: #0958d9; font-size: 11px; vertical-align: 1px; margin-inline-start: 2px; }
+
+  /* Heatmap ------------------------------------------------------------ */
+  .heat { display: grid; gap: 3px; }
+  .heat i { aspect-ratio: 1; border-radius: 2px; display: block; border: 1px solid rgb(0 0 0 / 0.04); }
+  .heat i.n0 { background: #f5f5f5; } .heat i.n1 { background: #d9f7be; } .heat i.n2 { background: #b7eb8f; }
+  .heat i.n3 { background: #ffe58f; } .heat i.n4 { background: #ffbb96; } .heat i.n5 { background: #ff9c9c; }
+  .heat i.gap { background: repeating-linear-gradient(45deg, #fafafa 0 3px, #eee 3px 6px); }
+
+  /* Matrix cells (interaction grid) ------------------------------------ */
+  .imx { border-collapse: separate; border-spacing: 2px; font-size: 11px; }
+  .imx th { font-weight: 500; color: var(--a-text-2); font-size: 11px; padding: 3px 5px; background: none; border: 0; position: static; white-space: nowrap; }
+  .imx th.v { writing-mode: vertical-rl; transform: rotate(180deg); text-align: start; height: 74px; padding: 0 3px; }
+  .imx td { width: 30px; height: 30px; text-align: center; border-radius: 4px; background: var(--a-fill-3); color: var(--a-text-4); padding: 0; border: 1px solid transparent; }
+  .imx td.x { background: transparent; }
+  .imx td.s1 { background: #fffbe6; border-color: #ffe58f; color: #874d00; }
+  .imx td.s2 { background: #fff7e6; border-color: #ffd591; color: #ad4e00; }
+  .imx td.s3 { background: #fff1f0; border-color: #ffa39e; color: #a8071a; font-weight: 700; }
+  .imx td.s0 { background: #fafafa; }
+
+  /* Command palette ---------------------------------------------------- */
+  .cmdk { background: var(--a-bg); border-radius: 10px; box-shadow: 0 12px 40px rgb(0 0 0 / 0.18); border: 1px solid var(--a-border-2); overflow: hidden; }
+  .cmdk-row { display: flex; align-items: center; gap: 10px; padding: 8px 14px; font-size: 13.5px; }
+  .cmdk-row.on { background: var(--a-primary-bg); }
+  .cmdk-row .kb { margin-inline-start: auto; }
+  .kbd { font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; padding: 1px 5px; border: 1px solid var(--a-border); border-block-end-width: 2px; border-radius: 4px; background: #fafafa; color: var(--a-text-2); }
+  .cmdk-grp { font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--a-text-3); font-weight: 600; padding: 9px 14px 4px; }
+
+  /* Rail / stepper ------------------------------------------------------ */
+  .steprail { display: grid; gap: 0; }
+  .steprail .s { display: grid; grid-template-columns: 20px 1fr; gap: 10px; }
+  .steprail .s .r { display: grid; grid-template-rows: auto 1fr; justify-items: center; }
+  .steprail .s .d { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--a-border); background: var(--a-bg); margin-top: 3px; }
+  .steprail .s .d.done { background: var(--a-success); border-color: var(--a-success); }
+  .steprail .s .d.now { border-color: var(--a-primary); box-shadow: 0 0 0 3px rgb(5 145 255 / 0.13); }
+  .steprail .s .d.blocked { border-color: var(--a-error); background: var(--a-error-bg); }
+  .steprail .s .ln { width: 2px; background: var(--a-border-2); min-height: 12px; }
+  .steprail .s:last-child .ln { display: none; }
+  .steprail .s .c { padding-bottom: 12px; }
+  .steprail .s:last-child .c { padding-bottom: 0; }
+
+  /* Golden thread link -------------------------------------------------- */
+  .thread { border-inline-start: 2px solid var(--a-warning); padding-inline-start: 10px; }
+  .thread.ok { border-inline-start-color: var(--a-success); }
+  .thread.miss { border-inline-start-color: var(--a-error); border-inline-start-style: dashed; }
+
+  /* Small caption under a mockup band ----------------------------------- */
+  .bandcap { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--a-text-3); font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .bandcap::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--a-border-2); }
+  .band + .band { margin-top: 20px; }
+
+  .statesgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 10px; }
+  .statecell { border: 1px solid var(--a-border-2); border-radius: var(--a-radius); padding: 10px; background: var(--a-bg); }
+  .statecell .nm { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--a-text-3); font-weight: 600; margin-bottom: 7px; }
+
+  @media (max-width: 720px) {
+    .cols.c3, .cols.c4 { grid-template-columns: 1fr; }
+    .cols.c2 { grid-template-columns: 1fr; }
+    .idx { columns: 1; }
+    .spec { position: static; }
+  }
+
+  /* Icons default to block in the base sheet, which orphans them onto their own
+     line when they appear inside running text. Flex parents blockify anyway,
+     so inline-block is safe everywhere and correct inside a sentence. */
+  .antd .i, .antd .i-14, .antd .i-18, .antd .i-20 { display: inline-block; vertical-align: -0.16em; }
+
+  /* Matrix — dividers at the set's medians, labels pinned to the corners. */
+  .matrix { padding: 2.2rem 3.4rem 3.2rem 3.4rem; }
+  .mx-plot { height: 600px; }
+  .mx-div { position: absolute; background: var(--rule-2); }
+  .mx-div.v { inset-block: 0; width: 1px; border-inline-start: 1px dashed var(--rule-2); background: none; }
+  .mx-div.h { inset-inline: 0; height: 1px; border-block-start: 1px dashed var(--rule-2); background: none; }
+  .mx-lab {
+    position: absolute; font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600; white-space: nowrap; opacity: 0.85;
+  }
+  .mx-lab.tl { inset-block-start: -1.5rem; inset-inline-start: 0; }
+  .mx-lab.tr { inset-block-start: -1.5rem; inset-inline-end: 0; color: var(--accent-ink); }
+  .mx-lab.bl { inset-block-end: -1.5rem; inset-inline-start: 0; }
+  .mx-lab.br { inset-block-end: -1.5rem; inset-inline-end: 0; }
+  .mx-dot { z-index: 2; box-shadow: 0 0 0 1.5px var(--surface); }
+  .mx-dot::after { font-size: 0.58rem; color: var(--muted); }
+  .matrix .mx-ax.y { inset-inline-start: 1rem; }
+
+  /* Matrix geometry corrections: room for the corner labels and the axis captions,
+     and a vertical y-axis title that is actually centred on the plot. */
+  .matrix { padding: 2.6rem 4.2rem 4.4rem 3.8rem; }
+  .mx-lab.bl, .mx-lab.br { inset-block-end: -2.7rem; }
+  .matrix .mx-ax.x { margin-top: 3.1rem; }
+  .matrix .mx-ax.y {
+    inset-inline-start: 1.1rem; inset-block-start: 0; inset-block-end: 0;
+    transform: none; writing-mode: vertical-rl; rotate: 180deg;
+    display: grid; place-items: center; height: auto;
+  }
+  @media (max-width: 760px) {
+    .matrix { padding: 2.6rem 1.2rem 5.4rem 2.6rem; }
+    .mx-lab { font-size: 0.52rem; }
+    .mx-lab.tr, .mx-lab.br { inset-inline-end: auto; inset-inline-start: 0; }
+    .mx-lab.tl, .mx-lab.tr { inset-block-start: -2.6rem; }
+    .mx-lab.tr { inset-block-start: -1.4rem; }
+    .mx-lab.bl { inset-block-end: -2.7rem; }
+    .mx-lab.br { inset-block-end: -3.9rem; }
+  }
+
+  /* `inset-block-*` resolves against the ELEMENT's own writing mode, so on a
+     vertical-rl label it stretches horizontally. Physical properties instead. */
+  .matrix .mx-ax.y {
+    inset: 0 auto 0 1.1rem; width: auto; height: auto;
+    inset-inline: auto; inset-block: auto;
+    top: 2.6rem; bottom: 4.4rem; left: 1.1rem; right: auto;
+  }
+
+  /* A long unbreakable API signature in the heading was forcing the whole page
+     wider than the viewport at 375px. Let the track shrink and the token break. */
+  .comp-head { grid-template-columns: auto minmax(0, 1fr); }
+  .comp-head > div { min-width: 0; }
+  .comp-head h3 { overflow-wrap: anywhere; }
+  .comp-head h3 .api { display: inline-block; overflow-wrap: anywhere; }
+  .comp-cols, .comp-body, .blk { min-width: 0; }
+  .blk p, .blk li { overflow-wrap: anywhere; }
+  .spec dd { overflow-wrap: anywhere; }
+
+  /* Auto table layout was giving the interaction matrix's text column all the
+     slack, stranding the cells at the far right. Size the table to its content. */
+  .imx { width: max-content; }
+  .imx th:first-child { text-align: end; padding-inline-end: 8px; }
+
+  /* Identifier lines under a name in a grid cell should not wrap mid-identifier. */
+  .a-tbl .xs.mono, .a-tbl .mono.xs { white-space: nowrap; }
+
+  /* ==================================================================== */
+  /*  OXYGEN DESIGN SYSTEM v2                                             */
+  /*  Loaded after base.css + extra.css. Everything below either defines  */
+  /*  a token or spends one. No literal outside this file is permitted    */
+  /*  in a component rule — that is the whole point of the rewrite.       */
+  /* ==================================================================== */
+
+  .antd, .ox {
+    /* --- space: 4px grid, one half-step ------------------------------ */
+    --sp-0: 0px;   --sp-h: 2px;  --sp-1: 4px;  --sp-2: 8px;   --sp-3: 12px;
+    --sp-4: 16px;  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;  --sp-10: 40px;
+    --sp-12: 48px; --sp-16: 64px;
+
+    /* --- control heights: one ladder, density switches the rung ------ */
+    --ctl-xs: 20px; --ctl-sm: 24px; --ctl-md: 28px; --ctl-lg: 32px; --ctl-xl: 40px;
+    --row-h: 32px;
+
+    /* --- radius: tight on controls, generous on containers ----------- */
+    --r-xs: 2px; --r-sm: 4px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px; --r-full: 999px;
+
+    /* --- type: size / line / weight / tracking, all named ------------ */
+    --fs-micro: 10.5px; --lh-micro: 1.35;
+    --fs-xs:    11.5px; --lh-xs:    1.4;
+    --fs-sm:    12.5px; --lh-sm:    1.45;
+    --fs-md:    13.5px; --lh-md:    1.5;
+    --fs-lg:    15px;   --lh-lg:    1.45;
+    --fs-xl:    17px;   --lh-xl:    1.35;
+    --fs-2xl:   21px;   --lh-2xl:   1.2;
+    --fs-3xl:   28px;   --lh-3xl:   1.1;
+    --tr-label: 0.075em;
+    --tr-tight: -0.014em;
+    --tr-display: -0.022em;
+    --fw-r: 400; --fw-m: 500; --fw-sb: 600; --fw-b: 680;
+
+    --font-ui: "Inter var", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text",
+               "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --font-num: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+
+    /* --- motion ------------------------------------------------------ */
+    --dur-press: 90ms; --dur-micro: 140ms; --dur-state: 200ms; --dur-layout: 280ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-both: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  /* ---- LIGHT ------------------------------------------------------- */
+  .antd, .ox {
+    --ink:    #0A1514;
+    --ink-2:  #384A46;
+    --ink-3:  #5C6D69;   /* tertiary text  - 5.4:1 on surface, 4.9:1 on sunken */
+    --ink-4:  #63736E;   /* micro labels   - 4.5:1 on SUNKEN, the harder ground */
+    --ink-5:  #A3B0AC;   /* NON-TEXT only  - dividers, disabled glyphs, decorative dots */
+
+    --bg:        #F7F9F9;
+    --surface:   #FFFFFF;
+    --sunken:    #F1F4F4;
+    --raised:    #FFFFFF;
+    --overlay:   #FFFFFF;
+
+    --line:      #E4EAE8;   /* hairline — the primary structural device */
+    --line-2:    #D2DBD8;   /* stronger divider */
+    --line-3:    #849993;   /* field border - 3.02:1, meets WCAG 1.4.11 */
+
+    --accent:        #0E7C66;
+    --accent-hover:  #0B6754;
+    --accent-press:  #085243;
+    --accent-soft:   #E4F3EF;
+    --accent-line:   #9FD3C6;
+    --accent-ink:    #075244;
+    --on-accent:     #FFFFFF;
+    --ring:          rgb(14 124 102 / 0.32);
+
+    --crit:      #B42318; --crit-soft: #FEF3F2; --crit-line: #F5B5AE; --crit-ink: #912018;
+    --warn:      #B54708; --warn-soft: #FFFAEB; --warn-line: #F5CE7A; --warn-ink: #93370D;
+    --ok:        #067647; --ok-soft:   #ECFDF3; --ok-line:   #9BE5BC; --ok-ink:   #05603A;
+    --info:      #175CD3; --info-soft: #EFF8FF; --info-line: #A9D4FB; --info-ink: #1849A9;
+    --ai:        #5B44BE; --ai-soft:   #F5F3FF; --ai-line:   #CFC6F6; --ai-ink:   #4A35A0;
+    --rest:      #3538CD; --rest-soft: #EEF4FF; --rest-line: #BFCEFB; --rest-ink: #2D31A6;
+
+    --shadow-ink: 10 21 20;
+    --e-1: 0 1px 2px -1px rgb(var(--shadow-ink) / 0.10);
+    --e-2: 0 4px 12px -4px rgb(var(--shadow-ink) / 0.14), 0 1px 2px -1px rgb(var(--shadow-ink) / 0.06);
+    --e-3: 0 14px 34px -10px rgb(var(--shadow-ink) / 0.20), 0 3px 8px -3px rgb(var(--shadow-ink) / 0.08);
+    --hair: inset 0 0 0 1px var(--line);
+    color-scheme: light;
+  }
+
+  /* ---- DARK -------------------------------------------------------- */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .antd, :root:not([data-theme="light"]) .ox {
+      --ink:    #E8F0EE;
+      --ink-2:  #B6C6C2;
+      --ink-3:  #8A9C98;
+      --ink-4:  #70837E;
+      --ink-5:  #4B5B57;
+
+      --bg:      #080F0E;
+      --surface: #0E1817;
+      --sunken:  #0A1211;
+      --raised:  #14201E;
+      --overlay: #172522;
+
+      --line:    #1E2C2A;
+      --line-2:  #2A3B38;
+      --line-3:  #506864;
+
+      --accent:       #34C6A4;
+      --accent-hover: #4FD6B6;
+      --accent-press: #29A98B;
+      --accent-soft:  #0C2A25;
+      --accent-line:  #1E5B4D;
+      --accent-ink:   #7FE3CB;
+      --on-accent:    #04201A;
+      --ring:         rgb(52 198 164 / 0.36);
+
+      --crit: #F97066; --crit-soft: #2A1210; --crit-line: #6B231C; --crit-ink: #FDA29B;
+      --warn: #F5A524; --warn-soft: #2A1E08; --warn-line: #6B4A11; --warn-ink: #FDC873;
+      --ok:   #47C98B; --ok-soft:   #08241A; --ok-line:   #14543A; --ok-ink:   #83E0B4;
+      --info: #5AA0F5; --info-soft: #0A1B2E; --info-line: #1B416E; --info-ink: #9CC9FB;
+      --ai:   #A48CF0; --ai-soft:   #1A1330; --ai-line:   #3B2C6B; --ai-ink:   #C8B9F8;
+      --rest: #8AA0FA; --rest-soft: #121734; --rest-line: #2C3878; --rest-ink: #B6C4FC;
+
+      --shadow-ink: 0 0 0;
+      --e-1: 0 1px 2px -1px rgb(0 0 0 / 0.6);
+      --e-2: 0 4px 14px -4px rgb(0 0 0 / 0.7), 0 1px 2px -1px rgb(0 0 0 / 0.5);
+      --e-3: 0 16px 40px -12px rgb(0 0 0 / 0.8), 0 3px 8px -3px rgb(0 0 0 / 0.6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] .antd, :root[data-theme="dark"] .ox {
+    --ink: #E8F0EE; --ink-2: #B6C6C2; --ink-3: #8A9C98; --ink-4: #70837E; --ink-5: #4B5B57;
+    --bg: #080F0E; --surface: #0E1817; --sunken: #0A1211; --raised: #14201E; --overlay: #172522;
+    --line: #1E2C2A; --line-2: #2A3B38; --line-3: #506864;
+    --accent: #34C6A4; --accent-hover: #4FD6B6; --accent-press: #29A98B; --accent-soft: #0C2A25;
+    --accent-line: #1E5B4D; --accent-ink: #7FE3CB; --on-accent: #04201A; --ring: rgb(52 198 164 / 0.36);
+    --crit: #F97066; --crit-soft: #2A1210; --crit-line: #6B231C; --crit-ink: #FDA29B;
+    --warn: #F5A524; --warn-soft: #2A1E08; --warn-line: #6B4A11; --warn-ink: #FDC873;
+    --ok: #47C98B; --ok-soft: #08241A; --ok-line: #14543A; --ok-ink: #83E0B4;
+    --info: #5AA0F5; --info-soft: #0A1B2E; --info-line: #1B416E; --info-ink: #9CC9FB;
+    --ai: #A48CF0; --ai-soft: #1A1330; --ai-line: #3B2C6B; --ai-ink: #C8B9F8;
+    --rest: #8AA0FA; --rest-soft: #121734; --rest-line: #2C3878; --rest-ink: #B6C4FC;
+    --shadow-ink: 0 0 0;
+    --e-1: 0 1px 2px -1px rgb(0 0 0 / 0.6);
+    --e-2: 0 4px 14px -4px rgb(0 0 0 / 0.7), 0 1px 2px -1px rgb(0 0 0 / 0.5);
+    --e-3: 0 16px 40px -12px rgb(0 0 0 / 0.8), 0 3px 8px -3px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+
+  /* ==================================================================== */
+  /*  COMPATIBILITY REMAP                                                 */
+  /*  1,985 inline styles and 159 classes still reference antd's `--a-*`. */
+  /*  Re-point them at Oxygen tokens: the whole catalogue re-themes with  */
+  /*  no markup change, which is the test of whether this is a system.    */
+  /* ==================================================================== */
+  .antd {
+    --a-primary: var(--accent);      --a-primary-bg: var(--accent-soft);  --a-primary-border: var(--accent-line);
+    --a-success: var(--ok);          --a-success-bg: var(--ok-soft);      --a-success-border: var(--ok-line);
+    --a-warning: var(--warn);        --a-warning-bg: var(--warn-soft);    --a-warning-border: var(--warn-line);
+    --a-error:   var(--crit);        --a-error-bg:   var(--crit-soft);    --a-error-border:   var(--crit-line);
+    --a-purple:  var(--ai);          --a-purple-bg:  var(--ai-soft);      --a-purple-border:  var(--ai-line);
+    --a-cyan:    var(--info);        --a-cyan-bg:    var(--info-soft);    --a-cyan-border:    var(--info-line);
+    --a-magenta: var(--ai);          --a-magenta-bg: var(--ai-soft);      --a-magenta-border: var(--ai-line);
+    --a-text: var(--ink); --a-text-2: var(--ink-2); --a-text-3: var(--ink-3); --a-text-4: var(--ink-4);
+    --a-border: var(--line-2); --a-border-2: var(--line);
+    --a-bg: var(--surface); --a-bg-layout: var(--bg);
+    --a-fill-3: var(--sunken); --a-fill-2: var(--sunken);
+    --a-radius: var(--r-sm); --a-radius-lg: var(--r-lg); --a-radius-sm: var(--r-xs);
+    --a-h: var(--ctl-md); --a-h-sm: var(--ctl-sm);
+    --a-shadow: var(--e-2);
+    font-family: var(--font-ui);
+    font-size: var(--fs-md);
+    line-height: var(--lh-md);
+    letter-spacing: var(--tr-tight);
+    color: var(--ink);
+    font-feature-settings: "cv05" 1, "ss01" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ==================================================================== */
+  /*  SURFACES — defined by hairline, not by drop shadow                  */
+  /* ==================================================================== */
+  .antd .a-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--e-1);
+    /* `overflow: clip` used to live here, to keep the head and foot inside the
+       rounded corners. It also sliced 300px off every calendar that opened
+       inside a card. The head and foot carry their own radii instead, which
+       costs two rules and lets a popover leave the card it belongs to. */
+  }
+  .antd .a-card > .a-card-head:first-child {
+    border-start-start-radius: var(--r-lg);
+    border-start-end-radius: var(--r-lg);
+  }
+  .antd .a-card > .a-card-foot:last-child {
+    border-end-start-radius: var(--r-lg);
+    border-end-end-radius: var(--r-lg);
+  }
+
+  /* A stage scrolls so a wide figure can be panned. `overflow-x: auto` forces
+     a computed `overflow-y: auto` — the two cannot disagree — so a scrolling
+     stage clips vertically whether it wants to or not, and no rule on the
+     panel can escape it. While a popover is actually open, the stage stops
+     scrolling; `:has()` makes that exactly as long as the popover exists. */
+  .antd .a-card:has(.pop),
+  .stage:has(.pop) {
+    overflow: visible;
+  }
+  .antd .a-card-head {
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(var(--sunken), var(--sunken)) padding-box;
+    gap: var(--sp-3);
+  }
+  .antd .a-card-title {
+    font-size: var(--fs-lg); font-weight: var(--fw-sb);
+    line-height: var(--lh-lg); letter-spacing: var(--tr-tight); color: var(--ink);
+  }
+  .antd .a-card-sub { font-size: var(--fs-xs); color: var(--ink-3); margin-top: var(--sp-h); letter-spacing: 0; }
+  .antd .a-card-body { padding: var(--sp-4); }
+  .antd .a-card-body.flush { padding: 0; }
+  .antd .a-card-foot {
+    padding: var(--sp-2) var(--sp-4);
+    border-top: 1px solid var(--line);
+    background: var(--sunken);
+    font-size: var(--fs-xs); color: var(--ink-3); gap: var(--sp-3);
+  }
+
+  .antd .tile {
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: var(--sp-3);
+    background: var(--surface);
+    transition: border-color var(--dur-micro) var(--ease-out),
+                box-shadow var(--dur-micro) var(--ease-out),
+                background-color var(--dur-micro) var(--ease-out);
+  }
+  .antd .tile.flat { background: var(--sunken); border-color: transparent; box-shadow: none; }
+  .antd .tile.ghost { border-style: dashed; border-color: var(--line-2); background: transparent; color: var(--ink-3); }
+  .antd .tile.sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+  .antd .tile.crit { border-color: var(--crit-line); background: var(--crit-soft); }
+  .antd .tile.warn { border-color: var(--warn-line); background: var(--warn-soft); }
+  .antd .tile.ok   { border-color: var(--ok-line);   background: var(--ok-soft); }
+  .antd .tile.ai   { border-color: var(--ai-line);   background: var(--ai-soft); }
+
+  .antd .a-app {
+    background: var(--bg);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-lg);
+    box-shadow: var(--e-2);
+    overflow: clip;
+  }
+  .antd .a-app-bar {
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--sunken);
+    border-bottom: 1px solid var(--line);
+    gap: var(--sp-2);
+  }
+  .antd .a-app-bar .dots i { width: 8px; height: 8px; background: var(--line-2); }
+  .antd .a-app-bar .url { font-size: var(--fs-micro); color: var(--ink-4); letter-spacing: 0; }
+
+  /* ==================================================================== */
+  /*  CONTROLS                                                            */
+  /* ==================================================================== */
+  .antd .a-btn {
+    height: var(--ctl-md);
+    padding: 0 var(--sp-3);
+    gap: var(--sp-1);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-m);
+    letter-spacing: 0;
+    cursor: default;
+    transition: background-color var(--dur-micro) var(--ease-out),
+                border-color var(--dur-micro) var(--ease-out),
+                color var(--dur-micro) var(--ease-out),
+                box-shadow var(--dur-micro) var(--ease-out),
+                translate var(--dur-press) var(--ease-out);
+  }
+  .antd .a-btn:hover { background: var(--sunken); border-color: var(--line-3); color: var(--ink); }
+  .antd .a-btn:active { translate: 0 1px; }
+  .antd .a-btn.primary {
+    background: var(--accent); border-color: transparent; color: var(--on-accent); font-weight: var(--fw-m);
+    box-shadow: 0 1px 2px -1px rgb(var(--shadow-ink) / 0.3), inset 0 1px 0 0 rgb(255 255 255 / 0.12);
+  }
+  .antd .a-btn.primary:hover { background: var(--accent-hover); }
+  .antd .a-btn.primary:active { background: var(--accent-press); }
+  .antd .a-btn.text { border-color: transparent; background: transparent; color: var(--ink-3); }
+  .antd .a-btn.text:hover { background: var(--sunken); color: var(--ink); }
+  .antd .a-btn.link {
+    border-color: transparent; background: none; color: var(--accent);
+    padding: 0; height: auto; font-weight: var(--fw-m);
+    text-underline-offset: 2px;
+  }
+  .antd .a-btn.link:hover { text-decoration: underline; background: none; }
+  .antd .a-btn.sm { height: var(--ctl-sm); padding: 0 var(--sp-2); font-size: var(--fs-xs); }
+  .antd .a-btn.on {
+    color: var(--accent-ink); border-color: var(--accent-line); background: var(--accent-soft);
+  }
+  .antd .a-btn[aria-disabled="true"], .antd .a-btn.disabled {
+    color: var(--ink-4); background: var(--sunken); border-color: var(--line); pointer-events: none;
+  }
+  .antd .a-btn:focus-visible,
+  .antd .win-btn:focus-visible,
+  .antd .a-seg span:focus-visible {
+    outline: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring);
+  }
+
+  .antd .a-input {
+    height: var(--ctl-lg);
+    padding: 0 var(--sp-3);
+    gap: var(--sp-2);
+    border: 1px solid var(--line-3);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    font-size: var(--fs-md);
+    color: var(--ink-4);
+    transition: border-color var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out);
+  }
+  .antd .a-input:hover { border-color: var(--ink-4); }
+  .antd .a-input.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+  .antd .a-input .val { color: var(--ink); }
+  .antd .a-caret {
+    width: 1.5px; height: 1.05em; background: var(--accent); vertical-align: -0.18em;
+    animation: ox-caret 1.05s steps(1) infinite;
+  }
+  @keyframes ox-caret { 0%, 55% { opacity: 1 } 56%, 100% { opacity: 0 } }
+
+  .antd .a-seg {
+    background: var(--sunken);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: 2px; gap: 2px;
+  }
+  .antd .a-seg span {
+    padding: 0 var(--sp-2);
+    height: calc(var(--ctl-md) - 6px);
+    display: inline-flex; align-items: center;
+    border-radius: 2px;
+    font-size: var(--fs-xs); font-weight: var(--fw-m); color: var(--ink-3);
+    transition: color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out);
+  }
+  .antd .a-seg span:hover { color: var(--ink); }
+  .antd .a-seg span.on {
+    background: var(--surface); color: var(--ink); box-shadow: var(--e-1), var(--hair);
+  }
+
+  .antd .win-btn {
+    width: var(--ctl-sm); height: var(--ctl-sm); border-radius: var(--r-xs); color: var(--ink-4);
+    transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+  }
+  .antd .win-btn:hover { background: var(--sunken); color: var(--ink); }
+
+  .antd .kbd, .kbd {
+    font-family: var(--font-num); font-size: var(--fs-micro); font-weight: var(--fw-m);
+    min-width: 18px; height: 18px; padding: 0 5px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: var(--r-xs);
+    background: var(--surface); color: var(--ink-3); letter-spacing: 0;
+  }
+
+  /* ==================================================================== */
+  /*  TAGS, CHIPS, STATUS                                                 */
+  /* ==================================================================== */
+  .antd .a-tag {
+    height: var(--ctl-xs); padding: 0 var(--sp-1); gap: var(--sp-1);
+    font-size: var(--fs-micro); font-weight: var(--fw-m); letter-spacing: 0;
+    border: 1px solid var(--line); border-radius: var(--r-xs);
+    background: var(--sunken); color: var(--ink-3);
+  }
+  .antd .a-tag.blue    { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent-ink); }
+  .antd .a-tag.green   { border-color: var(--ok-line);     background: var(--ok-soft);     color: var(--ok-ink); }
+  .antd .a-tag.gold    { border-color: var(--warn-line);   background: var(--warn-soft);   color: var(--warn-ink); }
+  .antd .a-tag.red     { border-color: var(--crit-line);   background: var(--crit-soft);   color: var(--crit-ink); }
+  .antd .a-tag.purple  { border-color: var(--ai-line);     background: var(--ai-soft);     color: var(--ai-ink); }
+  .antd .a-tag.cyan    { border-color: var(--info-line);   background: var(--info-soft);   color: var(--info-ink); }
+  .antd .a-tag.magenta { border-color: var(--ai-line);     background: var(--ai-soft);     color: var(--ai-ink); }
+  .antd .a-tag.plain   { border-color: var(--line); background: transparent; color: var(--ink-4); }
+
+  /* The status chip: hue + shape + word, on one geometry. */
+  .antd .cs, .cs {
+    height: var(--ctl-sm); padding: 0 var(--sp-2) 0 var(--sp-1); gap: var(--sp-1);
+    border-radius: var(--r-xs);
+    font-size: var(--fs-xs); font-weight: var(--fw-m); letter-spacing: 0;
+    border: 1px solid;
+  }
+  .antd .cs.lg { height: var(--ctl-md); font-size: var(--fs-sm); padding: 0 var(--sp-2); }
+  .antd .cs-crit { border-color: var(--crit-line); background: var(--crit-soft); color: var(--crit-ink); }
+  .antd .cs-warn { border-color: var(--warn-line); background: var(--warn-soft); color: var(--warn-ink); }
+  .antd .cs-cau  { border-color: var(--warn-line); background: var(--warn-soft); color: var(--warn-ink); opacity: .92; }
+  .antd .cs-ok   { border-color: var(--ok-line);   background: var(--ok-soft);   color: var(--ok-ink); }
+  .antd .cs-info { border-color: var(--info-line); background: var(--info-soft); color: var(--info-ink); }
+  .antd .cs-pend { border-color: var(--ai-line);   background: var(--ai-soft);   color: var(--ai-ink); }
+  .antd .cs-ai   { border-color: var(--info-line); background: var(--info-soft); color: var(--info-ink); }
+  .antd .cs-rest { border-color: var(--rest-line); background: var(--rest-soft); color: var(--rest-ink); }
+  .antd .cs-none { border-color: var(--line);      background: var(--sunken);    color: var(--ink-3); }
+  .antd .cs-unk  {
+    border-color: var(--line-2); color: var(--ink-2);
+    background: repeating-linear-gradient(135deg,
+      var(--sunken) 0 4px, color-mix(in oklab, var(--ink) 7%, var(--sunken)) 4px 8px);
+  }
+
+  /* ==================================================================== */
+  /*  TABLES — rules, not boxes                                           */
+  /* ==================================================================== */
+  .antd .a-tbl { font-size: var(--fs-sm); }
+  .antd .a-tbl th {
+    font-size: var(--fs-micro); font-weight: var(--fw-sb); letter-spacing: var(--tr-label);
+    text-transform: uppercase; color: var(--ink-4);
+    background: var(--sunken); border-bottom: 1px solid var(--line-2);
+    padding: var(--sp-2) var(--sp-3); height: var(--ctl-lg);
+  }
+  .antd .a-tbl td {
+    padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--line); color: var(--ink);
+    line-height: var(--lh-sm);
+  }
+  .antd .a-tbl tbody tr { transition: background-color var(--dur-micro) var(--ease-out); }
+  .antd .a-tbl tbody tr:hover td { background: color-mix(in oklab, var(--accent) 4%, transparent); }
+  .antd .a-tbl tr.sel td { background: var(--accent-soft); }
+  .antd .a-tbl tr.hov td { background: var(--sunken); }
+  .antd .a-tbl .stat { border-inline-start: 2px solid transparent; }
+  .antd .a-tbl .stat.crit { border-inline-start-color: var(--crit); }
+  .antd .a-tbl .stat.warn { border-inline-start-color: var(--warn); }
+  .antd .a-tbl .stat.ok   { border-inline-start-color: var(--ok); }
+  .antd .a-tbl .stat.info { border-inline-start-color: var(--info); }
+
+  /* ==================================================================== */
+  /*  FEEDBACK                                                            */
+  /* ==================================================================== */
+  .antd .a-alert {
+    padding: var(--sp-2) var(--sp-3); gap: var(--sp-2);
+    border-radius: var(--r-md); font-size: var(--fs-sm); line-height: var(--lh-sm);
+    border: 1px solid var(--accent-line); background: var(--accent-soft); color: var(--ink);
+  }
+  .antd .a-alert.warning { border-color: var(--warn-line); background: var(--warn-soft); }
+  .antd .a-alert.error   { border-color: var(--crit-line); background: var(--crit-soft); }
+  .antd .a-alert .ic { margin-top: 1px; }
+  .antd .a-alert.error   .ic { color: var(--crit); }
+  .antd .a-alert.warning .ic { color: var(--warn); }
+  .antd .a-alert .ic     { color: var(--accent); }
+
+  .antd .a-prog {
+    height: 5px; border-radius: var(--r-full);
+    background: color-mix(in oklab, var(--ink) 9%, transparent);
+  }
+  .antd .a-prog.thin { height: 3px; }
+  .antd .a-prog i {
+    background: var(--accent); border-radius: inherit;
+    transition: width var(--dur-layout) var(--ease-out);
+  }
+  .antd .a-prog i.ok { background: var(--ok); } .antd .a-prog i.warn { background: var(--warn); }
+  .antd .a-prog i.err { background: var(--crit); }
+
+  .antd .a-avatar {
+    border-radius: var(--r-full); border: 1px solid var(--line);
+    background: var(--sunken); color: var(--ink-3);
+    font-size: var(--fs-xs); font-weight: var(--fw-sb); letter-spacing: 0;
+    width: var(--ctl-lg); height: var(--ctl-lg);
+  }
+  .antd .a-avatar.lg { width: var(--ctl-xl); height: var(--ctl-xl); font-size: var(--fs-md); }
+  .antd .a-avatar.sm { width: var(--ctl-sm); height: var(--ctl-sm); font-size: var(--fs-micro); }
+  .antd .a-avatar.xs { width: var(--ctl-xs); height: var(--ctl-xs); font-size: 9px; }
+  .antd .a-avatar.b1 { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent-line); }
+  .antd .a-avatar.b2 { background: var(--ai-soft);     color: var(--ai-ink);     border-color: var(--ai-line); }
+  .antd .a-avatar.b3 { background: var(--info-soft);   color: var(--info-ink);   border-color: var(--info-line); }
+  .antd .a-avatar.b4 { background: var(--warn-soft);   color: var(--warn-ink);   border-color: var(--warn-line); }
+  .antd .a-avatar.b5 { background: var(--rest-soft);   color: var(--rest-ink);   border-color: var(--rest-line); }
+
+  /* ==================================================================== */
+  /*  TYPE UTILITIES — replacing inline font-size literals                */
+  /* ==================================================================== */
+  .antd .lbl, .antd .bandcap, .antd .colh, .antd .cmdk-grp, .antd .nm {
+    font-size: var(--fs-micro); font-weight: var(--fw-sb);
+    letter-spacing: var(--tr-label); text-transform: uppercase; color: var(--ink-4);
+  }
+  .antd .xs { font-size: var(--fs-xs);  line-height: var(--lh-xs); }
+  .antd .sm { font-size: var(--fs-sm);  line-height: var(--lh-sm); }
+  .antd .b  { font-weight: var(--fw-sb); color: var(--ink); }
+  .antd .t2 { color: var(--ink-2); } .antd .t3 { color: var(--ink-3); }
+  .antd .mono, .antd .num {
+    font-family: var(--font-num); font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em; font-feature-settings: "zero" 1;
+  }
+  .antd code {
+    background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-xs);
+    padding: 1px 4px; font-size: var(--fs-xs); font-family: var(--font-num); color: var(--ink-2);
+  }
+  .antd hr { border-top-color: var(--line); margin: var(--sp-3) 0; }
+  .antd .row  { gap: var(--sp-2); }
+  .antd .col  { gap: var(--sp-2); }
+
+  /* ==================================================================== */
+  /*  MOTION LAYER                                                        */
+  /* ==================================================================== */
+  @keyframes ox-pulse-ring {
+    0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--crit) 45%, transparent); }
+    70%  { box-shadow: 0 0 0 7px color-mix(in oklab, var(--crit) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--crit) 0%, transparent); }
+  }
+  @keyframes ox-shimmer { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+  @keyframes ox-wave    { 0%, 100% { transform: scaleY(0.35) } 50% { transform: scaleY(1) } }
+  @keyframes ox-stream  { from { opacity: 0; transform: translateY(2px) } to { opacity: 1; transform: none } }
+
+  .antd .sk {
+    background: linear-gradient(100deg,
+      var(--sunken) 30%,
+      color-mix(in oklab, var(--ink) 5%, var(--sunken)) 48%,
+      var(--sunken) 66%);
+    background-size: 200% 100%;
+    animation: ox-shimmer 1.6s linear infinite;
+    border-radius: var(--r-xs);
+  }
+  .antd .rec-dot { animation: ox-pulse-ring 1.8s var(--ease-both) infinite; }
+  .antd .wave i { animation: ox-wave 1.1s var(--ease-both) infinite; transform-origin: center; }
+  .antd .wave i:nth-child(3n)   { animation-delay: -0.35s }
+  .antd .wave i:nth-child(3n+1) { animation-delay: -0.7s }
+  .antd .diff .ins, .antd .diff .unv { animation: ox-stream var(--dur-state) var(--ease-out) both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .antd *, .antd *::before, .antd *::after {
+      animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+    }
+    .antd .sk { background: var(--sunken); }
+    .antd .a-caret { opacity: 1; }
+  }
+
+  /* ==================================================================== */
+  /*  STRUCTURE PASS                                                      */
+  /*  The re-skin fixed the palette. This fixes the thing that actually   */
+  /*  read as "generic admin panel": a bordered white box inside a        */
+  /*  bordered white box inside a bordered white box.                     */
+  /*  Rule adopted: ONE border per nesting stack. Depth is expressed by   */
+  /*  tone and hairline rules; a box outline is reserved for the outermost*/
+  /*  container and for anything carrying a status.                       */
+  /* ==================================================================== */
+
+  .antd .a-card .tile,
+  .antd .a-app  .tile,
+  .antd .statecell {
+    border-color: transparent;
+    background: var(--sunken);
+    box-shadow: none;
+  }
+  /* Status is the one thing that still earns an outline — and it gets a
+     rail rather than a full tint, so the tint stays available for selection. */
+  .antd .a-card .tile.crit, .antd .a-app .tile.crit,
+  .antd .a-card .tile.warn, .antd .a-app .tile.warn,
+  .antd .a-card .tile.ok,   .antd .a-app .tile.ok,
+  .antd .a-card .tile.ai,   .antd .a-app .tile.ai,
+  .antd .a-card .tile.sel,  .antd .a-app .tile.sel,
+  .antd .a-card .tile.ghost,.antd .a-app .tile.ghost {
+    border-color: currentColor;
+  }
+  .antd .tile.crit { border-inline-start: 2px solid var(--crit); color: inherit; }
+  .antd .tile.warn { border-inline-start: 2px solid var(--warn); }
+  .antd .tile.ok   { border-inline-start: 2px solid var(--ok); }
+  .antd .tile.ai   { border-inline-start: 2px solid var(--info); }
+  .antd .tile.crit, .antd .tile.warn, .antd .tile.ok, .antd .tile.ai {
+    border-block: 0; border-inline-end: 0;
+    border-start-start-radius: 0; border-end-start-radius: 0;
+  }
+  .antd .tile.sel {
+    border: 0; border-inline-start: 2px solid var(--accent);
+    background: var(--accent-soft); box-shadow: none;
+    border-start-start-radius: 0; border-end-start-radius: 0;
+  }
+  .antd .tile.ghost { border: 1px dashed var(--line-2); background: transparent; }
+
+  /* Section labels inside a surface: a hairline rule, not a header band. */
+  .antd .lbl {
+    display: flex; align-items: center; gap: var(--sp-2);
+    font-size: var(--fs-micro); font-weight: var(--fw-sb);
+    letter-spacing: var(--tr-label); text-transform: uppercase; color: var(--ink-4);
+  }
+  .antd .lbl::after {
+    content: ""; flex: 1 1 auto; height: 1px; background: var(--line); min-width: var(--sp-3);
+  }
+  .antd .row > .lbl, .antd .lbl.bare { display: inline-flex; }
+  .antd .row > .lbl::after, .antd .lbl.bare::after { display: none; }
+
+  /* Statecell names are the fifth uppercase micro-label on some screens.
+     Demote them to sentence case so the uppercase channel keeps its meaning. */
+  .antd .statecell .nm {
+    text-transform: none; letter-spacing: 0; font-size: var(--fs-xs);
+    font-weight: var(--fw-sb); color: var(--ink-3);
+    padding-bottom: var(--sp-2); border-bottom: 1px solid var(--line); margin-bottom: var(--sp-2);
+  }
+  .antd .statecell { padding: var(--sp-3); border-radius: var(--r-md); }
+  .antd .statesgrid { gap: var(--sp-2); }
+
+  /* Band caption: the one place uppercase-mono chrome is worth its noise. */
+  .antd .bandcap {
+    font-family: var(--font-num); font-size: var(--fs-micro); color: var(--ink-4);
+    letter-spacing: var(--tr-label); gap: var(--sp-3); margin-bottom: var(--sp-3);
+  }
+  .antd .band + .band { margin-top: var(--sp-6); }
+
+  /* ==================================================================== */
+  /*  NUMERALS — the strongest "this is a data product" signal            */
+  /*  A value, its unit and its delta are three ranks, not one string.    */
+  /* ==================================================================== */
+  .antd .mono.b, .antd .b.mono { letter-spacing: -0.02em; font-weight: var(--fw-sb); }
+  .antd td .mono.b { font-size: var(--fs-md); }
+  .antd .a-tbl td > .mono + .t3,
+  .antd .a-tbl td > .mono + .sm.t3 { font-weight: var(--fw-r); color: var(--ink-4); }
+
+  /* ==================================================================== */
+  /*  FLAT CARD DEFAULT — shadow is for overlays only                     */
+  /* ==================================================================== */
+  .antd .a-card { box-shadow: none; }
+  .antd .a-card.raised, .antd .cmdk, .antd .dock { box-shadow: var(--e-3); }
+  .antd .a-app { box-shadow: var(--e-1); }
+
+  /* Popovers and floating layers keep depth, everything else earns none. */
+  .antd .cmdk {
+    border: 1px solid var(--line-2); border-radius: var(--r-lg);
+    background: var(--overlay); overflow: clip;
+  }
+  .antd .cmdk-row {
+    padding: var(--sp-2) var(--sp-3); gap: var(--sp-3); font-size: var(--fs-md);
+    border-inline-start: 2px solid transparent;
+    transition: background-color var(--dur-micro) var(--ease-out),
+                border-color var(--dur-micro) var(--ease-out);
+  }
+  .antd .cmdk-row:hover { background: var(--sunken); }
+  .antd .cmdk-row.on { background: var(--accent-soft); border-inline-start-color: var(--accent); }
+  .antd .cmdk-grp {
+    padding: var(--sp-3) var(--sp-3) var(--sp-1); color: var(--ink-4);
+    font-size: var(--fs-micro); letter-spacing: var(--tr-label);
+  }
+  .antd .dock { border: 1px solid var(--line-2); border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  .antd .dock-h {
+    padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3);
+    background: var(--sunken); border-bottom: 1px solid var(--line); gap: var(--sp-2);
+  }
+  .antd .dock-h .ttl { font-size: var(--fs-sm); font-weight: var(--fw-sb); }
+
+  /* ==================================================================== */
+  /*  STEPPER, THREAD, RANGE — on the scale                               */
+  /* ==================================================================== */
+  .antd .steprail .s { grid-template-columns: 18px 1fr; gap: var(--sp-3); }
+  .antd .steprail .s .d {
+    width: 11px; height: 11px; border: 2px solid var(--line-3); background: var(--surface); margin-top: 4px;
+    transition: background-color var(--dur-state) var(--ease-out), border-color var(--dur-state) var(--ease-out);
+  }
+  .antd .steprail .s .d.done { background: var(--ok); border-color: var(--ok); }
+  .antd .steprail .s .d.now  { border-color: var(--accent); box-shadow: 0 0 0 4px var(--ring); }
+  .antd .steprail .s .d.blocked { border-color: var(--crit); background: var(--crit-soft); }
+  .antd .steprail .s .ln { width: 1px; background: var(--line-2); min-height: var(--sp-3); }
+  .antd .steprail .s .c { padding-bottom: var(--sp-3); }
+
+  .antd .thread { border-inline-start-width: 2px; padding-inline-start: var(--sp-3); }
+
+  .antd .rng .track { border: 0; background: var(--sunken); border-radius: var(--r-full); height: 6px; inset-block-start: 10px; }
+  .antd .rng .band  { background: var(--ok-soft); border-inline: 1px solid var(--ok-line); height: 6px; inset-block-start: 10px; }
+  .antd .rng .pin   { background: var(--ink); width: 2px; border-radius: var(--r-full); }
+  .antd .rng .pin.crit { background: var(--crit); box-shadow: 0 0 0 3px color-mix(in oklab, var(--crit) 18%, transparent); }
+  .antd .rng .pin.warn { background: var(--warn); }
+  .antd .rng .pin.prev { background: var(--ink-5); }
+  .antd .rng .cap { font-size: var(--fs-micro); color: var(--ink-4); }
+
+  /* ==================================================================== */
+  /*  CHART CHROME                                                        */
+  /* ==================================================================== */
+  .antd .chart .gridline { stroke: var(--line); }
+  .antd .chart .axis     { stroke: var(--line-2); }
+  .antd .chart .axlabel  { fill: var(--ink-4); font-family: var(--font-num); font-size: 9.5px; letter-spacing: 0; }
+  .antd .chart .refband  { fill: var(--ok-soft); }
+  .antd .chart .warnband { fill: var(--warn-soft); }
+  .antd .chart .critband { fill: var(--crit-soft); }
+  .antd .chart .pt       { stroke: var(--surface); stroke-width: 1.5; }
+  .antd .chart .series   { stroke-width: 1.75; }
+
+  /* ==================================================================== */
+  /*  DIFF / HEAT / MATRIX                                                */
+  /* ==================================================================== */
+  .antd .diff .ins { background: var(--ok-soft);   border-block-end: 1px solid var(--ok-line); }
+  .antd .diff .unv { background: var(--warn-soft); border-block-end: 1px dashed var(--warn-line); }
+  .antd .diff .del { background: var(--crit-soft); text-decoration-color: var(--crit); color: var(--ink-3); }
+  .antd .diff mark.cite {
+    background: var(--accent-soft); color: var(--accent-ink); border-radius: var(--r-xs);
+    padding: 0 3px; font-size: var(--fs-micro); font-family: var(--font-num);
+  }
+  .antd .imx td    { background: var(--sunken); color: var(--ink-4); border-radius: var(--r-xs); }
+  .antd .imx td.x  { background: transparent; }
+  .antd .imx td.s0 { background: var(--sunken); }
+  .antd .imx td.s1 { background: var(--warn-soft); border-color: var(--warn-line); color: var(--warn-ink); }
+  .antd .imx td.s2 { background: var(--warn-soft); border-color: var(--warn-line); color: var(--warn-ink); }
+  .antd .imx td.s3 { background: var(--crit-soft); border-color: var(--crit-line); color: var(--crit-ink); font-weight: var(--fw-sb); }
+  .antd .imx th    { color: var(--ink-3); font-size: var(--fs-micro); }
+
+  /* ==================================================================== */
+  /*  THE STAGE — mockups sit on their own ground, not the document's     */
+  /* ==================================================================== */
+  .stage {
+    background:
+      radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--ink) 8%, transparent) 1px, transparent 0)
+      0 0 / 22px 22px,
+      var(--surface-2);
+    border: 1px solid var(--rule);
+    border-radius: 16px;
+    padding: clamp(1.1rem, 3vw, 2.1rem);
+  }
+
+  /* Video-surface chrome: the one place a deliberately dark ground is correct
+     in both themes, because a camera preview is a camera preview. */
+  .antd { --video-a: #223033; --video-b: #101B20; --video-c: #0A1216; }
+
+  /* SVG presentation attributes now carry var(); make sure the chart classes
+     that still rely on CSS keep winning over them. */
+  .antd .chart .series { stroke-linecap: round; stroke-linejoin: round; }
+
+  .antd { --fs-chart: 9.5px; }
+
+  /* ==================================================================== */
+  /*  INTERACTION LAYER                                                   */
+  /*  The audit's finding was that the catalogue is a set of still frames. */
+  /*  Everything below is real behaviour in a real browser: hover, focus, */
+  /*  press, selection and streaming all respond. Nothing here is a       */
+  /*  picture of a state.                                                 */
+  /* ==================================================================== */
+
+  /* --- rows ---------------------------------------------------------- */
+  .antd .a-tbl tbody tr { position: relative; }
+  .antd .a-tbl tbody tr td:first-child { position: relative; }
+  .antd .a-tbl tbody tr:hover .a-btn { border-color: var(--line-3); }
+  .antd .cmdk-row, .antd .tile, .antd .statecell {
+    transition: background-color var(--dur-micro) var(--ease-out),
+                border-color var(--dur-micro) var(--ease-out),
+                box-shadow var(--dur-micro) var(--ease-out);
+  }
+  .antd .statecell:hover { background: color-mix(in oklab, var(--accent) 5%, var(--sunken)); }
+
+  /* --- chips: focusable when they carry an explanation ---------------- */
+  .antd .cs { transition: box-shadow var(--dur-micro) var(--ease-out), filter var(--dur-micro) var(--ease-out); }
+  .antd .cs:hover { filter: saturate(1.15) brightness(0.99); }
+  .antd .a-tag { transition: border-color var(--dur-micro) var(--ease-out); }
+
+  /* --- the universal focus ring: one shape, every control ------------- */
+  .antd :is(.a-btn, .a-tag, .cs, .tile, .cmdk-row, .a-seg span, .win-btn, .kbd, .a-avatar):focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring);
+    border-radius: var(--r-sm);
+  }
+
+  /* --- press: one downward pixel, 90ms, on everything pressable ------- */
+  .antd :is(.a-btn, .a-seg span, .win-btn):active { translate: 0 1px; }
+
+  /* --- disabled: stated, not merely faded ----------------------------- */
+  .antd .is-disabled, .antd [data-disabled] {
+    opacity: 0.55; pointer-events: none;
+    background-image: repeating-linear-gradient(135deg,
+      transparent 0 5px, color-mix(in oklab, var(--ink) 4%, transparent) 5px 10px);
+  }
+
+  /* --- loading: a control that is working says so --------------------- */
+  .antd .is-loading { position: relative; color: transparent !important; pointer-events: none; }
+  .antd .is-loading::after {
+    content: ""; position: absolute; inset: 50% auto auto 50%;
+    width: 12px; height: 12px; margin: -6px 0 0 -6px;
+    border: 1.5px solid color-mix(in oklab, currentColor 25%, transparent);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: ox-spin 700ms linear infinite;
+  }
+  @keyframes ox-spin { to { rotate: 360deg } }
+
+  /* --- live values: a number that just changed says so ---------------- */
+  @keyframes ox-tick {
+    0%   { background: color-mix(in oklab, var(--accent) 22%, transparent); }
+    100% { background: transparent; }
+  }
+  .antd .is-live { animation: ox-tick 1.2s var(--ease-out); border-radius: var(--r-xs); }
+
+  /* --- critical: the one place motion is allowed to insist ------------ */
+  .antd .cs-crit.is-urgent { animation: ox-pulse-ring 2.2s var(--ease-both) infinite; }
+
+  /* --- expandable rows / progressive disclosure ----------------------- */
+  .antd .disclose { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur-layout) var(--ease-out); }
+  .antd .disclose > * { overflow: hidden; }
+  .antd .disclose.open, .antd .tile:hover > .disclose, .antd .a-tbl tr:hover .disclose { grid-template-rows: 1fr; }
+
+  /* --- streaming text ------------------------------------------------- */
+  .antd .streaming > * { animation: ox-stream var(--dur-state) var(--ease-out) both; }
+  .antd .streaming > :nth-child(2) { animation-delay: 60ms }
+  .antd .streaming > :nth-child(3) { animation-delay: 120ms }
+  .antd .streaming > :nth-child(4) { animation-delay: 180ms }
+  .antd .streaming > :nth-child(5) { animation-delay: 240ms }
+
+  /* --- drag affordance ------------------------------------------------ */
+  .antd .draggable { cursor: grab; }
+  .antd .draggable:active { cursor: grabbing; box-shadow: var(--e-2); translate: 0 -1px; }
+
+  /* --- the states matrix used in the interaction section -------------- */
+  .statematrix { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; }
+  .statematrix > div { background: var(--surface); padding: 0.85rem 0.95rem; }
+  .statematrix .sh { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.11em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); }
+  .statematrix .demo { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-height: 2.6rem; }
+  .statematrix .note { font-size: 0.76rem; color: var(--muted); line-height: 1.45; }
+
+  .motiontable td .bar { display: block; height: 6px; border-radius: 3px; background: var(--accent); opacity: 0.85; }
+
+  /* ==================================================================== */
+  /*  DESIGN-SYSTEM AND AUDIT SECTION CHROME                              */
+  /* ==================================================================== */
+  .ox { color: var(--ink); }
+
+  .scalebar { display: flex; align-items: flex-end; gap: 6px; height: 4.2rem; }
+  .scalebar span {
+    background: var(--accent); border-radius: 2px; height: 100%; min-width: 1px;
+    position: relative; opacity: 0.82;
+  }
+  .scalebar span::after {
+    content: attr(data-t); position: absolute; inset-block-end: -1.15rem; inset-inline-start: 50%;
+    transform: translateX(-50%); font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted);
+  }
+  .scalebar { margin-bottom: 1.3rem; }
+
+  .typescale > div { display: flex; align-items: baseline; gap: 0.75rem; padding: 0.24rem 0; border-bottom: 1px dashed var(--rule); }
+  .typescale > div:last-child { border-bottom: 0; }
+  .typescale b { font-family: var(--font-mono); color: var(--ink); min-width: 3.4rem; line-height: 1.1; }
+  .typescale span { font-size: 0.78rem; color: var(--muted); }
+
+  .radscale { display: flex; gap: 0.55rem; flex-wrap: wrap; }
+  .radscale span {
+    width: 3rem; height: 3rem; display: grid; place-items: center;
+    background: var(--surface-2); border: 1px solid var(--rule-2);
+    font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted);
+  }
+
+  .elevscale { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); gap: 0.6rem; }
+  .elevscale span {
+    padding: 0.9rem 0.6rem; border-radius: 10px; background: var(--surface);
+    font-family: var(--font-mono); font-size: 0.64rem; color: var(--muted); text-align: center;
+  }
+  .elevscale .e0 { border: 1px solid var(--rule); }
+  .elevscale .e1 { border: 1px solid var(--rule); box-shadow: 0 1px 2px -1px rgb(10 21 20 / 0.10); }
+  .elevscale .e2 { border: 1px solid var(--rule); box-shadow: 0 4px 12px -4px rgb(10 21 20 / 0.14), 0 1px 2px -1px rgb(10 21 20 / 0.06); }
+  .elevscale .e3 { border: 1px solid var(--rule); box-shadow: 0 14px 34px -10px rgb(10 21 20 / 0.20), 0 3px 8px -3px rgb(10 21 20 / 0.08); }
+
+  .rampgrid { display: grid; gap: 0.4rem; margin: 1.25rem 0; }
+  .rampgrid > div { display: grid; grid-template-columns: 6rem repeat(4, 2.6rem) 1fr; gap: 0.35rem; align-items: center; }
+  .rampgrid .rn { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-2); }
+  .rampgrid .rv { font-size: 0.76rem; color: var(--muted); padding-inline-start: 0.5rem; }
+  .rampgrid i { height: 1.9rem; border-radius: 5px; display: block; border: 1px solid rgb(0 0 0 / 0.06); }
+  .r-accent-soft{background:#E4F3EF}.r-accent-line{background:#9FD3C6}.r-accent{background:#0E7C66}.r-accent-ink{background:#075244}
+  .r-crit-soft{background:#FEF3F2}.r-crit-line{background:#F5B5AE}.r-crit{background:#B42318}.r-crit-ink{background:#912018}
+  .r-warn-soft{background:#FFFAEB}.r-warn-line{background:#F5CE7A}.r-warn{background:#B54708}.r-warn-ink{background:#93370D}
+  .r-ok-soft{background:#ECFDF3}.r-ok-line{background:#9BE5BC}.r-ok{background:#067647}.r-ok-ink{background:#05603A}
+  .r-info-soft{background:#EFF8FF}.r-info-line{background:#A9D4FB}.r-info{background:#175CD3}.r-info-ink{background:#1849A9}
+  .r-ai-soft{background:#F5F3FF}.r-ai-line{background:#CFC6F6}.r-ai{background:#5B44BE}.r-ai-ink{background:#4A35A0}
+  .r-rest-soft{background:#EEF4FF}.r-rest-line{background:#BFCEFB}.r-rest{background:#3538CD}.r-rest-ink{background:#2D31A6}
+
+  /* ---- audit table --------------------------------------------------- */
+  .auditwrap { max-height: none; }
+  .audittbl { font-size: 0.8rem; min-width: 1080px; }
+  .audittbl th { font-size: 0.6rem; letter-spacing: 0.08em; padding: 0.55rem 0.35rem; }
+  .audittbl td { padding: 0.5rem 0.45rem; vertical-align: middle; }
+  .audittbl td.c, .audittbl th.c { text-align: center; }
+  .audittbl a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule-2); font-weight: 600; }
+  .audittbl a:hover { border-color: var(--accent); color: var(--accent-ink); }
+  .audittbl .defect { font-size: 0.76rem; color: var(--ink-2); line-height: 1.45; }
+  .audittbl .s-hi  { color: var(--ok); font-variant-numeric: tabular-nums; }
+  .audittbl .s-mid { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .audittbl .s-lo  { color: var(--bad); font-weight: 600; font-variant-numeric: tabular-nums;
+                     background: color-mix(in oklab, var(--bad) 8%, transparent); }
+  .disp { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.08em; padding: 0.16rem 0.4rem;
+          border-radius: 4px; border: 1px solid var(--rule-2); color: var(--muted); white-space: nowrap; }
+  .d-keep     { border-color: color-mix(in oklab, var(--ok) 45%, transparent); background: var(--ok-soft); color: var(--ok); }
+  .d-refine   { border-color: color-mix(in oklab, var(--warn) 45%, transparent); background: var(--warn-soft); color: var(--warn); }
+  .d-redesign { border-color: color-mix(in oklab, var(--bad) 45%, transparent); background: var(--bad-soft); color: var(--bad); }
+  .d-merge    { border-color: color-mix(in oklab, var(--accent) 45%, transparent); background: var(--accent-soft); color: var(--accent-ink); }
+
+  .axiskpi { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); }
+  .axiskpi .v { font-size: 1.4rem; }
+  .axiskpi .v.s-hi { color: var(--ok); } .axiskpi .v.s-mid { color: var(--accent-ink); } .axiskpi .v.s-lo { color: var(--bad); }
+  .rangebar { height: 4px; border-radius: 2px; background: var(--surface-2); border: 1px solid var(--rule); margin-top: 0.45rem; overflow: hidden; }
+  .rangebar i { display: block; height: 100%; background: var(--accent); }
+
+  @media (max-width: 760px) {
+    .rampgrid > div { grid-template-columns: 5rem repeat(4, 1fr); }
+    .rampgrid .rv { grid-column: 1 / -1; padding: 0 0 0.4rem; }
+    .statematrix { grid-template-columns: 1fr !important; }
+  }
+
+  /* A spinner drawn in the accent is invisible on an accent-filled button. */
+  .antd .a-btn.primary.is-loading::after {
+    border-color: rgb(255 255 255 / 0.32); border-top-color: var(--on-accent);
+  }
+
+  /* Ten axes wrap to 8+2 on auto-fit and leave an orphan tile. Pin to 5x2. */
+  .axiskpi { grid-template-columns: repeat(5, 1fr); }
+  @media (max-width: 900px) { .axiskpi { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .axiskpi { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Layout for the state matrix belongs in CSS, not in a style attribute —
+     an inline grid definition cannot be overridden by a breakpoint. */
+  .statematrix { grid-template-columns: 8.5rem repeat(3, minmax(0, 1fr)); }
+  .statematrix > div { min-width: 0; overflow-x: auto; }
+  .statematrix .demo { min-width: 0; }
+  @media (max-width: 900px) {
+    .statematrix { grid-template-columns: 6.5rem repeat(3, minmax(0, 1fr)); }
+    .statematrix > div { padding: 0.6rem 0.65rem; }
+  }
+  @media (max-width: 700px) {
+    .statematrix { grid-template-columns: 1fr; }
+    .statematrix .sh { position: sticky; top: 0; z-index: 1; }
+    .statematrix > div:nth-child(-n+4) { display: none; }
+    .statematrix > div[style*="span 3"] { grid-column: auto !important; }
+  }
+
+
+  /* ==================================================================== */
+  /*  DATE / TIME / SESSION — mockup layer.                               */
+  /*  Every rule spends an Oxygen token from the v2 layer above. The one  */
+  /*  exception is geometry the token set does not name (a 7-column month */
+  /*  grid), which is expressed in --sp-* multiples rather than literals. */
+  /* ==================================================================== */
+
+  /* Every control in these figures is a real <button>, because a calendar
+     cell that is a div with role="button" is one missing key handler away
+     from being unusable. The earlier briefs in this series never needed
+     this reset — they drew controls as divs — so the UA's ButtonFace
+     background was turning the month grid into a spreadsheet. Scored at
+     (0,1,1) so every component class below still wins. */
+  .antd button {
+    appearance: none; -webkit-appearance: none;
+    background: none; border: 0; margin: 0; padding: 0;
+    font: inherit; color: inherit; text-align: inherit;
+    cursor: default;
+  }
+  .antd button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- Field: the segmented, typable date/time input ----------------- */
+  .antd .dtf {
+    display: inline-flex; align-items: center; gap: 0;
+    height: var(--ctl-lg); padding: 0 var(--sp-1) 0 var(--sp-2);
+    border: 1px solid var(--line-3); border-radius: var(--r-sm);
+    background: var(--surface); color: var(--ink);
+    font-variant-numeric: tabular-nums; font-size: var(--fs-md);
+    transition: border-color var(--dur-micro) var(--ease-out),
+                box-shadow var(--dur-micro) var(--ease-out);
+    cursor: text; user-select: none; -webkit-user-select: none;
+  }
+  .antd .dtf:hover { border-color: var(--ink-4); }
+  .antd .dtf.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+  .antd .dtf.err   { border-color: var(--crit); }
+  .antd .dtf.err.focus { box-shadow: 0 0 0 3px color-mix(in oklab, var(--crit) 30%, transparent); }
+  .antd .dtf.warnf { border-color: var(--warn-line); background: var(--warn-soft); }
+  .antd .dtf.ro    { border-color: transparent; background: transparent; padding-inline-start: 0; cursor: default; }
+  .antd .dtf.dis   { border-color: var(--line); background: var(--sunken); color: var(--ink-4); pointer-events: none; }
+  .antd .dtf.wide  { min-width: 168px; }
+
+  /* A segment is the atom of keyboard entry: one roving tabstop, arrow
+     keys step its own unit, digits type into it, and it advances itself
+     when it can no longer accept another digit. */
+  .antd .dtf .seg {
+    padding: 0 2px; border-radius: 2px; min-width: 1.15em; text-align: center;
+    transition: background-color var(--dur-press) var(--ease-out), color var(--dur-press) var(--ease-out);
+  }
+  .antd .dtf .seg.y { min-width: 2.4em; }
+  .antd .dtf .seg.ph { color: var(--ink-4); }
+  .antd .dtf .seg.on { background: var(--accent); color: var(--on-accent); }
+  .antd .dtf.ro .seg.on { background: transparent; color: var(--ink); }
+  .antd .dtf .sep { color: var(--ink-4); padding: 0 var(--sp-h); }
+  .antd .dtf .fb {
+    margin-inline-start: auto; width: var(--ctl-sm); height: var(--ctl-sm);
+    display: inline-grid; place-items: center; border-radius: var(--r-xs);
+    color: var(--ink-4); flex: 0 0 auto;
+    transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+  }
+  .antd .dtf .fb:hover { background: var(--sunken); color: var(--ink); }
+  .antd .dtf .fb.on { color: var(--accent); }
+
+  /* The label + field + message stack every field shares. */
+  .antd .fld { display: grid; gap: var(--sp-1); }
+  .antd .fld > .lbl {
+    font-size: var(--fs-xs); font-weight: var(--fw-m); color: var(--ink-2);
+    letter-spacing: 0; display: flex; align-items: center; gap: var(--sp-1);
+  }
+  .antd .fld > .lbl .req { color: var(--crit); }
+  .antd .fld > .lbl .opt { color: var(--ink-4); font-weight: var(--fw-r); }
+  .antd .msg { font-size: var(--fs-xs); color: var(--ink-3); display: flex; align-items: flex-start; gap: var(--sp-1); line-height: var(--lh-xs); }
+  .antd .msg .i { margin-top: 1px; }
+  .antd .msg.err  { color: var(--crit-ink); }
+  .antd .msg.warn { color: var(--warn-ink); }
+  .antd .msg.ok   { color: var(--ok-ink); }
+  .antd .msg.hint { color: var(--ink-4); }
+
+  /* ---- Popover -------------------------------------------------------- */
+  .antd .pop {
+    background: var(--overlay); border: 1px solid var(--line);
+    border-radius: var(--r-lg); box-shadow: var(--e-3);
+    padding: var(--sp-3); display: inline-block; position: relative; z-index: 60;
+    animation: ox-pop var(--dur-state) var(--ease-out) both;
+  }
+  .antd .pop.flush { padding: 0; }
+  @keyframes ox-pop { from { opacity: 0; translate: 0 -4px; scale: 0.985 } to { opacity: 1; translate: 0; scale: 1 } }
+  @media (prefers-reduced-motion: reduce) { .antd .pop { animation: none } }
+
+  /* ---- Calendar ------------------------------------------------------- */
+  .antd .cal { width: 252px; user-select: none; -webkit-user-select: none; }
+  .antd .cal.wide { width: 100%; }
+  .antd .cal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: var(--sp-1); margin-bottom: var(--sp-2);
+  }
+  .antd .cal-title {
+    font-size: var(--fs-md); font-weight: var(--fw-sb); color: var(--ink);
+    letter-spacing: var(--tr-tight); display: inline-flex; align-items: center; gap: var(--sp-1);
+    padding: 0 var(--sp-1); height: var(--ctl-sm); border-radius: var(--r-xs);
+  }
+  .antd .cal-title:hover { background: var(--sunken); }
+  .antd .cal-nav {
+    width: var(--ctl-sm); height: var(--ctl-sm); display: inline-grid; place-items: center;
+    border-radius: var(--r-xs); color: var(--ink-3);
+    transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+  }
+  .antd .cal-nav:hover { background: var(--sunken); color: var(--ink); }
+  .antd .cal-nav[aria-disabled="true"] { color: var(--ink-5); pointer-events: none; }
+  .antd .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+  .antd .cal-wd {
+    font-size: var(--fs-micro); font-weight: var(--fw-sb); letter-spacing: var(--tr-label);
+    text-transform: uppercase; color: var(--ink-4); text-align: center;
+    height: 22px; display: grid; place-items: center;
+  }
+  .antd .cal-wd.we { color: var(--ink-5); }
+
+  /* 32px is the visual cell; the hit area is the full grid track, so the
+     interactive target clears WCAG 2.2 SC 2.5.8 (24px) even in clinical
+     density, where only the type and the gap tighten. */
+  .antd .cal-d {
+    height: 32px; display: grid; place-items: center; position: relative;
+    font-size: var(--fs-sm); color: var(--ink); border-radius: var(--r-xs);
+    font-variant-numeric: tabular-nums;
+    transition: background-color var(--dur-press) var(--ease-out),
+                color var(--dur-press) var(--ease-out),
+                box-shadow var(--dur-press) var(--ease-out);
+  }
+  .antd .cal-d:hover { background: var(--sunken); }
+  .antd .cal-d.out { color: var(--ink-5); }
+  .antd .cal-d.dis { color: var(--ink-5); background: transparent; pointer-events: none; }
+  /* A blocked date says why by its mark, not only by being pale: a single
+     diagonal for closed, a dot for busy. Colour is never the only cue. */
+  .antd .cal-d.dis::after {
+    content: ""; position: absolute; inset-inline: 8px; top: 50%; height: 1px;
+    background: var(--line-2); rotate: -20deg;
+  }
+  .antd .cal-d.today { font-weight: var(--fw-sb); color: var(--accent-ink); }
+  .antd .cal-d.today::before {
+    content: ""; position: absolute; bottom: 4px; width: 3px; height: 3px;
+    border-radius: 50%; background: var(--accent);
+  }
+  .antd .cal-d.sel {
+    background: var(--accent); color: var(--on-accent); font-weight: var(--fw-m);
+  }
+  .antd .cal-d.sel::before { background: var(--on-accent); }
+  .antd .cal-d.sel.today { color: var(--on-accent); }
+  .antd .cal-d.rng { background: var(--accent-soft); border-radius: 0; color: var(--accent-ink); }
+  .antd .cal-d.rng.s { border-start-start-radius: var(--r-xs); border-end-start-radius: var(--r-xs); }
+  .antd .cal-d.rng.e { border-start-end-radius: var(--r-xs); border-end-end-radius: var(--r-xs); }
+  .antd .cal-d.prev { background: color-mix(in oklab, var(--accent) 8%, transparent); border-radius: 0; }
+  .antd .cal-d.kb { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring); z-index: 1; }
+  /* Availability density under the numeral — the second signal a slot grid
+     would otherwise take a click to reveal. */
+  .antd .cal-d .load { position: absolute; bottom: var(--sp-h); display: flex; gap: var(--sp-h); }
+  .antd .cal-d .load i { width: 3px; height: 3px; border-radius: 50%; background: var(--ok); }
+  .antd .cal-d .load i.q { background: var(--warn); }
+  .antd .cal-d.sel .load i { background: var(--on-accent); }
+  .antd .cal-foot {
+    margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--line);
+    display: flex; align-items: center; gap: var(--sp-1); flex-wrap: wrap;
+  }
+
+  /* Month/year pane — the DOB and historical-date escape hatch. */
+  .antd .cal-pane { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-1); }
+  .antd .cal-pane b {
+    height: 30px; display: grid; place-items: center; border-radius: var(--r-xs);
+    font-size: var(--fs-sm); font-weight: var(--fw-r); color: var(--ink);
+  }
+  .antd .cal-pane b:hover { background: var(--sunken); }
+  .antd .cal-pane b.on { background: var(--accent); color: var(--on-accent); font-weight: var(--fw-m); }
+  .antd .cal-pane b.dis { color: var(--ink-5); pointer-events: none; }
+  .antd .cal-years { max-height: 200px; overflow-y: auto; scrollbar-width: thin; }
+
+  /* ---- Chips: relative dates, durations, presets ---------------------- */
+  .antd .chips { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+  .antd .chip {
+    height: var(--ctl-sm); padding: 0 var(--sp-2);
+    display: inline-flex; align-items: center; gap: var(--sp-1);
+    border: 1px solid var(--line-2); border-radius: var(--r-full);
+    background: var(--surface); color: var(--ink-2);
+    font-size: var(--fs-xs); font-weight: var(--fw-m); white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    transition: background-color var(--dur-micro) var(--ease-out),
+                border-color var(--dur-micro) var(--ease-out),
+                color var(--dur-micro) var(--ease-out);
+  }
+  .antd .chip:hover { border-color: var(--line-3); background: var(--sunken); color: var(--ink); }
+  .antd .chip.on { background: var(--accent); border-color: transparent; color: var(--on-accent); }
+  .antd .chip.dis { color: var(--ink-5); background: var(--sunken); border-color: var(--line); pointer-events: none; }
+  .antd .chip .n { font-weight: var(--fw-sb); }
+  .antd .chip.sq { border-radius: var(--r-sm); }
+  .antd .chip .code {
+    font-size: var(--fs-micro); opacity: 0.75; font-family: var(--font-num); letter-spacing: 0;
+  }
+
+  /* ---- Session: start → end → duration -------------------------------- */
+  .antd .sess {
+    display: flex; align-items: flex-end; gap: var(--sp-2); flex-wrap: wrap;
+  }
+  /* Aligned to the control's optical centre rather than nudged: the arrow
+     sits in a box the same height as the field it points between, so it
+     stays centred when density changes the control height. */
+  .antd .sess .arw {
+    color: var(--ink-4); flex: 0 0 auto;
+    height: var(--ctl-lg); display: inline-flex; align-items: center;
+  }
+  .antd .durbox {
+    height: var(--ctl-lg); min-width: 84px; padding: 0 var(--sp-2);
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1);
+    border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--sunken);
+    font-variant-numeric: tabular-nums; font-size: var(--fs-md); font-weight: var(--fw-sb); color: var(--ink);
+  }
+  .antd .durbox.drv { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-ink); }
+  /* The derived value is stated as derived. A field that silently recomputes
+     is the single most common defect in start/end/duration triples. */
+  .antd .drvtag {
+    font-size: var(--fs-micro); letter-spacing: var(--tr-label); text-transform: uppercase;
+    font-weight: var(--fw-sb); color: var(--ink-4); display: inline-flex; align-items: center; gap: var(--sp-1);
+  }
+  .antd .drvtag.held { color: var(--accent-ink); }
+  .antd .drvtag .lk { width: 10px; height: 10px; }
+
+  /* Horizontal time tape — makes overnight and buffer legible at a glance. */
+  .antd .tape {
+    position: relative; height: 34px; border-radius: var(--r-sm);
+    background: var(--sunken); border: 1px solid var(--line); overflow: hidden;
+  }
+  .antd .tape .blk { position: absolute; top: 0; bottom: 0; background: var(--accent); opacity: 0.9; }
+  .antd .tape .blk.buf { background: var(--warn); opacity: 0.35; }
+  .antd .tape .blk.busy { background: var(--crit); opacity: 0.28; }
+  .antd .tape .mid {
+    position: absolute; top: 0; bottom: 0; width: 1px; background: var(--ink-3);
+    border-inline-start: 1px dashed var(--ink-3);
+  }
+  .antd .tape .tk {
+    position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line-2);
+  }
+  .antd .tapelabels {
+    display: flex; justify-content: space-between; font-size: var(--fs-micro);
+    color: var(--ink-4); margin-top: var(--sp-1); font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Slot grid ------------------------------------------------------ */
+  .antd .slotgrp { margin-bottom: var(--sp-3); }
+  .antd .slotgrp:last-child { margin-bottom: 0; }
+  .antd .slotgrp > h6 {
+    font-size: var(--fs-micro); letter-spacing: var(--tr-label); text-transform: uppercase;
+    font-weight: var(--fw-sb); color: var(--ink-4); margin: 0 0 var(--sp-2);
+    display: flex; align-items: center; gap: var(--sp-2);
+  }
+  .antd .slotgrp > h6 .rule { flex: 1; height: 1px; background: var(--line); }
+  .antd .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: var(--sp-1); }
+  .antd .slot {
+    height: var(--ctl-lg); display: grid; place-items: center;
+    border: 1px solid var(--line-2); border-radius: var(--r-sm);
+    background: var(--surface); color: var(--ink); font-size: var(--fs-sm);
+    font-variant-numeric: tabular-nums; position: relative;
+    transition: background-color var(--dur-press) var(--ease-out),
+                border-color var(--dur-press) var(--ease-out),
+                color var(--dur-press) var(--ease-out),
+                box-shadow var(--dur-press) var(--ease-out);
+  }
+  .antd .slot:hover { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent-ink); }
+  .antd .slot.on {
+    background: var(--accent); border-color: transparent; color: var(--on-accent);
+    font-weight: var(--fw-m); box-shadow: 0 0 0 3px var(--ring);
+  }
+  /* Three unavailable reasons, one muted treatment, the reason in the
+     tooltip and the a11y name. Four separate greys would be noise. */
+  .antd .slot.off {
+    color: var(--ink-5); background: var(--sunken); border-color: transparent;
+    text-decoration: line-through; text-decoration-thickness: 1px; pointer-events: none;
+  }
+  .antd .slot.held {
+    border-color: var(--warn-line); background: var(--warn-soft); color: var(--warn-ink);
+  }
+  .antd .slot.held::after {
+    content: ""; position: absolute; top: 3px; inset-inline-end: 3px;
+    width: 5px; height: 5px; border-radius: 50%; background: var(--warn);
+  }
+  .antd .slot.sk { border-color: transparent; }
+  .antd .slot .sub { position: absolute; bottom: 2px; font-size: 9px; color: inherit; opacity: 0.7; }
+
+  /* ---- Day strip: a week of availability above the slot grid ---------- */
+  .antd .daystrip { display: grid; grid-auto-flow: column; gap: var(--sp-1); }
+  .antd .daycell {
+    display: grid; gap: 2px; justify-items: center; padding: var(--sp-1) 2px var(--sp-2);
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface);
+    transition: border-color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out);
+  }
+  .antd .daycell:hover { border-color: var(--line-3); }
+  .antd .daycell.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px var(--ring); }
+  .antd .daycell.none { background: var(--sunken); border-color: transparent; }
+  .antd .daycell .wd { font-size: var(--fs-micro); letter-spacing: var(--tr-label); text-transform: uppercase; color: var(--ink-4); font-weight: var(--fw-sb); }
+  .antd .daycell .dd { font-size: var(--fs-lg); font-weight: var(--fw-sb); color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: var(--tr-tight); }
+  .antd .daycell.on .dd { color: var(--accent-ink); }
+  .antd .daycell .ct { font-size: var(--fs-micro); color: var(--ok-ink); font-variant-numeric: tabular-nums; }
+  .antd .daycell.none .ct, .antd .daycell.none .dd { color: var(--ink-5); }
+
+  /* ---- Recurrence ----------------------------------------------------- */
+  .antd .wdset { display: flex; gap: var(--sp-1); }
+  .antd .wdset b {
+    width: 32px; height: 32px; display: grid; place-items: center;
+    border: 1px solid var(--line-2); border-radius: var(--r-full);
+    font-size: var(--fs-xs); font-weight: var(--fw-m); color: var(--ink-2); background: var(--surface);
+    transition: background-color var(--dur-micro) var(--ease-out),
+                border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+  }
+  .antd .wdset b:hover { border-color: var(--line-3); background: var(--sunken); }
+  .antd .wdset b.on { background: var(--accent); border-color: transparent; color: var(--on-accent); }
+  /* The plain-language echo of the rule. It is the only part of a
+     recurrence builder most users read, so it is rendered as content. */
+  .antd .rrsum {
+    padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md);
+    background: var(--accent-soft); border: 1px solid var(--accent-line);
+    color: var(--accent-ink); font-size: var(--fs-md); line-height: var(--lh-md);
+  }
+  .antd .rrsum b { font-weight: var(--fw-sb); }
+  .antd .rrcode {
+    font-family: var(--font-num); font-size: var(--fs-micro); color: var(--ink-4);
+    letter-spacing: 0; margin-top: var(--sp-1); display: block;
+    overflow-x: auto; white-space: nowrap; scrollbar-width: thin;
+  }
+  .antd .rrcode + .rrcode { margin-top: 1px; }
+  /* Series preview — each occurrence carries its own resolution. */
+  /* The document sheet gives every ul a 1.35rem inline start padding and a
+     1rem bottom margin. Inside a bordered list that reads as a 22px indent
+     nothing asked for, so the reset is part of the component, not a tidy-up. */
+  .antd .occ {
+    display: grid; gap: 1px; background: var(--line);
+    border: 1px solid var(--line); border-radius: var(--r-md); overflow: clip;
+    list-style: none; margin: 0; padding: 0;
+  }
+  .antd .occ > li {
+    display: grid; grid-template-columns: 20px 1fr auto; gap: var(--sp-2); align-items: center;
+    padding: var(--sp-1) var(--sp-2); background: var(--surface); font-size: var(--fs-sm);
+    list-style: none; margin: 0;
+  }
+  .antd .occ > li .n { font-size: var(--fs-micro); color: var(--ink-4); font-variant-numeric: tabular-nums; text-align: end; }
+  .antd .occ > li .dt { font-variant-numeric: tabular-nums; color: var(--ink); }
+  .antd .occ > li.bad { background: var(--crit-soft); }
+  .antd .occ > li.bad .dt { color: var(--crit-ink); }
+  .antd .occ > li.skip { background: var(--sunken); }
+  .antd .occ > li.skip .dt { color: var(--ink-4); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .antd .occ > li .fix { font-size: var(--fs-micro); }
+
+  /* ---- Timezone ------------------------------------------------------- */
+  .antd .tzpair {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--sp-3);
+    padding: var(--sp-3); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--sunken);
+  }
+  /* Renamed from .who: base.css already owns `.antd .who` for the timeline
+     byline, and inheriting its flex+5px gap put this label off the grid. */
+  .antd .tzcell .zlab { font-size: var(--fs-micro); letter-spacing: var(--tr-label); text-transform: uppercase; color: var(--ink-4); font-weight: var(--fw-sb); }
+  .antd .tzcell .tm { font-size: var(--fs-xl); font-weight: var(--fw-sb); color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: var(--tr-tight); margin-top: 2px; }
+  .antd .tzcell .zn { font-size: var(--fs-xs); color: var(--ink-3); }
+  .antd .tzcell.mine .tm { color: var(--accent-ink); }
+
+  /* ---- Mobile frame --------------------------------------------------- */
+  .antd .phone {
+    width: 300px; height: 580px; border-radius: 30px; border: 8px solid var(--ink);
+    background: var(--bg); position: relative; overflow: clip; box-shadow: var(--e-3);
+    display: flex; flex-direction: column;
+  }
+  .antd .phone .notch {
+    position: absolute; top: 0; inset-inline: 0; height: 24px; display: grid; place-items: center;
+    font-size: 9px; color: var(--ink-4); letter-spacing: var(--tr-label);
+  }
+  .antd .phone .scr { flex: 1; padding: var(--sp-8) var(--sp-3) var(--sp-3); overflow: hidden; position: relative; }
+  .antd .sheet {
+    position: absolute; inset-inline: 0; bottom: 0; background: var(--overlay);
+    border-start-start-radius: var(--r-xl); border-start-end-radius: var(--r-xl);
+    border-top: 1px solid var(--line); box-shadow: var(--e-3);
+    padding: var(--sp-2) var(--sp-3) var(--sp-4);
+    transition: translate var(--dur-layout) var(--ease-out);
+  }
+  .antd .sheet.shut { translate: 0 100%; }
+  .antd .sheet .grab { width: 34px; height: 4px; border-radius: 2px; background: var(--line-2); margin: 0 auto var(--sp-2); }
+  .antd .scrim {
+    position: absolute; inset: 0; background: rgb(var(--shadow-ink) / 0.35);
+    opacity: 1; transition: opacity var(--dur-state) var(--ease-out);
+  }
+  .antd .scrim.shut { opacity: 0; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .antd .sheet, .antd .scrim { transition: none }
+  }
+  /* On a touch target the mobile slot is 44px, not 32 — density is a
+     contract, and `patient` is the profile a portal renders under. */
+  .antd .phone .slot, .antd .sheet .slot { height: 44px; }
+  .antd .phone .cal-d, .antd .sheet .cal-d { height: 40px; font-size: var(--fs-md); }
+  .antd .phone .dtf, .antd .sheet .dtf { height: var(--ctl-xl); font-size: var(--fs-lg); }
+
+  /* ---- Keystroke cast -------------------------------------------------- */
+  .antd .keycast { display: grid; gap: var(--sp-1); }
+  .antd .keyrow { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); }
+  .antd .keyrow .out { font-family: var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .antd .keyrow .arw { color: var(--ink-5); }
+  .antd .keyrow.dim { opacity: 0.45; }
+
+  /* ---- Read-only clinical display -------------------------------------- */
+  .antd .ro-grid { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-1) var(--sp-4); align-items: baseline; margin: 0; }
+  .antd .ro-grid dt { font-size: var(--fs-xs); color: var(--ink-4); letter-spacing: 0; }
+  .antd .ro-grid dd { margin: 0; font-size: var(--fs-md); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .antd .ro-grid dd .rel { color: var(--ink-4); font-size: var(--fs-xs); margin-inline-start: var(--sp-1); }
+  .antd .ro-grid dd .abs { color: var(--ink-3); font-size: var(--fs-xs); }
+
+  /* ---- Report-side helpers -------------------------------------------- */
+  /* min() so a 320px track never forces the grid wider than its container.
+     `minmax(320px, 1fr)` is the single most common cause of a page that
+     reflows correctly at 360 and overflows at 320. */
+  .stagegrid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); align-items: start; }
+  .stagegrid.two { grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); }
+  .mocklabel {
+    display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.85rem;
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .mocklabel .no { color: var(--accent); font-weight: 700; }
+  .mocklabel .live {
+    margin-inline-start: auto; text-transform: none; letter-spacing: 0;
+    font-size: 0.66rem; color: var(--accent-ink); background: var(--accent-soft);
+    border: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
+    border-radius: 999px; padding: 0.1rem 0.5rem;
+  }
+  .themebtn {
+    flex: 0 0 auto; font-size: 0.72rem; padding: 0.3rem 0.6rem; border-radius: 6px;
+    border: 1px solid var(--rule-2); background: var(--surface); color: var(--muted);
+    font-family: var(--font-mono); letter-spacing: 0.06em; margin-inline-start: auto;
+  }
+  .themebtn:hover { color: var(--ink); border-color: var(--accent); }
+
+  /* The four-jobs spine, used in §2 and referenced throughout. */
+  .jobs { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: var(--surface); }
+  .jobs > div { display: grid; grid-template-columns: 8.5rem 1fr; gap: 1.1rem; padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--rule); }
+  .jobs > div:last-child { border-bottom: 0; }
+  .jobs .jn { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .jobs .jn small { display: block; font-family: var(--font-body); font-size: 0.72rem; letter-spacing: 0; text-transform: none; color: var(--muted); font-weight: 400; margin-top: 0.3rem; }
+  .jobs .jd { font-size: 0.9rem; color: var(--ink-2); line-height: 1.6; }
+  .jobs .jd b { color: var(--ink); }
+  .jobs .jd .ex { display: block; margin-top: 0.5rem; font-size: 0.82rem; color: var(--muted); }
+  @media (max-width: 640px) { .jobs > div { grid-template-columns: 1fr; gap: 0.5rem } }
+
+  /* State matrix — every cell is a live render, not a screenshot. */
+  .smx { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 12px; overflow: auto; }
+  .smx > div { background: var(--surface); padding: 0.7rem 0.75rem; min-width: 0; }
+  .smx .sh { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); position: sticky; top: 0; z-index: 1; }
+  .smx .rh { font-size: 0.76rem; font-weight: 600; color: var(--ink); background: var(--surface-2); position: sticky; inset-inline-start: 0; }
+  .smx .cell { display: grid; place-items: center; min-height: 54px; }
+  .smx .na { color: var(--ink-5); font-size: 0.7rem; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.8rem; color: var(--muted); margin-top: 1rem; }
+  .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .legend i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--rule-2); display: inline-block; }
+
+  /* ==================================================================== */
+  /*  FORCED THEME — §45 items 25 and 26 must sit side by side, which the */
+  /*  root-level [data-theme] selector cannot express. These two classes  */
+  /*  pin a subtree to one palette. Values are copied from the v2 layer   */
+  /*  above; if they ever diverge, the side-by-side is the thing that     */
+  /*  shows it, which is the argument for having it in the report.        */
+  /* ==================================================================== */
+  /* Specificity, deliberately: the dark override in the base sheet is
+     `:root:not([data-theme="light"]) .antd`, which scores (0,3,0). A plain
+     `.antd.tlight` scores (0,2,0) and loses no matter what order it loads
+     in — which rendered the "light theme" panel dark. Repeating the class
+     and anchoring on :root takes it to (0,4,0). */
+  :root .antd.tlight.tlight {
+    --ink: #0A1514; --ink-2: #384A46; --ink-3: #5C6D69; --ink-4: #63736E; --ink-5: #A3B0AC;
+    --bg: #F7F9F9; --surface: #FFFFFF; --sunken: #F1F4F4; --raised: #FFFFFF; --overlay: #FFFFFF;
+    --line: #E4EAE8; --line-2: #D2DBD8; --line-3: #849993;
+    --accent: #0E7C66; --accent-hover: #0B6754; --accent-press: #085243; --accent-soft: #E4F3EF;
+    --accent-line: #9FD3C6; --accent-ink: #075244; --on-accent: #FFFFFF; --ring: rgb(14 124 102 / 0.32);
+    --crit: #B42318; --crit-soft: #FEF3F2; --crit-line: #F5B5AE; --crit-ink: #912018;
+    --warn: #B54708; --warn-soft: #FFFAEB; --warn-line: #F5CE7A; --warn-ink: #93370D;
+    --ok: #067647; --ok-soft: #ECFDF3; --ok-line: #9BE5BC; --ok-ink: #05603A;
+    --info: #175CD3; --info-soft: #EFF8FF; --info-line: #A9D4FB; --info-ink: #1849A9;
+    --ai: #5B44BE; --ai-soft: #F5F3FF; --ai-line: #CFC6F6; --ai-ink: #4A35A0;
+    --rest: #3538CD; --rest-soft: #EEF4FF; --rest-line: #BFCEFB; --rest-ink: #2D31A6;
+    --shadow-ink: 10 21 20;
+    --e-1: 0 1px 2px -1px rgb(var(--shadow-ink) / 0.10);
+    --e-2: 0 4px 12px -4px rgb(var(--shadow-ink) / 0.14), 0 1px 2px -1px rgb(var(--shadow-ink) / 0.06);
+    --e-3: 0 14px 34px -10px rgb(var(--shadow-ink) / 0.20), 0 3px 8px -3px rgb(var(--shadow-ink) / 0.08);
+    color-scheme: light;
+  }
+  :root .antd.tdark.tdark {
+    --ink: #E8F0EE; --ink-2: #B6C6C2; --ink-3: #8A9C98; --ink-4: #70837E; --ink-5: #4B5B57;
+    --bg: #080F0E; --surface: #0E1817; --sunken: #0A1211; --raised: #14201E; --overlay: #172522;
+    --line: #1E2C2A; --line-2: #2A3B38; --line-3: #506864;
+    --accent: #34C6A4; --accent-hover: #4FD6B6; --accent-press: #29A98B; --accent-soft: #0C2A25;
+    --accent-line: #1E5B4D; --accent-ink: #7FE3CB; --on-accent: #04201A; --ring: rgb(52 198 164 / 0.36);
+    --crit: #F97066; --crit-soft: #2A1210; --crit-line: #6B231C; --crit-ink: #FDA29B;
+    --warn: #F5A524; --warn-soft: #2A1E08; --warn-line: #6B4A11; --warn-ink: #FDC873;
+    --ok: #47C98B; --ok-soft: #08241A; --ok-line: #14543A; --ok-ink: #83E0B4;
+    --info: #5AA0F5; --info-soft: #0A1B2E; --info-line: #1B416E; --info-ink: #9CC9FB;
+    --ai: #A48CF0; --ai-soft: #1A1330; --ai-line: #3B2C6B; --ai-ink: #C8B9F8;
+    --rest: #8AA0FA; --rest-soft: #121734; --rest-line: #2C3878; --rest-ink: #B6C4FC;
+    --shadow-ink: 0 0 0;
+    --e-1: 0 1px 2px -1px rgb(0 0 0 / 0.6);
+    --e-2: 0 4px 14px -4px rgb(0 0 0 / 0.7), 0 1px 2px -1px rgb(0 0 0 / 0.5);
+    --e-3: 0 16px 40px -12px rgb(0 0 0 / 0.8), 0 3px 8px -3px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+  .antd.tlight, .antd.tdark { background: var(--bg); padding: var(--sp-4); border-radius: var(--r-lg); }
+
+  /* Forced-colours: every state that is carried by a token pair must
+     survive a palette the operating system chooses. Selection keeps its
+     fill via Highlight; the disabled diagonal keeps its stroke. */
+  @media (forced-colors: active) {
+    .antd .cal-d.sel, .antd .slot.on, .antd .chip.on, .antd .wdset b.on {
+      background: Highlight; color: HighlightText; forced-color-adjust: none;
+    }
+    .antd .cal-d.kb, .antd .dtf.focus { outline: 2px solid CanvasText; outline-offset: 1px; }
+    .antd .cal-d.dis::after { background: GrayText; }
+  }
+
+  /* ==================================================================== */
+  /*  FORCED STATES — for the §22 matrix only.                            */
+  /*  :hover cannot be photographed, and a matrix of screenshots is the   */
+  /*  thing this report is trying not to be. These classes replay the     */
+  /*  hover and focus rules on a live element so every cell is real.      */
+  /* ==================================================================== */
+  .antd .fs-hover.slot, .antd .fs-hover.cal-d { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent-ink); }
+  .antd .fs-hover.chip { border-color: var(--line-3); background: var(--sunken); color: var(--ink); }
+  .antd .fs-hover.dtf  { border-color: var(--ink-4); }
+  .antd .fs-focus.dtf  { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+  .antd .fs-focus.slot, .antd .fs-focus.chip, .antd .fs-focus.cal-d {
+    outline: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring);
+  }
+  .antd .fs-focus.cal-d { z-index: 1; position: relative; }
+
+  @keyframes ox-spin { to { rotate: 360deg } }
+  @keyframes ox-shimmer { to { background-position-x: -200% } }
+  .antd .sk.live { background-size: 200% 100%; animation: ox-shimmer 1.4s linear infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .antd .sk.live { animation: none }
+    .antd .i[style*="ox-spin"] { animation: none !important }
+  }
+
+  .antd .durbox.err { border-color: var(--crit); background: var(--crit-soft); color: var(--crit-ink); }
+
+  /* auto-fit leaves an orphan tile whenever the item count is not a multiple
+     of the columns it happens to choose. Pin the two counts we actually use. */
+  .kpi.k4 { grid-template-columns: repeat(4, 1fr); }
+  .kpi.k5 { grid-template-columns: repeat(5, 1fr); }
+  .kpi.k4 .v, .kpi.k5 .v { font-size: 1.4rem; }
+  .kpi.k4 .l, .kpi.k5 .l { font-size: 0.72rem; }
+  @media (max-width: 620px) {
+    .kpi.k4, .kpi.k5 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* A placeholder must read as ABOVE the surface, not as a hole in it.
+     The base sheet builds the shimmer out of --sunken, which is darker than
+     --surface in both themes — correct on light, and on dark it renders a
+     loading slot as a black rectangle that looks like a failure. Mixing
+     against ink instead flips with the theme, as it should. */
+  .antd .sk {
+    background: linear-gradient(100deg,
+      color-mix(in oklab, var(--ink) 7%, var(--surface)) 30%,
+      color-mix(in oklab, var(--ink) 14%, var(--surface)) 48%,
+      color-mix(in oklab, var(--ink) 7%, var(--surface)) 66%);
+    background-size: 200% 100%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .antd .sk { background: color-mix(in oklab, var(--ink) 9%, var(--surface)); }
+  }
+
+  /* The month/year pane, the segmented controls and the weekday toggles are
+     real <button>s now, so the style hooks have to name them as well as the
+     tags the first draft used. A control that needs a keydown shim to be
+     operable is a control that should have been a button. */
+  .antd .cal-pane b, .antd .cal-pane button {
+    height: 30px; display: grid; place-items: center; border-radius: var(--r-xs);
+    font-size: var(--fs-sm); font-weight: var(--fw-r); color: var(--ink); width: 100%;
+  }
+  .antd .cal-pane b:hover, .antd .cal-pane button:hover { background: var(--sunken); }
+  .antd .cal-pane b.on, .antd .cal-pane button.on { background: var(--accent); color: var(--on-accent); font-weight: var(--fw-m); }
+  .antd .a-seg button {
+    padding: 0 var(--sp-2); height: calc(var(--ctl-md) - 6px);
+    display: inline-flex; align-items: center; border-radius: 2px;
+    font-size: var(--fs-xs); font-weight: var(--fw-m); color: var(--ink-3);
+    transition: color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out);
+  }
+  .antd .a-seg button:hover { color: var(--ink); }
+  .antd .a-seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--e-1), var(--hair); }
+  .antd .a-seg button:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring); }
+  .antd .wdset button {
+    width: 32px; height: 32px; display: grid; place-items: center;
+    border: 1px solid var(--line-2); border-radius: var(--r-full);
+    font-size: var(--fs-xs); font-weight: var(--fw-m); color: var(--ink-2); background: var(--surface);
+    transition: background-color var(--dur-micro) var(--ease-out),
+                border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+  }
+  .antd .wdset button:hover { border-color: var(--line-3); background: var(--sunken); }
+  .antd .wdset button.on { background: var(--accent); border-color: transparent; color: var(--on-accent); }
+
+  /* A legend swatch is a picture of a control, not a control. */
+  .antd .slot.swatch {
+    width: 22px; height: 16px; min-width: 0; font-size: 0; pointer-events: none;
+  }
+
+  /* SC 2.5.8 again: the base sheet sizes a segment at `--ctl-md - 6` = 22px,
+     which was defensible when segments were divs and arguably not targets.
+     They are buttons now, so they owe the 24px floor like everything else. */
+  .antd .a-seg button { height: var(--ctl-sm); min-width: var(--ctl-sm); }
+  .antd .dtf .fb { border-radius: var(--r-xs); }
+
+  /* Form controls the UA still styles: a checkbox carries a 3px top margin
+     that puts its row a hair off the baseline of the label beside it. */
+  .antd input[type="checkbox"] {
+    margin: 0; inline-size: 14px; block-size: 14px; accent-color: var(--accent);
+  }
+  .antd label { display: inline-flex; align-items: center; gap: var(--sp-2); }
+
+  /* The reason list under a calendar. On the antd type scale, not the
+     document's rem scale, because it sits inside the mockup. */
+  .antd .callout { display: grid; gap: var(--sp-1); margin-top: var(--sp-2); }
+  .antd .callout > span { font-size: var(--fs-xs); color: var(--ink-3); line-height: var(--lh-sm); }
+  .antd .callout > span b { color: var(--ink-2); font-weight: var(--fw-sb); }
+
+  /* ==================================================================== */
+  /*  RIGHT-TO-LEFT                                                       */
+  /*  Logical properties give us the mirror for free. Two things they do  */
+  /*  not give us: a chevron still points the way it was drawn, and a     */
+  /*  numeric value must not mirror with the layout around it.            */
+  /* ==================================================================== */
+  /* Anchored on the dir attribute itself, not on `.antd`: in practice the
+     RTL container is INSIDE the component root, so `.antd [dir=rtl]` and
+     `[dir=rtl] .antd` are both real nestings and only this matches both. */
+  [dir="rtl"] .cal-nav svg,
+  [dir="rtl"] .arw svg,
+  [dir="rtl"] svg.i-arrow { scale: -1 1; }
+
+  /* The value itself is always LTR — set on the element, so it survives
+     being dropped into an RTL form without the host thinking about it. */
+  .antd .dtf,
+  .antd .durbox,
+  .antd .slot,
+  .antd .cal-d,
+  .antd .tapelabels,
+  .antd .ro-grid dd { unicode-bidi: isolate; }
+
+  /* ==================================================================== */
+  /*  SEVERITY RAILS — repairing a specificity defect in the base sheet.  */
+  /*                                                                      */
+  /*  base.css flattens a tile inside a card and then restores its status */
+  /*  with `.antd .a-card .tile.crit { border-color: currentColor }` —    */
+  /*  four classes, (0,4,0). The rule that actually paints the rail is    */
+  /*  `.antd .tile.crit { border-inline-start: 2px solid var(--crit) }`,  */
+  /*  three classes, (0,3,0). The flatten wins on specificity no matter   */
+  /*  what order they load in, so EVERY severity rail inside a card —     */
+  /*  critical, warning, ok, ai and selected — renders in the ink colour  */
+  /*  and the five states become one. Colour carrying meaning, with the   */
+  /*  colour absent, is an ENGINEERING.md §6 failure rather than a nit.   */
+  /*                                                                      */
+  /*  Matched at (0,4,0) and loaded later, so it wins on order.           */
+  /* ==================================================================== */
+  .antd .a-card .tile.crit, .antd .a-app .tile.crit { border-inline-start-color: var(--crit); }
+  .antd .a-card .tile.warn, .antd .a-app .tile.warn { border-inline-start-color: var(--warn); }
+  .antd .a-card .tile.ok,   .antd .a-app .tile.ok   { border-inline-start-color: var(--ok); }
+  .antd .a-card .tile.ai,   .antd .a-app .tile.ai   { border-inline-start-color: var(--info); }
+  .antd .a-card .tile.sel,  .antd .a-app .tile.sel  { border-inline-start-color: var(--accent); }
+  .antd .a-card .tile.ghost,.antd .a-app .tile.ghost{ border-color: var(--line-2); }
+
+  /* The rail is the primary cue, so it also carries a tint at the low end
+     of the scale — a 2px line is not enough signal on its own for a state
+     a clinician has to notice, and it is invisible to a reader who cannot
+     resolve a hairline. Shape and word still do the real work. */
+  .antd .a-card .tile.crit, .antd .a-app .tile.crit {
+    background: color-mix(in oklab, var(--crit) 7%, var(--sunken));
+  }
+  .antd .a-card .tile.warn, .antd .a-app .tile.warn {
+    background: color-mix(in oklab, var(--warn) 7%, var(--sunken));
+  }
+  .antd .a-card .tile.ok, .antd .a-app .tile.ok {
+    background: color-mix(in oklab, var(--ok) 7%, var(--sunken));
+  }
+
+  /* ==================================================================== */
+  /*  NAME COLLISION — `.wrap` is the document's page container.          */
+  /*                                                                      */
+  /*  The mockup convention in this series is `class="row wrap"` for a    */
+  /*  wrapping flex row, and `.wrap` is ALSO the report's own 1180px      */
+  /*  centred page container: `max-width: 1180px; margin: 0 auto;         */
+  /*  padding: 0 clamp(1rem, 4vw, 2.5rem)`. Every wrapping row in every   */
+  /*  figure was therefore inheriting auto side margins and up to 40px of */
+  /*  page padding — which centres it and indents its first child. It is  */
+  /*  invisible on a full-width row and obvious on a short one.           */
+  /*                                                                      */
+  /*  Neutralised here rather than renamed, because the markup convention */
+  /*  is shared with the other briefs in the series.                      */
+  /* ==================================================================== */
+  .antd .row.wrap,
+  .antd .wrap {
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  /* ==================================================================== */
+  /*  INK-5 IS A NON-TEXT TOKEN.                                          */
+  /*                                                                      */
+  /*  That was settled in the healthcare-50 redesign: the 4.5:1 floor     */
+  /*  genuinely limits how many greys can carry small text on light, so   */
+  /*  --ink-5 is reserved for dividers, disabled glyphs and decoration.   */
+  /*  The first draft of this component spent it on numerals — weekend    */
+  /*  headers at 2.5:1, out-of-month days at 2.5:1, disabled days at      */
+  /*  2.2:1. Disabled controls are exempt from 1.4.3, but "exempt" is a   */
+  /*  legal answer, not a legible one, and an out-of-month day in a range */
+  /*  picker is not disabled at all — it is a target.                     */
+  /*                                                                      */
+  /*  All of them move to --ink-4, which clears 4.5:1 on the sunken       */
+  /*  ground. The state stays distinguishable because it was never        */
+  /*  carried by the grey alone: disabled keeps its diagonal, out-of-     */
+  /*  month keeps its lighter weight against --ink.                       */
+  /* ==================================================================== */
+  /*  The rule, applied once and everywhere:                             */
+  /*    non-disabled dimmed text  -> --ink-3   (clears 4.5:1 on every     */
+  /*                                            ground in both themes)    */
+  /*    disabled controls         -> --ink-4   (exempt from 1.4.3, and    */
+  /*                                            still legible)            */
+  /*    --ink-5                   -> never on a word                      */
+  /*                                                                      */
+  /*  --ink-4 was the first answer and it fails in DARK on two grounds    */
+  /*  the light theme never presents: --overlay (a bottom sheet, 3.95:1)  */
+  /*  and --accent-soft (a selected day strip, 3.81:1). Auditing one      */
+  /*  theme would have shipped both.                                      */
+  .antd .cal-wd { color: var(--ink-3); }
+  .antd .cal-wd.we { color: var(--ink-3); opacity: 0.78; }
+  .antd .cal-d.out { color: var(--ink-3); }
+  /* Disabled days end up on --ink-3 as well, not a second grey. They are
+     exempt from 1.4.3, but on the bottom sheet's --overlay ground --ink-4
+     lands at 3.95:1 and "exempt" is not the same as readable. The state is
+     carried by the diagonal, which is a shape and survives both a palette
+     the user chose and a reader who cannot separate two greys. */
+  .antd .cal-d.dis { color: var(--ink-3); }
+  .antd .cal-d.out.rng, .antd .cal-d.out.prev { color: var(--accent-ink); opacity: 0.75; }
+  .antd .cal-pane b.dis, .antd .cal-pane button.dis { color: var(--ink-4); }
+  .antd .slot.off { color: var(--ink-4); }
+  .antd .chip.dis { color: var(--ink-4); }
+  .antd .daycell .wd { color: var(--ink-3); }
+  .antd .daycell.on .wd { color: var(--accent-ink); }
+  .antd .daycell.none .ct, .antd .daycell.none .dd { color: var(--ink-4); }
+  .antd .msg.hint { color: var(--ink-3); }
+  .antd .dtf .sep { color: var(--ink-3); }
+  .antd .dtf .seg.ph { color: var(--ink-3); }
+  .antd .occ > li .n { color: var(--ink-3); }
+  .antd .drvtag { color: var(--ink-3); }
+  .antd .tapelabels { color: var(--ink-3); }
+  .antd .a-tag.plain { color: var(--ink-3); }
+  .smx .na { color: var(--ink-3); }
+
+  /* The avatar monogram lands at 4.49:1 in light — accent on accent-soft,
+     one hundredth under the floor. The ink step of the same hue clears it
+     without changing the chip's identity. */
+  .antd .node.clinical { color: var(--accent-ink); }
+  .antd .node.comms { color: var(--info-ink); }
+  .antd .node.reported { color: var(--ai-ink); }
+  .antd .node.critical { color: var(--crit-ink); }
+
+  /* ==================================================================== */
+  /*  REFLOW — SC 1.4.10, at 320px.                                       */
+  /*                                                                      */
+  /*  The page never scrolls in two dimensions: a wide figure scrolls     */
+  /*  inside its own .stage, which is the correct pattern for a table or  */
+  /*  a state matrix. But a figure that is DEMONSTRATING responsive       */
+  /*  behaviour has to actually reflow, or the report is asserting        */
+  /*  something its own mockups do not do.                                */
+  /* ==================================================================== */
+  @media (max-width: 560px) {
+    .antd .ro-grid { grid-template-columns: 1fr; gap: 0 0; }
+    .antd .ro-grid dt { margin-top: var(--sp-2); }
+    .antd .tzpair { grid-template-columns: 1fr; gap: var(--sp-2); }
+    .antd .tzpair > div:nth-child(2) { rotate: 90deg; justify-self: start; }
+    .antd .sess { align-items: stretch; }
+    .antd .sess .arw { rotate: 90deg; align-self: center; }
+    .antd .daystrip { grid-auto-flow: row; grid-template-columns: repeat(4, 1fr); }
+    .antd .slots { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+    .antd .cal { width: 100%; }
+    .antd .phone { width: 100%; max-width: 300px; }
+    .antd .a-card-head { flex-wrap: wrap; }
+    .antd .row { flex-wrap: wrap; }
+  }
+
+  /* Two-column figure rows that must become one. Scoped by the inline
+     grid template they were built with, so nothing else is caught. */
+  @media (max-width: 640px) {
+    .antd [style*="grid-template-columns:9rem"],
+    .antd [style*="grid-template-columns: 9rem"],
+    .antd [style*="grid-template-columns:8.5rem"],
+    .antd [style*="grid-template-columns: 8.5rem"],
+    .antd [style*="grid-template-columns:auto 1fr auto"],
+    .antd [style*="grid-template-columns: auto 1fr auto"] {
+      grid-template-columns: 1fr !important;
+      gap: var(--sp-2) !important;
+    }
+    .antd .occ > li { grid-template-columns: 18px 1fr; }
+    .antd .occ > li > :last-child { grid-column: 2; justify-self: start; }
+  }
+
+  @media (max-width: 560px) {
+    /* The recurrence builder is the densest control cluster in the set:
+       a segmented control, an interval row, seven weekday toggles and an
+       end-condition row. All four have to wrap rather than scroll, because
+       a control the user cannot see is a control they cannot set. */
+    .antd .a-seg { flex-wrap: wrap; }
+    .antd .wdset { flex-wrap: wrap; gap: var(--sp-1); }
+    .antd .rrsum { overflow-wrap: anywhere; }
+    .antd .chips { row-gap: var(--sp-1); }
+    .antd .kpi.k4, .antd .kpi.k5, .kpi.k4, .kpi.k5 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ==================================================================== */
+  /*  MIN-CONTENT LEAKS                                                   */
+  /*                                                                      */
+  /*  A grid or flex child defaults to `min-width: auto`, which is its    */
+  /*  min-content width. One `white-space: nowrap` element deep inside a  */
+  /*  card therefore sets the width of the whole card — the RRULE string  */
+  /*  was making the recurrence figure 580px wide at a 320px viewport and */
+  /*  cutting off four controls that had nothing to do with it. The       */
+  /*  element's own `overflow-x: auto` does not help until it is allowed  */
+  /*  to be narrower than its content.                                    */
+  /* ==================================================================== */
+  .antd .a-card { max-width: min(560px, 100%); }
+  .antd .a-card.wide { max-width: min(860px, 100%); }
+  .antd .a-card.xwide { max-width: min(1040px, 100%); }
+  .antd .rrsum, .antd .rrcode,
+  .antd .a-card-body > *, .antd .fld, .antd .occ > li,
+  .antd .tile > * { min-width: 0; }
+  .antd .rrcode { max-width: 100%; }
+
+  /* The other half of the min-content story, and the one that actually bit.
+     A single-column grid with no explicit template places its children in an
+     IMPLICIT column, and an implicit column is sized by `grid-auto-columns`,
+     which defaults to `auto` — i.e. max-content. So a row of chips that is
+     perfectly willing to wrap still widens its own track first and overflows
+     the card. `min-width: 0` on the item does not help: it clamps the item's
+     minimum, not the track's maximum.
+
+     `grid-auto-columns` only ever affects implicit tracks, so a grid that
+     declares its own template is untouched by this. */
+  .antd .fld,
+  .antd [style*="display: grid"],
+  .antd [style*="display:grid"] { grid-auto-columns: minmax(0, 1fr); }
+
+
+  /* Hairlines drawn on the cells, not as grid gaps showing the container
+     through. 26 items never fill the last row of a responsive grid, and a
+     gap-coloured container renders that remainder as a tinted block. */
+  .hero .gallery {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+    gap: 0; margin-top: 2.25rem; background: var(--surface);
+    border: 1px solid var(--rule); border-radius: 12px; overflow: hidden;
+  }
+  .hero .gx { box-shadow: inset -1px -1px 0 0 var(--rule); }
+  .hero .gx {
+    display: flex; align-items: baseline; gap: 0.5rem; padding: 0.5rem 0.7rem;
+    background: var(--surface); color: var(--ink-2); text-decoration: none;
+    font-size: 0.78rem; line-height: 1.3;
+  }
+  .hero .gx:hover { background: var(--accent-soft); color: var(--accent-ink); }
+  .hero .gn { font-family: var(--font-mono); font-size: 0.66rem; color: var(--accent); font-weight: 700; }
+  nav.toc a b { font-family: var(--font-mono); font-size: 0.7rem; color: var(--accent); margin-inline-end: 0.3rem; }
+  .sub { color: var(--muted); font-size: 0.9rem; margin-top: -0.4rem; margin-bottom: 1rem; }
+  section h3 { margin-top: 2.25rem; margin-bottom: 0.9rem; }
+  section > .wrap > p { max-width: 74ch; }
+  figure .stage { padding: clamp(0.9rem, 2.5vw, 1.5rem); }
+
+</style>
