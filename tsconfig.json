@@ -1,0 +1,20 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/grid-signals"
+    },
+    {
+      "path": "packages/grid-core"
+    },
+    {
+      "path": "packages/grid-dom"
+    },
+    {
+      "path": "packages/grid-healthcare"
+    },
+    {
+      "path": "packages/grid-react"
+    }
+  ]
+}

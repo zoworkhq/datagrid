@@ -1,0 +1,21 @@
+{
+  "name": "@oxygenui-design/grid-healthcare",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Coverage, the absence taxonomy, disclosure policy, sort provenance, the recipes",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest run --passWithNoTests",
+    "size": "size-limit"
+  },
+  "oxygen": { "layer": "domain", "budget": "16 KB", "wave": 1 },
+  "size-limit": [{ "path": "dist/index.js", "limit": "16 KB" }],
+  "dependencies": { "@oxygenui-design/grid-core": "workspace:*", "@oxygenui-design/grid-dom": "workspace:*" }
+}

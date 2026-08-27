@@ -14,3 +14,6 @@ docs/research/generators/**/preview.html
 docs/research/generators/**/out.html
 __pycache__/
 *.pyc
+
+# size-limit scratch
+.size-limit.json

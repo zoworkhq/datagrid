@@ -1,0 +1,64 @@
+# The gates that guard wave 1.
+#
+# "A gate added later never catches the regression that mattered" — so these
+# exist before the code they guard. Four are live today; three are declared and
+# not yet wired, and are listed at the bottom of this file rather than left
+# undiscovered. A gate that is quietly absent is worse than one that is
+# openly pending.
+name: ci
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # 1. Types. Every contract in wave 1 is a type-system decision, so this
+      #    is the gate that actually guards them.
+      - name: typecheck
+        run: pnpm typecheck
+
+      # 2. Behaviour. Includes the three security tests that exist because the
+      #    architecture review found three defects.
+      - name: test
+        run: pnpm test
+
+      # 3. Layers. Implements ADR 0006; each rule names the record it enforces.
+      - name: layer rules
+        run: pnpm lint:layers
+
+      # 4. Bundle budgets, per package, ratcheted.
+      - name: size
+        run: pnpm size
+
+  # ── Declared, not yet wired ────────────────────────────────────────────────
+  #
+  # accessibility  axe across three engines, plus the cross-adapter
+  #                accessibility-tree assertion. Wired when grid-dom renders
+  #                (wave 1) and meaningful when the second adapter exists
+  #                (wave 4).
+  # performance    First paint, sort, filter keystroke, frame time and heap at
+  #                1k/10k/100k, CPU-throttled on the CI machine, ratcheted.
+  #                Wave 2, with the virtualiser. A budget measured on an
+  #                M-series laptop has not been measured.
+  # memory         200 mount/unmount cycles with a heap-growth threshold, and
+  #                every plugin's teardown asserted. Wave 3. Nobody in this
+  #                category gates on this, and the failure mode is a ward
+  #                workstation that degrades over a shift.
