@@ -21,6 +21,10 @@
 import {
   type FocusTarget,
   type Geometry,
+  type RowId,
+  type SpanFn,
+  partitionPinned,
+  planSpans,
   type GridAction,
   type GridError,
   type KeyBinding,
@@ -54,6 +58,12 @@ export interface RenderRow<TRow> {
 export interface GridViewModel<TRow> {
   readonly columns: readonly RenderColumn[];
   readonly rows: readonly RenderRow<TRow>[];
+  /**
+   * Rows held out of the scrolling band. Always rendered, never virtualised —
+   * that is what pinning means, so a caller who pins a thousand rows has asked
+   * for a thousand rendered rows.
+   */
+  readonly pinned?: { readonly top?: ReadonlySet<RowId>; readonly bottom?: ReadonlySet<RowId> };
   /** `"unknown"` becomes `aria-rowcount="-1"`, which is the specified value. */
   readonly total: number | "unknown";
   readonly sort: readonly SortSpec[];
@@ -74,6 +84,12 @@ export interface RendererOptions<TRow> {
   readonly rowHeight?: number;
   /** Rows rendered beyond each edge of the viewport. */
   readonly overscan?: number;
+  /**
+   * How many columns a cell covers. Used by the masked-region case, where one
+   * "withheld under 42 CFR Part 2" notice spans three columns rather than
+   * repeating in each.
+   */
+  readonly span?: SpanFn<TRow>;
 }
 
 export interface GridRenderer<TRow> {
@@ -237,18 +253,11 @@ export function createGridRenderer<TRow>(
     }
   }
 
-  /** Builds the cells of a row once. Reused for every row that node ever holds. */
-  function buildRow(columns: readonly RenderColumn[]): HTMLElement {
+  /** An empty row shell. Cells are attached per bind, because spans vary by row. */
+  function buildRow(): HTMLElement {
     const row = doc.createElement("div");
     row.setAttribute("role", "row");
     row.style.cssText = "position:absolute;left:0;right:0";
-    columns.forEach((column, i) => {
-      const cell = doc.createElement("div");
-      cell.setAttribute("role", "gridcell");
-      cell.setAttribute("aria-colindex", String(i + 1));
-      cell.dataset["colKey"] = column.key;
-      row.append(cell);
-    });
     return row;
   }
 
@@ -258,21 +267,66 @@ export function createGridRenderer<TRow>(
     m: GridViewModel<TRow>,
     selected: ReadonlySet<string>,
     focus: FocusTarget | null,
+    /** Where to put it: a geometry offset, or a sticky band. */
+    place: { readonly kind: "flow"; readonly top: number } | { readonly kind: "pinned"; readonly edge: "start" | "end" },
   ): void {
     // Absolute, so a screen reader announces "row 19,998" and not the position
-    // within a rendered window of fifteen.
+    // within a rendered window of fifteen. Pinning does not change which row
+    // this is, only where it sits.
     row.setAttribute("aria-rowindex", String(ariaRowIndex(entry.index)));
     row.dataset["rowId"] = entry.id;
     row.dataset["rowIndex"] = String(entry.index);
     if (selected.has(entry.id)) row.setAttribute("aria-selected", "true");
     else row.removeAttribute("aria-selected");
-    row.style.top = `${geometry.offsetOf(entry.index)}px`;
 
-    const cells = row.children;
-    m.columns.forEach((column, i) => {
-      const cell = cells[i] as HTMLElement | undefined;
+    if (place.kind === "pinned") {
+      row.dataset["pinned"] = place.edge;
+      row.style.position = "sticky";
+      row.style.top = place.edge === "start" ? "0px" : "";
+      row.style.bottom = place.edge === "end" ? "0px" : "";
+      row.style.zIndex = "1";
+    } else {
+      delete row.dataset["pinned"];
+      row.style.position = "absolute";
+      row.style.top = `${place.top}px`;
+      row.style.bottom = "";
+      row.style.zIndex = "";
+    }
+
+    const columnKeys = m.columns.map((c) => c.key);
+    const plan = planSpans(entry.row, columnKeys, options.span);
+
+    // The cell set changes with the span, so reconcile length first and then
+    // rebind. A recycled row that spanned three columns must not leave two
+    // orphaned cells behind.
+    while (row.childElementCount > plan.cells.length) {
+      const last = row.lastElementChild as HTMLElement | null;
+      if (!last) break;
+      const r = mounted.get(last);
+      if (r) {
+        r.unmount(last);
+        mounted.delete(last);
+      }
+      last.remove();
+    }
+    while (row.childElementCount < plan.cells.length) {
+      const cell = doc.createElement("div");
+      cell.setAttribute("role", "gridcell");
+      row.append(cell);
+    }
+
+    plan.cells.forEach((planned, i) => {
+      const cell = row.children[i] as HTMLElement | undefined;
       if (!cell) return;
-      const isFocus = focus?.rowId === entry.id && focus.columnKey === column.key;
+      const column = m.columns.find((c) => c.key === planned.key);
+      if (!column) return;
+
+      cell.setAttribute("aria-colindex", String(columnKeys.indexOf(planned.key) + 1));
+      if (planned.span > 1) cell.setAttribute("aria-colspan", String(planned.span));
+      else cell.removeAttribute("aria-colspan");
+      cell.dataset["colKey"] = planned.key;
+
+      const isFocus = focus?.rowId === entry.id && focus.columnKey === planned.key;
       // The body is ONE tab stop: exactly one cell in the whole grid carries
       // tabindex="0". A tab stop per cell is 800 presses to leave a 40x20 grid.
       cell.setAttribute("tabindex", isFocus ? "0" : "-1");
@@ -285,7 +339,10 @@ export function createGridRenderer<TRow>(
     grid.setAttribute("aria-rowcount", String(ariaRowCount(m.total)));
     grid.setAttribute("aria-colcount", String(m.columns.length));
 
-    geometry.setRowCount(m.rows.length);
+    // Pinned rows leave the scrolling band entirely: geometry covers only what
+    // actually scrolls, so pinning a summary row does not shift every offset.
+    const bands = partitionPinned(m.rows, (r) => r.id, m.pinned ?? {});
+    geometry.setRowCount(bands.scrollable.length);
     const focus = resolveFocus(shapeOf(m), m.focus);
 
     // ── header ──────────────────────────────────────────────────────────────
@@ -305,11 +362,12 @@ export function createGridRenderer<TRow>(
         hRow.append(th);
       });
       headGroup.append(hRow);
-      // Column identity changed, so every pooled row's cells are stale.
+      // Column identity changed, so every pooled row's cells are stale. The
+      // pool itself is kept; bindRow reconciles cell counts per row, which it
+      // has to do anyway because spans vary from row to row.
       for (const [el, r] of mounted) r.unmount(el);
       mounted.clear();
-      pool.length = 0;
-      bodyGroup.textContent = "";
+      for (const row of pool) row.textContent = "";
       columnSignature = signature;
     }
 
@@ -329,16 +387,36 @@ export function createGridRenderer<TRow>(
     const w = geometry.windowFor(viewport.scrollTop, viewportHeight, overscan);
     canvas.style.height = `${w.totalHeight}px`;
 
-    const visible = m.rows.slice(w.start, w.end);
+    const visible = bands.scrollable.slice(w.start, w.end);
     // Keep the focused row rendered even when it has scrolled out of the
     // window. Without this, scrolling away from the focused cell recycles its
     // node and the browser drops focus to the document body — and the body is
-    // one tab stop, so there would be nothing to return to.
+    // one tab stop, so there would be nothing to return to. A pinned row is
+    // always rendered, so it never needs keeping.
     const focusIndex =
-      focus && focus.rowId !== HEADER_ROW_ID ? m.rows.findIndex((r) => r.id === focus.rowId) : -1;
+      focus && focus.rowId !== HEADER_ROW_ID
+        ? bands.scrollable.findIndex((r) => r.id === focus.rowId)
+        : -1;
     const keeper =
-      focusIndex >= 0 && (focusIndex < w.start || focusIndex >= w.end) ? m.rows[focusIndex] : undefined;
-    const render = keeper ? [...visible, keeper] : visible;
+      focusIndex >= 0 && (focusIndex < w.start || focusIndex >= w.end)
+        ? bands.scrollable[focusIndex]
+        : undefined;
+
+    /** What renders, and where each one goes. Pinned bands bracket the window. */
+    const render: {
+      entry: RenderRow<TRow>;
+      place: { kind: "flow"; top: number } | { kind: "pinned"; edge: "start" | "end" };
+    }[] = [
+      ...bands.top.map((entry) => ({ entry, place: { kind: "pinned" as const, edge: "start" as const } })),
+      ...visible.map((entry, i) => ({
+        entry,
+        place: { kind: "flow" as const, top: geometry.offsetOf(w.start + i) },
+      })),
+      ...(keeper
+        ? [{ entry: keeper, place: { kind: "flow" as const, top: geometry.offsetOf(focusIndex) } }]
+        : []),
+      ...bands.bottom.map((entry) => ({ entry, place: { kind: "pinned" as const, edge: "end" as const } })),
+    ];
 
     // ── recycle ─────────────────────────────────────────────────────────────
     while (pool.length > render.length) {
@@ -355,16 +433,16 @@ export function createGridRenderer<TRow>(
       row.remove();
     }
     while (pool.length < render.length) {
-      const row = buildRow(m.columns);
+      const row = buildRow();
       pool.push(row);
       bodyGroup.append(row);
       observer?.observe(row);
     }
 
     const selected = new Set(m.selection);
-    render.forEach((entry, i) => {
+    render.forEach((item, i) => {
       const row = pool[i];
-      if (row) bindRow(row, entry, m, selected, focus);
+      if (row) bindRow(row, item.entry, m, selected, focus, item.place);
     });
 
     current = { ...m, focus };
@@ -424,7 +502,10 @@ export function createGridRenderer<TRow>(
     options.onAction({ type: "focus/cell", rowId: next.rowId, columnKey: next.columnKey });
     current = { ...current, focus: next };
     if (next.rowId !== HEADER_ROW_ID) {
-      const i = current.rows.findIndex((r) => r.id === next.rowId);
+      // Index within the scrolling band: a pinned row is always visible, so
+      // scrolling to it would move the viewport for no reason.
+      const scrollable = partitionPinned(current.rows, (r) => r.id, current.pinned ?? {}).scrollable;
+      const i = scrollable.findIndex((r) => r.id === next.rowId);
       if (i >= 0) scrollIntoView(i);
     } else {
       scrollIntoView(0);
