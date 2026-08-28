@@ -30,6 +30,9 @@
     },
     {
       "path": "packages/grid-devtools"
+    },
+    {
+      "path": "packages/grid-ai"
     }
   ]
 }

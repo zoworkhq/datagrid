@@ -13,7 +13,7 @@ import {
   createClientRowModel,
   describeAggregate,
   initialState,
-  PROVISIONAL_CLIENT_ROW_CEILING,
+  DEFAULT_CLIENT_ROW_CEILING,
   sortRows,
   toggleSort,
   type Comparator,
@@ -178,7 +178,7 @@ function recompute(): void {
     comparators,
     // The refusal is a real behaviour, not a hypothetical: pick 200,000 rows
     // in the control above and the grid declines with a reason.
-    maxRows: PROVISIONAL_CLIENT_ROW_CEILING,
+    maxRows: DEFAULT_CLIENT_ROW_CEILING,
   });
   model.setState(state);
   const result = model.result();
@@ -189,7 +189,7 @@ function recompute(): void {
     refusalEl.hidden = false;
     refusalEl.textContent =
       `Client mode refuses ${result.total.toLocaleString()} rows. The ceiling is ` +
-      `${PROVISIONAL_CLIENT_ROW_CEILING.toLocaleString()}, above which the server owns the set. ` +
+      `${DEFAULT_CLIENT_ROW_CEILING.toLocaleString()}, above which the server owns the set. ` +
       `A silent four-second sort is worse than a clear error. ` +
       `(The constant is provisional and unmeasured — it needs a real ward workstation.)`;
   } else {

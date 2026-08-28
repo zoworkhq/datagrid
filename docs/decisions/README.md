@@ -20,6 +20,8 @@ Format: **Context** (the forces, stated honestly) → **Decision** (what we do)
 | [0006](0006-the-grids-layers-are-named-not-numbered.md) | The grid's layers are named, not numbered | accepted |
 | [0007](0007-server-rendered-adoption-needs-an-app-owned-host.md) | Server-rendered adoption needs an app-owned host | accepted |
 | [0008](0008-what-a-cell-may-decide.md) | A cell renders a clinical state; it never derives one | accepted |
+| [0009](0009-the-licence-is-mit-and-the-support-posture-is-stated.md) | MIT for everything, and a stated support posture | accepted |
+| [0010](0010-what-wave-six-is-not.md) | Four wave-six bets, declined or reshaped | accepted |
 
 ## Inherited from Oxygen UI
 

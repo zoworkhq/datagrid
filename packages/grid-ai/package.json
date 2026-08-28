@@ -1,0 +1,15 @@
+{
+  "name": "@oxygenui-design/grid-ai",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Provenance and refusal. Proposals are never applied, and an AI-derived value cannot be mistaken for a verified one.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist"],
+  "scripts": { "build": "tsc --build", "test": "vitest run --passWithNoTests", "size": "size-limit" },
+  "oxygen": { "layer": "plugin", "budget": "6 KB", "wave": 6 },
+  "size-limit": [{ "path": "dist/index.js", "limit": "6 KB", "ignore": ["@oxygenui-design/grid-core"] }],
+  "dependencies": { "@oxygenui-design/grid-core": "workspace:*" }
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  PROVISIONAL_CLIENT_ROW_CEILING,
+  DEFAULT_CLIENT_ROW_CEILING,
   createClientRowModel,
   createServerRowModel,
   queryFrom,
@@ -59,8 +59,14 @@ describe("the client row model", () => {
     expect(r.total).toBe(11);
   });
 
-  it("labels its ceiling as provisional rather than measured", () => {
-    expect(PROVISIONAL_CLIENT_ROW_CEILING).toBe(100_000);
+  it("ships a documented DEFAULT, and the deployment overrides it", () => {
+    // The number that matters is total retained heap on the target device, and
+    // that varies by deployment more than it varies by grid. So this is a
+    // default to override, not a measurement we owe anyone.
+    expect(DEFAULT_CLIENT_ROW_CEILING).toBe(100_000);
+    const m = createClientRowModel({ rows, rowKey, get, maxRows: 2 });
+    m.setState(initialState());
+    expect(m.result().errors.map((e) => e.code)).toEqual(["client-mode-refused"]);
   });
 
   it("memoises -- re-reading does not re-run the comparator", () => {

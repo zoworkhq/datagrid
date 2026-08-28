@@ -42,24 +42,48 @@ export interface RowModel<TRow> {
 }
 
 /**
- * ── PROVISIONAL. NOT YET MEASURED. ──────────────────────────────────────────
+ * ── A DEFAULT, NOT A MEASUREMENT — AND THE RIGHT NUMBER IS YOURS ────────────
  *
- * The real constant is measured on the CI machine at the density where the
- * budget breaks, and is blocked on the wave 2 benchmark. This placeholder comes
- * from the published ceiling in the architecture review (~100k), NOT from our
- * own measurement, and it must not be cited as though it were.
+ * This is the published ceiling from the architecture review (~100k), not a
+ * number measured on your hardware. It cannot be: the constant that decides
+ * whether client mode is offered is TOTAL RETAINED HEAP on the device the grid
+ * runs on, and that varies by deployment more than it varies by grid.
  *
  * For scale: TanStack Table v9 — the best-measured engine in the category —
  * retains 380 MB for one million rows by eight columns. A clinical grid has
  * forty, on a shared workstation with 4 GB and an EHR already open.
+ *
+ * **Measure your own and pass it as `maxRows`.** The procedure:
+ *
+ *   1. Load a representative row shape — your real column count, not eight.
+ *   2. Take a heap snapshot on the target device class, not a developer laptop.
+ *   3. Find the row count where retained heap crosses what that device can
+ *      spare with the applications a clinician actually has open.
+ *   4. Use it. It will be lower than this default, and it should be.
+ *
+ * `bench/browser.mjs` runs the interaction half of that on a CPU-throttled
+ * Chromium; the heap half needs the real machine.
  */
-export const PROVISIONAL_CLIENT_ROW_CEILING = 100_000;
+export const DEFAULT_CLIENT_ROW_CEILING = 100_000;
+
+/**
+ * @deprecated Renamed to `DEFAULT_CLIENT_ROW_CEILING`. The old name implied a
+ * measurement was pending; it is a default, and the measured number is the
+ * deployment's to supply.
+ */
+export const PROVISIONAL_CLIENT_ROW_CEILING = DEFAULT_CLIENT_ROW_CEILING;
 
 export interface ClientRowModelOptions<TRow> {
   readonly rows: readonly TRow[];
   readonly rowKey: (row: TRow) => string;
   readonly get: Accessor<TRow>;
   readonly comparators?: Readonly<Record<string, Comparator<TRow>>>;
+  /**
+   * The row count above which client mode refuses.
+   *
+   * Measure it on your target device class rather than taking the default —
+   * see `DEFAULT_CLIENT_ROW_CEILING`.
+   */
   readonly maxRows?: number;
 }
 
@@ -82,7 +106,7 @@ function defaultComparator<TRow>(get: Accessor<TRow>, key: string): Comparator<T
 }
 
 export function createClientRowModel<TRow>(options: ClientRowModelOptions<TRow>): RowModel<TRow> {
-  const ceiling = options.maxRows ?? PROVISIONAL_CLIENT_ROW_CEILING;
+  const ceiling = options.maxRows ?? DEFAULT_CLIENT_ROW_CEILING;
   const source = signal(options.rows);
   const state = signal<GridState | null>(null);
 

@@ -45,6 +45,12 @@ importers:
         specifier: 4.1.11
         version: 4.1.11(@types/node@22.10.5)(jsdom@30.0.1)(vite@8.2.2(@types/node@22.10.5)(esbuild@0.28.2)(yaml@2.9.0))
 
+  packages/grid-ai:
+    dependencies:
+      '@oxygenui-design/grid-core':
+        specifier: workspace:*
+        version: link:../grid-core
+
   packages/grid-clipboard:
     dependencies:
       '@oxygenui-design/grid-core':

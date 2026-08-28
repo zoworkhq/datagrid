@@ -8,13 +8,13 @@ A framework-agnostic, virtualised enterprise data grid with a healthcare layer<b
 built in — for EHR, behavioural-health, clinical, operational and billing workflows.
 
 <sub>
-<img alt="engine 6.8 KB of a 22 KB budget" src="https://img.shields.io/badge/engine-6.8%20KB%20%2F%2022%20KB-0E7C66.svg" />
+<img alt="engine 7.3 KB of a 22 KB budget" src="https://img.shields.io/badge/engine-7.3%20KB%20%2F%2022%20KB-0E7C66.svg" />
 <img alt="React adapter 456 bytes" src="https://img.shields.io/badge/react%20adapter-456%20B-0E7C66.svg" />
 <img alt="one external runtime dependency" src="https://img.shields.io/badge/runtime%20deps-1-0E7C66.svg" />
-<img alt="329 tests" src="https://img.shields.io/badge/tests-329-0E7C66.svg" />
-<img alt="7 accepted decision records" src="https://img.shields.io/badge/ADRs-7%20accepted-0E7C66.svg" />
+<img alt="409 tests" src="https://img.shields.io/badge/tests-409-0E7C66.svg" />
+<img alt="10 accepted decision records" src="https://img.shields.io/badge/ADRs-10%20accepted-0E7C66.svg" />
 <img alt="not published to npm" src="https://img.shields.io/badge/npm-not%20published-b7791f.svg" />
-<img alt="MIT, provisional" src="https://img.shields.io/badge/license-MIT%20(provisional)-blue.svg" />
+<img alt="MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" />
 </sub>
 
 </div>
@@ -23,8 +23,10 @@ built in — for EHR, behavioural-health, clinical, operational and billing work
 
 > ### Nothing here is published, and one thing is unreviewed
 >
-> Every package is `private: true`. Publication is blocked on a licence and
-> support decision that has not been made — see [Status](#status).
+> Every package is `private: true`. The licence question is
+> [settled](docs/decisions/0009-the-licence-is-mit-and-the-support-posture-is-stated.md) —
+> MIT, everything — but publishing is a deliberate act nobody has performed,
+> because a first publish claims names on a public registry.
 >
 > **No clinician has reviewed the clinical layer.** Every clinical rule in this
 > repository is derived from published literature and general knowledge, and is
@@ -159,14 +161,17 @@ starts making its own ARIA decisions it fails. Both adapters are under
 
 | Package | Layer | Size | Budget |
 | --- | --- | --- | --- |
-| [`grid-core`](packages/grid-core) | engine | 6.82 KB | 22 KB |
+| [`grid-core`](packages/grid-core) | engine | 7.34 KB | 22 KB |
 | [`grid-signals`](packages/grid-signals) | engine | 1.66 KB | 3 KB |
-| [`grid-dom`](packages/grid-dom) | render | 4.88 KB | 18 KB |
-| [`grid-healthcare`](packages/grid-healthcare) | domain | 449 B | 16 KB |
+| [`grid-dom`](packages/grid-dom) | render | 4.94 KB | 18 KB |
+| [`grid-healthcare`](packages/grid-healthcare) | domain | 2.13 KB | 16 KB |
 | [`grid-fhir`](packages/grid-fhir) | domain | 1.66 KB | 9 KB |
 | [`grid-react`](packages/grid-react) | adapter | 456 B | 4 KB |
 | [`grid-element`](packages/grid-element) | adapter | 585 B | 6 KB |
 | [`grid-export`](packages/grid-export) | plugin | 2.76 KB | 7 KB |
+| [`grid-clipboard`](packages/grid-clipboard) | plugin | 1.05 KB | 5 KB |
+| [`grid-devtools`](packages/grid-devtools) | plugin | 893 B | 6 KB |
+| [`grid-ai`](packages/grid-ai) | plugin | 868 B | 6 KB |
 
 Brotlied, each package's own code. **One external runtime dependency in the
 whole workspace** — `alien-signals`, imported by exactly one file so that TC39
@@ -187,7 +192,7 @@ taxonomy and disclosure types · serialisable views with a precedence chain ·
 selection algebra with drift detection · bulk review · CSV, XLSX and the print
 sheet · the FHIR source · SSR with adoption.
 
-**Gated in CI.** Types · 329 tests · 15 layer rules · per-package size budgets ·
+**Gated in CI.** Types · 409 tests · 15 layer rules · per-package size budgets ·
 structural axe · a memory-leak gate over 200 mount/unmount cycles · engine and
 browser performance harnesses.
 
@@ -195,13 +200,18 @@ browser performance harnesses.
 disclosure policy — all held on a clinician reviewer. The Angular and Vue
 adapters. Docs site, playground, codemods. Everything in wave 6.
 
-**Not decided.** Licence and support posture, which blocks publishing ·
-behavioural health versus general digital health, which changes which recipes
-get built · the Angular build toolchain · the client-mode refusal constant,
-which needs a real ward workstation.
+**Decided, and recorded.** MIT throughout, with no commercial split until
+there is something built to split ([0009](docs/decisions/0009-the-licence-is-mit-and-the-support-posture-is-stated.md)).
+The transposed layout is a second component rather than a `layout` prop;
+DuckDB-WASM and a Vue package are declined with reasons; the AI plugin ships
+provenance and refusal and not the model ([0010](docs/decisions/0010-what-wave-six-is-not.md)).
+
+**Still open.** The clinical reviewer. The Angular build toolchain. And the
+client-mode ceiling, which is now a documented default you measure and override
+rather than a number we owe you.
 
 Read [`HANDOVER.md`](HANDOVER.md) for the full context, and
-[`docs/decisions/`](docs/decisions/) for the seven records that gate the code.
+[`docs/decisions/`](docs/decisions/) for the ten records that gate the code.
 
 ### On the gates
 
@@ -244,10 +254,10 @@ pnpm install && pnpm gate
 
 ```
 HANDOVER.md              the seed context — read this first
-packages/                eight packages across five layers
+packages/                eleven packages across five layers
 bench/                   engine and browser performance harnesses
 docs/
-├─ decisions/            seven ADRs, accepted — the ones that gate code
+├─ decisions/            ten ADRs, accepted — the ones that gate code
 └─ research/             the product brief and architecture review, and the
                          Python sources both are generated from
 ```
@@ -261,9 +271,11 @@ rather than reimplement.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). **Provisional.** The intended split is MIT for
-everything a security reviewer must read, with a separate commercial licence
-only for an enterprise recipe pack. That decision is not made, and no package
-publishes until it is ([`HANDOVER.md`](HANDOVER.md) §7).
+MIT — see [LICENSE](LICENSE). Every package, including the healthcare and FHIR
+layers. There is no dual licence and no commercial pack: splitting a licence
+around a product nobody has built means guessing at the seam, and the audience
+here is a security reviewer who should be able to read all of it
+([ADR 0009](docs/decisions/0009-the-licence-is-mit-and-the-support-posture-is-stated.md)).
 
-Support posture is likewise undecided. Until it is stated, assume none.
+**Support posture, stated plainly:** issues are triaged weekly. Support is not
+guaranteed and is not a contract. Silence would imply an SLA nobody agreed to.
