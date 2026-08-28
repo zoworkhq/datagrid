@@ -8,6 +8,9 @@
  * @see ../../../docs/decisions/0006-the-grids-layers-are-named-not-numbered.md
  */
 export * from "./actions.js";
+export * from "./aggregate.js";
+export * from "./group.js";
+export * from "./live.js";
 export * from "./column.js";
 export * from "./errors.js";
 export * from "./export-value.js";
