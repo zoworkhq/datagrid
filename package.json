@@ -15,7 +15,10 @@
     "size": "turbo run size",
     "gate": "pnpm typecheck && pnpm test && pnpm lint:layers && pnpm size",
     "changeset": "changeset",
-    "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo .turbo"
+    "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo .turbo",
+    "bench": "pnpm build && node --expose-gc bench/run.mjs",
+    "bench:check": "pnpm build && node --expose-gc bench/run.mjs --check",
+    "bench:write": "pnpm build && node --expose-gc bench/run.mjs --write"
   },
   "devDependencies": {
     "@changesets/cli": "3.0.1",

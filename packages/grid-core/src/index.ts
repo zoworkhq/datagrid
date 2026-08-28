@@ -19,3 +19,4 @@ export * from "./keymap.js";
 export * from "./query.js";
 export * from "./sort.js";
 export * from "./state.js";
+export * from "./view.js";

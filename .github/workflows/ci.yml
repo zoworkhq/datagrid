@@ -1,7 +1,7 @@
 # The gates that guard wave 1.
 #
 # "A gate added later never catches the regression that mattered" — so these
-# exist before the code they guard. Five are live today; the rest are declared
+# exist before the code they guard. Six are live today; the rest are declared
 # and not yet wired, and are listed at the bottom of this file rather than left
 # undiscovered. A gate that is quietly absent is worse than one that is
 # openly pending.
@@ -51,6 +51,20 @@ jobs:
       - name: size
         run: pnpm size
 
+      # 5. Engine performance. Sort, filter, geometry and row-model heap at
+      #    1k/10k/100k, compared against a recorded baseline with 40% headroom
+      #    for runner noise — a ratchet that fails on noise gets disabled,
+      #    which is worse than no ratchet.
+      #
+      #    NOTE: the ratchet SELF-SKIPS when the baseline's platform differs
+      #    from the runner's, and the only baseline committed today is
+      #    darwin-arm64. On linux-x64 CI it therefore prints and passes without
+      #    comparing. To arm it, run `pnpm bench:write` on a runner and commit
+      #    bench/baseline.linux-x64.json. Until then this step is a measurement,
+      #    not a gate, and should not be described as one.
+      - name: performance
+        run: pnpm bench:check
+
   # ── Declared, not yet wired ────────────────────────────────────────────────
   #
   # accessibility  PARTIAL. Structural axe runs in jsdom on every commit. What
@@ -60,10 +74,13 @@ jobs:
   #                governs leaving `experimental`. Plan it as work, not as a
   #                discovery. The cross-adapter tree assertion becomes
   #                meaningful when the second adapter exists (wave 4).
-  # performance    First paint, sort, filter keystroke, frame time and heap at
-  #                1k/10k/100k, CPU-throttled on the CI machine, ratcheted.
-  #                Wave 2, with the virtualiser. A budget measured on an
-  #                M-series laptop has not been measured.
+  # performance    PARTIAL. Engine operations are measured and ratchable (see
+  #                step 5), but the ratchet is not yet armed on this runner.
+  #                NOT measured at all: first paint, scroll frame time and INP.
+  #                Those need a real engine with layout and a Playwright
+  #                harness. Until that exists, the paint and 60 fps columns of
+  #                the budget table are unverified claims — do not cite them as
+  #                measured. CPU throttling also needs the browser harness.
   # memory         200 mount/unmount cycles with a heap-growth threshold, and
   #                every plugin's teardown asserted. Wave 3. Nobody in this
   #                category gates on this, and the failure mode is a ward
