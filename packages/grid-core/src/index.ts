@@ -25,6 +25,7 @@ export * from "./row-model.js";
 export * from "./selection.js";
 export * from "./keymap.js";
 export * from "./query.js";
+export * from "./reorder.js";
 export * from "./sort.js";
 export * from "./state.js";
 export * from "./view.js";

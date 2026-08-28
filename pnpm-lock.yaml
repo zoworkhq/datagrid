@@ -57,6 +57,12 @@ importers:
         specifier: workspace:*
         version: link:../grid-signals
 
+  packages/grid-devtools:
+    dependencies:
+      '@oxygenui-design/grid-core':
+        specifier: workspace:*
+        version: link:../grid-core
+
   packages/grid-dom:
     dependencies:
       '@oxygenui-design/grid-core':
