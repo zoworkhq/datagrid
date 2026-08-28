@@ -1,8 +1,8 @@
 # The gates that guard wave 1.
 #
 # "A gate added later never catches the regression that mattered" — so these
-# exist before the code they guard. Four are live today; three are declared and
-# not yet wired, and are listed at the bottom of this file rather than left
+# exist before the code they guard. Five are live today; the rest are declared
+# and not yet wired, and are listed at the bottom of this file rather than left
 # undiscovered. A gate that is quietly absent is worse than one that is
 # openly pending.
 name: ci
@@ -35,8 +35,11 @@ jobs:
       - name: typecheck
         run: pnpm typecheck
 
-      # 2. Behaviour. Includes the three security tests that exist because the
-      #    architecture review found three defects.
+      # 2. Behaviour. Includes the security tests that exist because the
+      #    architecture review found three defects, the keyboard-only suite
+      #    (no test in it dispatches a pointer event), and the structural axe
+      #    gate — which caught a critical role="grid" violation on the day it
+      #    was wired.
       - name: test
         run: pnpm test
 
@@ -50,10 +53,13 @@ jobs:
 
   # ── Declared, not yet wired ────────────────────────────────────────────────
   #
-  # accessibility  axe across three engines, plus the cross-adapter
-  #                accessibility-tree assertion. Wired when grid-dom renders
-  #                (wave 1) and meaningful when the second adapter exists
-  #                (wave 4).
+  # accessibility  PARTIAL. Structural axe runs in jsdom on every commit. What
+  #                is NOT covered: every rule needing layout — colour contrast,
+  #                target size, focus-not-obscured — plus the NVDA / JAWS /
+  #                VoiceOver x 3-engine matrix, which cannot be automated and
+  #                governs leaving `experimental`. Plan it as work, not as a
+  #                discovery. The cross-adapter tree assertion becomes
+  #                meaningful when the second adapter exists (wave 4).
   # performance    First paint, sort, filter keystroke, frame time and heap at
   #                1k/10k/100k, CPU-throttled on the CI machine, ratcheted.
   #                Wave 2, with the virtualiser. A budget measured on an

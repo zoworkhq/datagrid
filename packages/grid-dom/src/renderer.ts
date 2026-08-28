@@ -83,6 +83,12 @@ export function createGridRenderer<TRow>(
   const keymap = options.keymap ?? DEFAULT_KEYMAP;
   const pageRows = options.pageRows ?? 20;
 
+  // The live region is a SIBLING of the grid, not a child of it: role="grid"
+  // owns its children and admits only rowgroup and row. axe flags a role=status
+  // inside it as a critical violation, and it is right to.
+  const root = doc.createElement("div");
+  root.className = "oxg-root";
+
   const grid = doc.createElement("div");
   grid.setAttribute("role", "grid");
   grid.setAttribute("aria-label", options.label);
@@ -105,8 +111,9 @@ export function createGridRenderer<TRow>(
   live.style.cssText =
     "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap";
 
-  grid.append(headGroup, bodyGroup, live);
-  host.append(grid);
+  grid.append(headGroup, bodyGroup);
+  root.append(grid, live);
+  host.append(root);
 
   let current: GridViewModel<TRow> | null = null;
   const mounted = new Map<HTMLElement, CellRenderer<TRow>>();
@@ -323,7 +330,7 @@ export function createGridRenderer<TRow>(
       grid.removeEventListener("focusin", onFocusIn);
       for (const [el, r] of mounted) r.unmount(el);
       mounted.clear();
-      grid.remove();
+      root.remove();
       current = null;
     },
   };
