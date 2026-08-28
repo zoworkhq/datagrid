@@ -109,50 +109,65 @@ export function createGridRenderer<TRow>(
   const overscan = options.overscan ?? 4;
   const estimate = options.rowHeight ?? 40;
 
+  // ── phase 2 of the SSR boundary ─────────────────────────────────────────
+  // If the server rendered a first page into this host, ADOPT those nodes
+  // rather than clearing and rebuilding. Replacing them is what produces the
+  // flash, the lost scroll position and the hydration warning that make teams
+  // wrap a grid in a dynamic import and stop trusting it. See ssr.ts.
+  // `:not([data-oxg-live])` matters: only *server* markup may be adopted. A
+  // root that a live renderer already owns is never adopted, because two
+  // renderers sharing one DOM tree would recycle each other's rows.
+  const existing = host.querySelector<HTMLElement>(":scope > .oxg-root:not([data-oxg-live])");
+  const hydrating = existing !== null;
+
+  const make = (tag: string, cls: string, from: HTMLElement | null): HTMLElement => {
+    const el = from ?? doc.createElement(tag);
+    el.className = cls;
+    return el;
+  };
+  const within = (parent: HTMLElement | null, selector: string): HTMLElement | null =>
+    hydrating && parent ? parent.querySelector<HTMLElement>(selector) : null;
+
+  const root = make("div", "oxg-root", existing);
+
   // The live region is a SIBLING of the grid, not a child of it: role="grid"
   // owns its children and admits only rowgroup and row. axe flags a role=status
   // inside it as a critical violation, and it is right to.
-  const root = doc.createElement("div");
-  root.className = "oxg-root";
-
-  const grid = doc.createElement("div");
+  const grid = make("div", "oxg", within(root, ':scope > [role="grid"]'));
   grid.setAttribute("role", "grid");
   grid.setAttribute("aria-label", options.label);
-  grid.className = "oxg";
 
-  const headGroup = doc.createElement("div");
+  const headGroup = make("div", "oxg-head", within(grid, ':scope > .oxg-head'));
   headGroup.setAttribute("role", "rowgroup");
-  headGroup.className = "oxg-head";
 
   // The scroller and the canvas carry role="presentation" so they do not appear
   // between role="grid" and its rowgroups in the accessibility tree. Without
   // that, the required-children rule fails — the same defect as the live region.
-  const viewport = doc.createElement("div");
+  const viewport = make("div", "oxg-viewport", within(grid, ":scope > .oxg-viewport"));
   viewport.setAttribute("role", "presentation");
-  viewport.className = "oxg-viewport";
   viewport.style.cssText = "overflow-y:auto;overflow-x:hidden;position:relative";
 
-  const canvas = doc.createElement("div");
+  const canvas = make("div", "oxg-canvas", within(viewport, ":scope > .oxg-canvas"));
   canvas.setAttribute("role", "presentation");
-  canvas.className = "oxg-canvas";
-  canvas.style.cssText = "position:relative;width:100%";
+  if (!hydrating) canvas.style.cssText = "position:relative;width:100%";
 
-  const bodyGroup = doc.createElement("div");
+  const bodyGroup = make("div", "oxg-body", within(canvas, ":scope > .oxg-body"));
   bodyGroup.setAttribute("role", "rowgroup");
-  bodyGroup.className = "oxg-body";
 
-  const live = doc.createElement("div");
+  const live = make("div", "oxg-live", within(root, ":scope > .oxg-live"));
   live.setAttribute("role", "status");
   live.setAttribute("aria-live", "polite");
-  live.className = "oxg-live";
   live.style.cssText =
     "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap";
 
-  canvas.append(bodyGroup);
-  viewport.append(canvas);
-  grid.append(headGroup, viewport);
-  root.append(grid, live);
-  host.append(root);
+  if (!hydrating) {
+    canvas.append(bodyGroup);
+    viewport.append(canvas);
+    grid.append(headGroup, viewport);
+    root.append(grid, live);
+    host.append(root);
+  }
+  root.dataset["oxgLive"] = "1";
 
   const geometry: Geometry = createGeometry(0, estimate);
 
@@ -160,6 +175,15 @@ export function createGridRenderer<TRow>(
   let columnSignature = "";
   /** Recycled row nodes, in DOM order. Never destroyed while the grid lives. */
   const pool: HTMLElement[] = [];
+
+  if (hydrating) {
+    // Take the server's rows into the recycling pool, and derive the column
+    // signature the same way paint does — so a matching header is not rebuilt.
+    pool.push(...(Array.from(bodyGroup.children) as HTMLElement[]));
+    columnSignature = Array.from(headGroup.querySelectorAll<HTMLElement>('[role="columnheader"]'))
+      .map((th) => `${th.dataset["colKey"] ?? ""}:${th.textContent ?? ""}`)
+      .join("|");
+  }
   const mounted = new Map<HTMLElement, CellRenderer<TRow>>();
   let suppressScroll = false;
 
@@ -499,6 +523,8 @@ export function createGridRenderer<TRow>(
             if (Number.isFinite(index)) applyMeasurement(index, el.getBoundingClientRect().height);
           }
         });
+
+  if (observer) for (const row of pool) observer.observe(row);
 
   grid.addEventListener("keydown", onKeyDown);
   grid.addEventListener("focusin", onFocusIn);

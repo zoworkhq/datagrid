@@ -97,3 +97,62 @@ describe("the React adapter", () => {
     });
   });
 });
+
+describe("the SSR boundary", () => {
+  it("React clears server markup in a container it owns -- verified, not assumed", async () => {
+    // suppressHydrationWarning only silences the warning; React still deletes
+    // children it did not render. This is why ADR 0007 exists, and why the
+    // supported adoption path is an app-owned host.
+    const { renderToString } = await import("@oxygenui-design/grid-dom");
+    const { hydrateRoot } = await import("react-dom/client");
+    const m = model(5);
+    container.innerHTML = `<div>${renderToString(m, { label: "g", fallback })}</div>`;
+    expect(container.querySelector(".oxg-root")).not.toBeNull();
+
+    // React does not merely discard the subtree: it throws a hydration
+    // mismatch and falls back to a full client render. Capturing it here
+    // rather than letting it escape, because it IS the finding.
+    const recoverable: unknown[] = [];
+    let hydrated: Root;
+    act(() => {
+      hydrated = hydrateRoot(
+        container,
+        <DataGrid model={m} label="g" onAction={() => {}} fallback={fallback} />,
+        { onRecoverableError: (e) => recoverable.push(e) },
+      );
+    });
+    expect(recoverable.length).toBeGreaterThan(0);
+    // The server subtree is gone, and the renderer built a fresh one.
+    expect(container.querySelectorAll(".oxg-root")).toHaveLength(1);
+    expect(container.querySelectorAll('.oxg-body [role="row"]')).toHaveLength(5);
+    act(() => hydrated.unmount());
+    act(() => {
+      root = createRoot(container);
+    });
+  });
+
+  it("adopts the server page when the host is app-owned", async () => {
+    const { renderToString } = await import("@oxygenui-design/grid-dom");
+    const m = model(5);
+    // An element React does not render into, so React never touches it.
+    const appHost = document.createElement("div");
+    document.body.append(appHost);
+    appHost.innerHTML = renderToString(m, { label: "Patient roster", fallback });
+    const serverRows = Array.from(appHost.querySelectorAll('.oxg-body [role="row"]'));
+    expect(serverRows).toHaveLength(5);
+
+    act(() => {
+      root.render(
+        <DataGrid model={m} host={appHost} label="Patient roster" onAction={() => {}} fallback={fallback} />,
+      );
+    });
+
+    expect(appHost.querySelectorAll(".oxg-root")).toHaveLength(1);
+    for (const node of appHost.querySelectorAll('.oxg-body [role="row"]')) {
+      expect(serverRows).toContain(node); // adopted, not rebuilt
+    }
+    expect(appHost.querySelectorAll('[tabindex="0"]')).toHaveLength(1);
+    expect(container.querySelector(".oxg-root")).toBeNull(); // renders nothing itself
+    appHost.remove();
+  });
+});

@@ -18,6 +18,7 @@ Format: **Context** (the forces, stated honestly) → **Decision** (what we do)
 | [0004](0004-npm-only-distribution.md) | The grid ships on npm only; dual-channel distribution does not apply | accepted |
 | [0005](0005-coverage-may-report-an-unknown-total.md) | Coverage may report an unknown total | accepted |
 | [0006](0006-the-grids-layers-are-named-not-numbered.md) | The grid's layers are named, not numbered | accepted |
+| [0007](0007-server-rendered-adoption-needs-an-app-owned-host.md) | Server-rendered adoption needs an app-owned host | accepted |
 
 ## Inherited from Oxygen UI
 
@@ -33,6 +34,7 @@ architecture** and had to be settled before code was written:
 | 0004 | [Oxygen ADR 0002](https://github.com/zoworkhq/oxygenui/blob/main/content/decisions/0002-dual-channel-distribution.md) — makes npm + copy-source registry mandatory for every release |
 | 0005 | [Oxygen ADR 0011](https://github.com/zoworkhq/oxygenui/blob/main/content/decisions/0011-summaries-declare-their-boundaries.md) — *amended*, not overridden: the obligation stands, one field's type changes |
 | 0006 | [Oxygen `ENGINEERING.md` §2](https://github.com/zoworkhq/oxygenui/blob/main/ENGINEERING.md) — the `L0`–`L4` layer model, whose labels collided with this repository's |
+| 0007 | [Oxygen ADR 0009](https://github.com/zoworkhq/oxygenui/blob/main/content/decisions/0009-supply-chain-and-component-constraints.md) — forbids `dangerouslySetInnerHTML`, which is what React would need to adopt a server-rendered page |
 
 ## When a change needs a record here
 

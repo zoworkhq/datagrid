@@ -32,6 +32,16 @@ import {
 
 export interface DataGridProps<TRow> {
   readonly model: GridViewModel<TRow>;
+  /**
+   * An app-owned element to mount into, instead of a container React renders.
+   *
+   * This is the supported path for adopting a server-rendered first page.
+   * React deletes children it did not render — `suppressHydrationWarning` only
+   * silences the warning — so server markup inside a React-owned container is
+   * cleared on mount. An element React does not own survives, and
+   * `createGridRenderer` adopts it. See ADR 0007.
+   */
+  readonly host?: HTMLElement | null;
   /** The grid's accessible name. "Patient roster", not "grid". */
   readonly label: string;
   readonly onAction: (action: GridAction) => void;
@@ -56,7 +66,7 @@ export function DataGrid<TRow>(props: DataGridProps<TRow>) {
   latest.current = props;
 
   useLayoutEffect(() => {
-    const el = host.current;
+    const el = latest.current.host ?? host.current;
     if (!el) return;
     renderer.current = createGridRenderer<TRow>(el, {
       label: latest.current.label,
@@ -75,6 +85,10 @@ export function DataGrid<TRow>(props: DataGridProps<TRow>) {
     renderer.current?.render(props.model);
   }, [props.model]);
 
+  // When the caller supplied its own host, this component renders nothing —
+  // the grid lives in an element React does not own, which is what lets a
+  // server-rendered first page survive to be adopted. See ADR 0007.
+  if (props.host) return null;
   return <div ref={host} className={props.className} />;
 }
 
