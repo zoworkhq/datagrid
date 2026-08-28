@@ -36,7 +36,7 @@ import {
 import { ariaRowCount, ariaRowIndex } from "./aria.js";
 import { setCellContent, type CellContent, type CellRenderer } from "./cell.js";
 import { chordOf, moveForBinding, resolveBinding } from "./keyboard.js";
-import { moveFocus, resolveFocus, type GridShape } from "./focus.js";
+import { moveFocus, type GridShape } from "./focus.js";
 
 /** The header is row 1 of the grid, and is navigable — arrowing up from the first data row reaches it. */
 export const HEADER_ROW_ID = "__oxg_header__";
@@ -203,6 +203,46 @@ export function createGridRenderer<TRow>(
   const mounted = new Map<HTMLElement, CellRenderer<TRow>>();
   let suppressScroll = false;
 
+  /**
+   * Band split and row index, memoised on the model.
+   *
+   * `paint` runs on every scroll frame. Partitioning 100,000 rows and scanning
+   * for the focused row there made scroll cost O(rows) — the browser harness
+   * measured p95 frame time going 9.7 ms at 10k to 30 ms at 100k, with every
+   * frame dropped. Scroll must be O(window); only a model change is O(rows).
+   */
+  let bandsCache: {
+    rows: unknown;
+    pinned: unknown;
+    bands: { top: RenderRow<TRow>[]; scrollable: readonly RenderRow<TRow>[]; bottom: RenderRow<TRow>[] };
+    indexById: Map<string, number>;
+    allIds: Set<string>;
+  } | null = null;
+
+  function bandsOf(m: GridViewModel<TRow>): NonNullable<typeof bandsCache> {
+    const pinned = m.pinned ?? null;
+    if (bandsCache && bandsCache.rows === m.rows && bandsCache.pinned === pinned) return bandsCache;
+
+    const hasPins = (pinned?.top?.size ?? 0) > 0 || (pinned?.bottom?.size ?? 0) > 0;
+    const split = hasPins
+      ? partitionPinned(m.rows, (r) => r.id, pinned ?? {})
+      : { top: [] as RenderRow<TRow>[], scrollable: m.rows, bottom: [] as RenderRow<TRow>[] };
+
+    const indexById = new Map<string, number>();
+    split.scrollable.forEach((r, i) => indexById.set(r.id, i));
+    const allIds = new Set<string>();
+    for (const r of m.rows) allIds.add(r.id);
+
+    bandsCache = {
+      rows: m.rows,
+      pinned,
+      bands: { top: [...split.top], scrollable: split.scrollable, bottom: [...split.bottom] },
+      indexById,
+      allIds,
+    };
+    return bandsCache;
+  }
+
   const shapeOf = (m: GridViewModel<TRow>): GridShape => ({
     rowIds: [HEADER_ROW_ID, ...m.rows.map((r) => r.id)],
     columnKeys: m.columns.map((c) => c.key),
@@ -341,9 +381,25 @@ export function createGridRenderer<TRow>(
 
     // Pinned rows leave the scrolling band entirely: geometry covers only what
     // actually scrolls, so pinning a summary row does not shift every offset.
-    const bands = partitionPinned(m.rows, (r) => r.id, m.pinned ?? {});
+    const cached = bandsOf(m);
+    const bands = cached.bands;
     geometry.setRowCount(bands.scrollable.length);
-    const focus = resolveFocus(shapeOf(m), m.focus);
+
+    // Resolved against the memoised id set rather than by rebuilding the whole
+    // rowId array — `shapeOf` is O(rows) and this runs on every scroll frame.
+    // Same semantics as `resolveFocus`: an unusable target falls back to the
+    // header's first column, so the body always has exactly one tab stop.
+    const columnKeys = m.columns.map((c) => c.key);
+    const firstCell: FocusTarget | null =
+      columnKeys.length > 0 ? { rowId: HEADER_ROW_ID, columnKey: columnKeys[0] as string } : null;
+    const wanted = m.focus;
+    const focus: FocusTarget | null =
+      wanted &&
+      firstCell &&
+      (wanted.rowId === HEADER_ROW_ID || cached.allIds.has(wanted.rowId)) &&
+      columnKeys.includes(wanted.columnKey)
+        ? wanted
+        : firstCell;
 
     // ── header ──────────────────────────────────────────────────────────────
     const signature = m.columns.map((c) => `${c.key}:${c.header}`).join("|");
@@ -394,9 +450,7 @@ export function createGridRenderer<TRow>(
     // one tab stop, so there would be nothing to return to. A pinned row is
     // always rendered, so it never needs keeping.
     const focusIndex =
-      focus && focus.rowId !== HEADER_ROW_ID
-        ? bands.scrollable.findIndex((r) => r.id === focus.rowId)
-        : -1;
+      focus && focus.rowId !== HEADER_ROW_ID ? (cached.indexById.get(focus.rowId) ?? -1) : -1;
     const keeper =
       focusIndex >= 0 && (focusIndex < w.start || focusIndex >= w.end)
         ? bands.scrollable[focusIndex]
@@ -504,8 +558,7 @@ export function createGridRenderer<TRow>(
     if (next.rowId !== HEADER_ROW_ID) {
       // Index within the scrolling band: a pinned row is always visible, so
       // scrolling to it would move the viewport for no reason.
-      const scrollable = partitionPinned(current.rows, (r) => r.id, current.pinned ?? {}).scrollable;
-      const i = scrollable.findIndex((r) => r.id === next.rowId);
+      const i = bandsOf(current).indexById.get(next.rowId) ?? -1;
       if (i >= 0) scrollIntoView(i);
     } else {
       scrollIntoView(0);
@@ -630,6 +683,7 @@ export function createGridRenderer<TRow>(
       for (const [el, r] of mounted) r.unmount(el);
       mounted.clear();
       pool.length = 0;
+      bandsCache = null;
       root.remove();
       current = null;
     },

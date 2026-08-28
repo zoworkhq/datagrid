@@ -64,8 +64,20 @@ jobs:
       #    comparing. To arm it, run `pnpm bench:write` on a runner and commit
       #    bench/baseline.linux-x64.json. Until then this step is a measurement,
       #    not a gate, and should not be described as one.
-      - name: performance
+      - name: performance (engine)
         run: pnpm bench:check
+
+      # 6. Browser performance. First paint, sort, filter keystroke and scroll
+      #    frame time in a real Chromium, CPU-throttled 4x over CDP. This is
+      #    what makes the paint and 60 fps columns of the budget table measured
+      #    rather than claimed — it found an O(rows) scan in the scroll path on
+      #    the day it was written.
+      #
+      #    Still NOT a ward workstation: the throttle emulates a slower CPU, not
+      #    4 GB of contended memory with an EHR in another tab. Treat the numbers
+      #    as a floor, not a prediction. Same platform caveat as step 5.
+      - name: performance (browser)
+        run: pnpm exec playwright install --with-deps chromium && pnpm bench:browser:check
 
   # ── Declared, not yet wired ────────────────────────────────────────────────
   #
@@ -76,13 +88,12 @@ jobs:
   #                governs leaving `experimental`. Plan it as work, not as a
   #                discovery. The cross-adapter tree assertion becomes
   #                meaningful when the second adapter exists (wave 4).
-  # performance    PARTIAL. Engine operations are measured and ratchable (see
-  #                step 5), but the ratchet is not yet armed on this runner.
-  #                NOT measured at all: first paint, scroll frame time and INP.
-  #                Those need a real engine with layout and a Playwright
-  #                harness. Until that exists, the paint and 60 fps columns of
-  #                the budget table are unverified claims — do not cite them as
-  #                measured. CPU throttling also needs the browser harness.
+  # performance    LIVE, steps 5 and 6. Engine work in node, and paint, sort,
+  #                filter and scroll frame time in a CPU-throttled Chromium.
+  #                What remains: the ratchet self-skips until a linux-x64
+  #                baseline is committed, and no harness here is a ward
+  #                workstation — the client-mode refusal constant still needs
+  #                one.
   # memory         LIVE, inside step 2. What is NOT yet covered: plugin
   #                teardown, because the plugin registry does not exist until
   #                wave 3 proper. Cell-renderer teardown IS asserted.

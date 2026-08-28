@@ -1,0 +1,34 @@
+{
+  "note": "Chromium, CPU-throttled. NOT a ward workstation — see the header of this file.",
+  "cpuThrottle": 4,
+  "platform": "darwin-arm64",
+  "results": {
+    "1000": {
+      "firstPaintMs": 2.5,
+      "sortMs": 36.3,
+      "filterMs": 9,
+      "scrollP50Ms": 8.3,
+      "scrollP95Ms": 9.7,
+      "droppedFrames": 1,
+      "heapMb": 3.5
+    },
+    "10000": {
+      "firstPaintMs": 7.4,
+      "sortMs": 25.8,
+      "filterMs": 19.9,
+      "scrollP50Ms": 8.2,
+      "scrollP95Ms": 10.9,
+      "droppedFrames": 1,
+      "heapMb": 5.4
+    },
+    "100000": {
+      "firstPaintMs": 72.2,
+      "sortMs": 466.8,
+      "filterMs": 296.5,
+      "scrollP50Ms": 8.3,
+      "scrollP95Ms": 11,
+      "droppedFrames": 1,
+      "heapMb": 42.5
+    }
+  }
+}

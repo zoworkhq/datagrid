@@ -18,7 +18,10 @@
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo .turbo",
     "bench": "pnpm build && node --expose-gc bench/run.mjs",
     "bench:check": "pnpm build && node --expose-gc bench/run.mjs --check",
-    "bench:write": "pnpm build && node --expose-gc bench/run.mjs --write"
+    "bench:write": "pnpm build && node --expose-gc bench/run.mjs --write",
+    "bench:browser": "pnpm build && node bench/browser.mjs",
+    "bench:browser:check": "pnpm build && node bench/browser.mjs --check",
+    "bench:browser:write": "pnpm build && node bench/browser.mjs --write"
   },
   "devDependencies": {
     "@changesets/cli": "3.0.1",
@@ -26,7 +29,9 @@
     "@types/node": "22.10.5",
     "axe-core": "4.13.0",
     "dependency-cruiser": "18.2.0",
+    "esbuild": "0.28.2",
     "jsdom": "30.0.1",
+    "playwright": "1.62.1",
     "size-limit": "13.0.3",
     "turbo": "2.10.12",
     "typescript": "5.7.3",
