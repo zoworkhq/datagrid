@@ -115,6 +115,9 @@ importers:
         specifier: workspace:*
         version: link:../grid-dom
     devDependencies:
+      '@oxygenui-design/grid-healthcare':
+        specifier: workspace:*
+        version: link:../grid-healthcare
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
