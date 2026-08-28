@@ -20,6 +20,9 @@
     <button role="tab" data-tab="clinical" aria-selected="false">Clinical cells</button>
     <button role="tab" data-tab="disclosure" aria-selected="false">Disclosure</button>
     <button role="tab" data-tab="grouping" aria-selected="false">Grouping</button>
+    <button role="tab" data-tab="working" aria-selected="false">Working on a row</button>
+    <button role="tab" data-tab="ai" aria-selected="false">AI</button>
+    <button role="tab" data-tab="migration" aria-selected="false">Migration</button>
     <button role="tab" data-tab="devtools" aria-selected="false">Devtools</button>
   </nav>
   <div class="controls" data-roster-only>
@@ -85,6 +88,65 @@
     <label><input type="checkbox" id="mixed-units" /> Mix mg and mL in ward Cedar</label>
   </div>
   <div class="grid-slot tree" id="group-host"></div>
+</section>
+
+<section class="panel" data-panel="working" hidden>
+  <div class="hint">Editing and the inspector. A failed write <b>restores the original and keeps your draft</b>.
+  Opening the inspector changes exactly one thing — what is inspected — and <b>cannot touch focus or
+  selection</b>, by signature. The URL carries the row <em>and</em> the query that produced the list.</div>
+  <div class="controls inline">
+    <label>Ward for row 1
+      <select id="edit-value">
+        <option>Ashgrove</option><option>Beeches</option>
+        <option>Cedar</option><option>Dunlin</option>
+      </select>
+    </label>
+    <button id="edit-commit" type="button">Commit</button>
+    <span class="muted-note">Writes to <b>Cedar</b> always fail, to show the rollback.</span>
+  </div>
+  <div class="editnote" id="edit-note"></div>
+  <div class="split">
+    <div class="grid-slot" id="working-host"></div>
+    <aside class="inspector" id="inspector-panel"><p class="muted-note">Click a row to inspect it.</p></aside>
+  </div>
+  <div class="urlbar" id="url-bar"></div>
+</section>
+
+<section class="panel" data-panel="ai" hidden>
+  <div class="hint">The features are table stakes. <b>Refusal and provenance</b> are not, and neither needs a
+  model. A proposal that names a column this grid lacks <b>runs nothing</b>; a proposal is never applied; and an
+  AI-derived value is a different <em>shape</em> from a verified one, so nothing can rank them together.</div>
+  <div class="controls inline">
+    <label>Proposal
+      <select id="ai-proposal">
+        <option value="ok">ward = Ashgrove AND risk ≥ 7</option>
+        <option value="unknown-column">diagnosis contains "sepsis" — column does not exist</option>
+        <option value="unsupported">ward endsWith "e" — operator not supported</option>
+        <option value="or">ward = A OR ward = B — compiles, shown as one chip</option>
+      </select>
+    </label>
+    <button id="ai-run" type="button">Compile</button>
+    <button id="ai-accept" type="button" disabled>Accept</button>
+  </div>
+  <div class="chips" id="ai-chips"></div>
+  <div class="refusal" id="ai-refusal" hidden role="alert"></div>
+  <div class="grid-slot" id="ai-host"></div>
+</section>
+
+<section class="panel" data-panel="migration" hidden>
+  <div class="hint">The codemod renames what means the same thing, <b>leaves what does not</b> with the reason
+  attached, and <b>refuses to write a coverage claim</b> — it emits a placeholder that does not compile.</div>
+  <div class="controls inline">
+    <label>From
+      <select id="mig-source"><option value="antd">antd Table</option><option value="mui">MUI DataGrid</option></select>
+    </label>
+    <button id="mig-run" type="button">Migrate</button>
+  </div>
+  <div class="split">
+    <textarea id="mig-in" spellcheck="false"></textarea>
+    <pre class="migout" id="mig-out"></pre>
+  </div>
+  <div class="todos" id="mig-todos"></div>
 </section>
 
 <section class="panel" data-panel="devtools" hidden>

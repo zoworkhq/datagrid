@@ -15,7 +15,7 @@ const pkg = (n) => join(HERE, "..", "..", "packages", n, "dist", "index.js");
 const PACKAGES = [
   "grid-core", "grid-dom", "grid-signals",
   "grid-healthcare", "grid-export", "grid-fhir", "grid-element",
-  "grid-clipboard", "grid-devtools",
+  "grid-clipboard", "grid-devtools", "grid-ai", "grid-codemod",
 ];
 
 export const options = {

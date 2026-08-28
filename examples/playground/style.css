@@ -139,3 +139,42 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 1.2rem 1.2rem; }
 [role="row"][data-pinned] { background: var(--surface-2); font-weight: 600; }
 [role="gridcell"][data-editing] { background: var(--accent-soft); outline: 2px solid var(--accent); }
 .grouprow { font-weight: 700; }
+
+/* ── working / ai / migration ─────────────────────────────────────────── */
+.split { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 340px; gap: .8rem; }
+.inspector {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
+  padding: .8rem .9rem; overflow: auto; font-size: .85rem;
+}
+.inspector h3 { margin: 0 0 .5rem; font-size: .95rem; }
+.inspector dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .3rem .7rem; }
+.inspector dt { color: var(--muted); font-size: .78rem; }
+.inspector dd { margin: 0; }
+.muted-note { color: var(--muted); font-size: .78rem; }
+.urlbar {
+  flex: none; margin-top: .6rem; padding: .45rem .7rem; border-radius: 3px;
+  background: var(--surface-2); border: 1px solid var(--rule);
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .74rem; color: var(--muted);
+  overflow-x: auto; white-space: nowrap;
+}
+.editnote { font-size: .82rem; padding: .45rem .7rem; margin-bottom: .6rem; border-radius: 3px; min-height: 1.9rem; }
+.editnote[data-state="ok"] { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent); }
+.editnote[data-state="fail"] { background: var(--bad-soft); color: var(--bad); border: 1px solid var(--bad-rule); }
+.chips { display: flex; gap: .35rem; flex-wrap: wrap; margin-bottom: .6rem; min-height: 1.6rem; }
+.chip {
+  font-size: .76rem; padding: .18rem .5rem; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent);
+}
+.chip.ai { background: var(--warn-soft); color: var(--warn); border-color: var(--warn-rule); }
+#mig-in, .migout {
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .74rem; line-height: 1.6;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
+  padding: .7rem .8rem; overflow: auto; margin: 0; color: var(--ink-2); white-space: pre-wrap;
+}
+#mig-in { resize: none; }
+.split:has(#mig-in) { grid-template-columns: 1fr 1fr; }
+.todos {
+  flex: none; margin-top: .6rem; font-size: .8rem; padding: .55rem .8rem; border-radius: 3px;
+  background: var(--bad-soft); color: var(--bad); border: 1px solid var(--bad-rule); white-space: pre-wrap;
+}
+.todos:empty { display: none; }

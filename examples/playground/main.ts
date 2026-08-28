@@ -32,6 +32,7 @@ import { printSheetHtml, toCsv, toXlsx, type ExportColumn } from "@oxygenui-desi
 import { copyRange, emptyUndo, invert, record, undo as undoStep } from "@oxygenui-design/grid-clipboard";
 import { createDevtools, explain } from "@oxygenui-design/grid-devtools";
 import { mountClinical, mountDisclosure, mountGrouping } from "./panels.js";
+import { mountAi, mountMigration, mountWorking } from "./panels2.js";
 import {
   arrivalCount,
   createLiveState,
@@ -450,6 +451,35 @@ function show(name: string): void {
       host: document.getElementById("group-host") as HTMLElement,
       groupBy: document.getElementById("groupby") as HTMLSelectElement,
       mixUnits: document.getElementById("mixed-units") as HTMLInputElement,
+    });
+  }
+  if (name === "working") {
+    mountWorking({
+      host: document.getElementById("working-host") as HTMLElement,
+      panel: document.getElementById("inspector-panel") as HTMLElement,
+      urlBar: document.getElementById("url-bar") as HTMLElement,
+      value: document.getElementById("edit-value") as HTMLSelectElement,
+      commit: document.getElementById("edit-commit") as HTMLButtonElement,
+      note: document.getElementById("edit-note") as HTMLElement,
+    });
+  }
+  if (name === "ai") {
+    mountAi({
+      host: document.getElementById("ai-host") as HTMLElement,
+      chips: document.getElementById("ai-chips") as HTMLElement,
+      refusal: document.getElementById("ai-refusal") as HTMLElement,
+      select: document.getElementById("ai-proposal") as HTMLSelectElement,
+      run: document.getElementById("ai-run") as HTMLButtonElement,
+      accept: document.getElementById("ai-accept") as HTMLButtonElement,
+    });
+  }
+  if (name === "migration") {
+    mountMigration({
+      input: document.getElementById("mig-in") as HTMLTextAreaElement,
+      output: document.getElementById("mig-out") as HTMLElement,
+      todos: document.getElementById("mig-todos") as HTMLElement,
+      source: document.getElementById("mig-source") as HTMLSelectElement,
+      run: document.getElementById("mig-run") as HTMLButtonElement,
     });
   }
   if (name === "devtools") renderDevtools();
