@@ -26,6 +26,7 @@
     "playground:build": "pnpm build && node examples/playground/build.mjs"
   },
   "devDependencies": {
+    "@angular/core": "22.1.4",
     "@changesets/cli": "3.0.1",
     "@size-limit/preset-small-lib": "13.0.3",
     "@types/node": "22.10.5",
@@ -33,6 +34,7 @@
     "dependency-cruiser": "18.2.0",
     "esbuild": "0.28.2",
     "jsdom": "30.0.1",
+    "ng-packagr": "22.0.1",
     "playwright": "1.62.1",
     "size-limit": "13.0.3",
     "turbo": "2.10.12",

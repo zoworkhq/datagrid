@@ -18,3 +18,4 @@ __pycache__/
 # size-limit scratch
 .size-limit.json
 examples/playground/dist/
+packages/grid-angular/dist-ng/

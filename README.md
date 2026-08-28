@@ -11,8 +11,8 @@ built in — for EHR, behavioural-health, clinical, operational and billing work
 <img alt="engine 7.3 KB of a 22 KB budget" src="https://img.shields.io/badge/engine-7.3%20KB%20%2F%2022%20KB-0E7C66.svg" />
 <img alt="React adapter 456 bytes" src="https://img.shields.io/badge/react%20adapter-456%20B-0E7C66.svg" />
 <img alt="one external runtime dependency" src="https://img.shields.io/badge/runtime%20deps-1-0E7C66.svg" />
-<img alt="409 tests" src="https://img.shields.io/badge/tests-409-0E7C66.svg" />
-<img alt="10 accepted decision records" src="https://img.shields.io/badge/ADRs-10%20accepted-0E7C66.svg" />
+<img alt="413 tests" src="https://img.shields.io/badge/tests-413-0E7C66.svg" />
+<img alt="11 accepted decision records" src="https://img.shields.io/badge/ADRs-11%20accepted-0E7C66.svg" />
 <img alt="not published to npm" src="https://img.shields.io/badge/npm-not%20published-b7791f.svg" />
 <img alt="MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" />
 </sub>
@@ -138,15 +138,16 @@ This is also the answer for Svelte, Qwik, Solid and vanilla.
 
 </details>
 
-**Two adapters ship today: React and the custom element.** Angular and Vue do
-not exist, and this README will not list them until they do.
+**Three adapters ship: React, Angular and the custom element.** The largest is
+1.09 KB. Vue is [declined](docs/decisions/0010-what-wave-six-is-not.md) — the
+custom element already serves it.
 
 ## Architecture
 
 ```
-grid-core  →  grid-dom  →  react · element        (angular · vue: not built)
- (signals,     (DOM, ARIA,      (~500 B each,
-  no DOM)       focus,           no grid logic)
+grid-core  →  grid-dom  →  react · angular · element      (vue: declined)
+ (signals,     (DOM, ARIA,      (456 B · 1.09 KB · 585 B,
+  no DOM)       focus,           no grid logic in any)
                 recycling)
 ```
 
@@ -154,10 +155,12 @@ A framework-free DOM renderer sits **below** the framework adapters, so the
 accessibility model and the virtualiser are written once rather than once per
 framework. That is the decision the whole repository is organised around.
 
-It is enforced, not asserted: one accessibility-tree assertion runs against
-every adapter and compares *every* `aria-*` attribute, so the moment an adapter
-starts making its own ARIA decisions it fails. Both adapters are under
-600&nbsp;bytes because there is nothing in them to be large.
+It is enforced, not asserted. One accessibility-tree assertion runs across
+adapters comparing *every* `aria-*` attribute, and a second test reads the built
+Angular bundle and fails if any of the grid's own vocabulary — `aria-rowindex`,
+`localeCompare`, `scrollTop` — appears in it. The adapters are small because
+there is nothing in them to be large
+([ADR 0011](docs/decisions/0011-framework-agnosticism-holds.md)).
 
 | Package | Layer | Size | Budget |
 | --- | --- | --- | --- |
@@ -167,6 +170,7 @@ starts making its own ARIA decisions it fails. Both adapters are under
 | [`grid-healthcare`](packages/grid-healthcare) | domain | 2.13 KB | 16 KB |
 | [`grid-fhir`](packages/grid-fhir) | domain | 1.66 KB | 9 KB |
 | [`grid-react`](packages/grid-react) | adapter | 456 B | 4 KB |
+| [`grid-angular`](packages/grid-angular) | adapter | 1.09 KB | 8 KB |
 | [`grid-element`](packages/grid-element) | adapter | 585 B | 6 KB |
 | [`grid-export`](packages/grid-export) | plugin | 2.76 KB | 7 KB |
 | [`grid-clipboard`](packages/grid-clipboard) | plugin | 1.05 KB | 5 KB |
@@ -192,7 +196,7 @@ taxonomy and disclosure types · serialisable views with a precedence chain ·
 selection algebra with drift detection · bulk review · CSV, XLSX and the print
 sheet · the FHIR source · SSR with adoption.
 
-**Gated in CI.** Types · 409 tests · 15 layer rules · per-package size budgets ·
+**Gated in CI.** Types · 413 tests · 15 layer rules · per-package size budgets ·
 structural axe · a memory-leak gate over 200 mount/unmount cycles · engine and
 browser performance harnesses.
 
@@ -206,12 +210,12 @@ The transposed layout is a second component rather than a `layout` prop;
 DuckDB-WASM and a Vue package are declined with reasons; the AI plugin ships
 provenance and refusal and not the model ([0010](docs/decisions/0010-what-wave-six-is-not.md)).
 
-**Still open.** The clinical reviewer. The Angular build toolchain. And the
-client-mode ceiling, which is now a documented default you measure and override
-rather than a number we owe you.
+**Still open.** The clinical reviewer — the one thing here nobody can decide
+their way out of. The client-mode ceiling is now a documented default you
+measure and override rather than a number we owe you.
 
 Read [`HANDOVER.md`](HANDOVER.md) for the full context, and
-[`docs/decisions/`](docs/decisions/) for the ten records that gate the code.
+[`docs/decisions/`](docs/decisions/) for the eleven records that gate the code.
 
 ### On the gates
 
@@ -254,10 +258,10 @@ pnpm install && pnpm gate
 
 ```
 HANDOVER.md              the seed context — read this first
-packages/                eleven packages across five layers
+packages/                twelve packages across five layers
 bench/                   engine and browser performance harnesses
 docs/
-├─ decisions/            ten ADRs, accepted — the ones that gate code
+├─ decisions/            eleven ADRs, accepted — the ones that gate code
 └─ research/             the product brief and architecture review, and the
                          Python sources both are generated from
 ```

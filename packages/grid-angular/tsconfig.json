@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "dist", "noEmit": false },
+  "include": ["src/**/*"],
+  "references": [{ "path": "../grid-core" }, { "path": "../grid-dom" }],
+  "exclude": ["**/*.test.ts"]
+}

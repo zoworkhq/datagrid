@@ -22,6 +22,7 @@ Format: **Context** (the forces, stated honestly) → **Decision** (what we do)
 | [0008](0008-what-a-cell-may-decide.md) | A cell renders a clinical state; it never derives one | accepted |
 | [0009](0009-the-licence-is-mit-and-the-support-posture-is-stated.md) | MIT for everything, and a stated support posture | accepted |
 | [0010](0010-what-wave-six-is-not.md) | Four wave-six bets, declined or reshaped | accepted |
+| [0011](0011-framework-agnosticism-holds.md) | Framework agnosticism holds, and here is the evidence | accepted |
 
 ## Inherited from Oxygen UI
 
