@@ -19,6 +19,7 @@ Format: **Context** (the forces, stated honestly) → **Decision** (what we do)
 | [0005](0005-coverage-may-report-an-unknown-total.md) | Coverage may report an unknown total | accepted |
 | [0006](0006-the-grids-layers-are-named-not-numbered.md) | The grid's layers are named, not numbered | accepted |
 | [0007](0007-server-rendered-adoption-needs-an-app-owned-host.md) | Server-rendered adoption needs an app-owned host | accepted |
+| [0008](0008-what-a-cell-may-decide.md) | A cell renders a clinical state; it never derives one | accepted |
 
 ## Inherited from Oxygen UI
 

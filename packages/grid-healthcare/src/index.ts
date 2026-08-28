@@ -6,5 +6,7 @@
  * Nothing below this package may import it.
  */
 export * from "./absence.js";
+export * from "./cell-contract.js";
+export * from "./cells.js";
 export * from "./coverage.js";
 export * from "./disclosure.js";
