@@ -1,0 +1,12 @@
+{
+  "antd": {
+    "input": "import { Table, Button } from \"antd\";\n\nexport function Roster({ patients }) {\n  return (\n    <Table\n      columns={columns}\n      dataSource={patients}\n      rowKey=\"id\"\n      pagination={{ pageSize: 20 }}\n      onChange={handleChange}\n    />\n  );\n}",
+    "output": "import { Button } from \"antd\";\nimport { DataGrid } from \"@oxygenui-design/grid-react\";\n\nexport function Roster({ patients }) {\n  return (\n    <DataGrid\n      coverage={/* TODO(grid-codemod): coverage is required and cannot be inferred.\n      Describe what this query actually reached: which sources, their health, and the\n      total if the server reports one. See docs/decisions/0005. */ MISSING_COVERAGE}\n      columns={columns}\n      data={patients}\n      rowKey=\"id\"\n      pagination={{ pageSize: 20 }}\n      onChange={handleChange}\n    />\n  );\n}",
+    "report": "4 edits.\n\nThis file will NOT compile until these are answered:\n  · pagination: antd's `pagination` is offset-based. This grid defaults to cursor paging because FHIR has no offset. Choose deliberately.\n  · onChange: antd's `onChange` fires for sort, filter and pagination together. This grid emits a typed action per change; split the handler.\n  · coverage: required, with no default. Describe what this query reached — the codemod will not guess."
+  },
+  "mui": {
+    "input": "import { DataGrid } from \"@mui/x-data-grid\";\n\nexport function Roster({ patients }) {\n  return (\n    <DataGrid\n      rows={patients}\n      columns={columns}\n      getRowId={(r) => r.id}\n      checkboxSelection\n    />\n  );\n}",
+    "output": "import { DataGrid } from \"@oxygenui-design/grid-react\";\n\nexport function Roster({ patients }) {\n  return (\n    <DataGrid\n      coverage={/* TODO(grid-codemod): coverage is required and cannot be inferred.\n      Describe what this query actually reached: which sources, their health, and the\n      total if the server reports one. See docs/decisions/0005. */ MISSING_COVERAGE}\n      data={patients}\n      columns={columns}\n      rowKey={(r) => r.id}\n      checkboxSelection\n    />\n  );\n}",
+    "report": "5 edits.\n\nThis file will NOT compile until these are answered:\n  · checkboxSelection: Selection here is ids OR a predicate. Map it explicitly rather than assuming ids.\n  · coverage: required, with no default. Describe what this query reached — the codemod will not guess."
+  }
+}

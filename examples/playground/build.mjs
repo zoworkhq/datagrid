@@ -30,6 +30,53 @@ export const options = {
   alias: Object.fromEntries(PACKAGES.map((n) => [`@oxygenui-design/${n}`, pkg(n)])),
 };
 
+/**
+ * Runs the codemod at BUILD time and emits its output as data.
+ *
+ * A codemod is a build-time tool. Bundling it for the browser dragged the whole
+ * TypeScript compiler into the page — 9.99 MB for a panel that shows two fixed
+ * examples. Running it here is both smaller and a more honest picture of how it
+ * is actually used.
+ */
+async function precomputeMigrations() {
+  const { migrate, describeMigration } = await import(pkg("grid-codemod"));
+  const samples = {
+    antd: `import { Table, Button } from "antd";
+
+export function Roster({ patients }) {
+  return (
+    <Table
+      columns={columns}
+      dataSource={patients}
+      rowKey="id"
+      pagination={{ pageSize: 20 }}
+      onChange={handleChange}
+    />
+  );
+}`,
+    mui: `import { DataGrid } from "@mui/x-data-grid";
+
+export function Roster({ patients }) {
+  return (
+    <DataGrid
+      rows={patients}
+      columns={columns}
+      getRowId={(r) => r.id}
+      checkboxSelection
+    />
+  );
+}`,
+  };
+  const out = {};
+  for (const [source, code] of Object.entries(samples)) {
+    const result = migrate(code, source);
+    out[source] = { input: code, output: result.code, report: describeMigration(result) };
+  }
+  mkdirSync(DIST, { recursive: true });
+  writeFileSync(join(HERE, "migrations.generated.json"), JSON.stringify(out, null, 2) + "\n");
+  console.log("precomputed migrations for", Object.keys(out).join(", "));
+}
+
 export function copyStatic() {
   mkdirSync(DIST, { recursive: true });
   for (const f of ["index.html", "style.css"]) copyFileSync(join(HERE, f), join(DIST, f));
@@ -38,6 +85,7 @@ export function copyStatic() {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await precomputeMigrations();
   copyStatic();
   if (process.argv.includes("--watch")) {
     const ctx = await context(options);

@@ -91,6 +91,12 @@ function makePatients(n: number): Patient[] {
       reviewed: `2026-08-${String((i % 27) + 1).padStart(2, "0")}`,
     };
   }
+  // Two rows carry a spreadsheet formula in the NAME field, because a name is
+  // free text a patient supplies and a registration clerk types. Nothing in the
+  // grid treats these as special — they render as the literal text they are.
+  // Export is where it matters, and the CSV panel shows what the writer emitted.
+  if (rows[1]) rows[1] = { ...(rows[1] as Patient), name: `=cmd|' /c calc'!A1` };
+  if (rows[2]) rows[2] = { ...(rows[2] as Patient), name: `@SUM(1+1)*cmd|' /c calc'!A1` };
   return rows;
 }
 
@@ -382,32 +388,128 @@ const request = () => ({
   ...(state.filter ? { predicate: `name contains "${(state.filter as { value: string }).value}"` } : {}),
 });
 
-function download(bytes: Uint8Array, filename: string, type: string): void {
-  const url = URL.createObjectURL(new Blob([bytes as unknown as BlobPart], { type }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+const exportOut = () => document.getElementById("export-out") as HTMLElement;
+
+/**
+ * Shows what the writer actually emitted.
+ *
+ * More useful than handing over a file: the point of these writers is that a
+ * patient-supplied name arrives inert, and you can only see that by reading the
+ * bytes. `'=cmd|…` with its leading apostrophe is the whole demonstration.
+ */
+function showOutput(title: string, body: string, note: string, interesting?: readonly RegExp[]): void {
+  const el = exportOut();
+  el.hidden = false;
+  el.textContent = "";
+  const head = document.createElement("b");
+  head.textContent = `${title}\n${note}\n\n`;
+  el.append(head, document.createTextNode(excerpt(body, interesting)));
+}
+
+/**
+ * Trims the output for display WITHOUT cutting off the part being demonstrated.
+ *
+ * A blind prefix is the obvious way to do this and it is wrong here: the row
+ * carrying the injection payload is thousands of lines down, so a prefix shows
+ * the reader everything except the thing they were told to look for. The head
+ * is kept for shape; every interesting line is kept because it is the evidence.
+ */
+function excerpt(body: string, interesting: readonly RegExp[] = [], head = 20): string {
+  // Every line is clipped first. A print sheet puts its whole <tbody> on one
+  // line, so a line budget alone bounds nothing — 20 lines can still be 200 kB.
+  const clip = (l: string): string =>
+    l.length <= 400 ? l : `${l.slice(0, 400)} …+${(l.length - 400).toLocaleString()} chars`;
+
+  const lines = body.split("\n");
+  if (lines.length <= head) return lines.map(clip).join("\n");
+
+  const rest = lines.slice(head);
+  // Per-pattern quota. A shared budget lets whichever pattern appears first
+  // consume it and silently hide the other — the same failure as a blind
+  // prefix, one level up.
+  const hits = [...new Set(interesting.flatMap((re) => rest.filter((l) => re.test(l)).slice(0, 3)))];
+
+  const out = [
+    ...lines.slice(0, head).map(clip),
+    `\n⋮  ${(rest.length - hits.length).toLocaleString()} lines not shown`,
+  ];
+  if (hits.length > 0) out.push("", ...hits.map(clip));
+  return out.join("\n");
+}
+
+/**
+ * Offers the file, when the viewer's host allows it.
+ *
+ * A published artifact grants saves through a capability the viewer confirms;
+ * a plain download link is inert there. `null` means this view cannot save, so
+ * the affordance simply is not offered.
+ */
+async function offerSave(filename: string, data: string | Uint8Array): Promise<string> {
+  const claude = (globalThis as { claude?: { use(n: string): Promise<unknown> } }).claude;
+  if (!claude?.use) return "";
+  const downloads = (await claude.use("downloads")) as
+    | { save(r: { filename: string; data: string | Uint8Array }): Promise<unknown> }
+    | null;
+  if (!downloads) return "";
+  try {
+    await downloads.save({ filename, data });
+    return "  ·  saved";
+  } catch {
+    // Declined, rate-limited, or the format is not on the host's allowlist.
+    return "  ·  not saved";
+  }
 }
 
 document.getElementById("csv")?.addEventListener("click", () => {
   const out = toCsv(request(), { filename: "roster.csv" });
-  if (out.ok) download(out.bytes, out.filename, out.mediaType);
+  if (!out.ok) return;
+  const text = new TextDecoder().decode(out.bytes);
+  showOutput(
+    "roster.csv — the emitted bytes",
+    text,
+    "The formula payload in a patient name arrives neutralised: find the line starting '=cmd. " +
+      "A withheld cell reads [withheld: …] and never its value. The coverage sentence is the first line.",
+    [/'[=@+]/, /\[withheld/],
+  );
+  void offerSave("roster.csv", text).then((note) => {
+    if (note) exportOut().append(document.createTextNode(note));
+  });
 });
 
 document.getElementById("xlsx")?.addEventListener("click", () => {
   const out = toXlsx(request(), { filename: "roster.xlsx", sheetName: "Roster" });
-  if (out.ok) download(out.bytes, out.filename, out.mediaType);
+  if (!out.ok) return;
+  // The sheet part is stored uncompressed, so the interesting XML is readable
+  // straight out of the archive — and it IS the interesting part.
+  const whole = new TextDecoder().decode(out.bytes);
+  const start = whole.indexOf("<worksheet");
+  const end = whole.indexOf("</worksheet>");
+  showOutput(
+    "roster.xlsx — the sheet XML inside the archive",
+    // One row per line: the part is emitted as a single line, and the rows are
+    // what a reader is comparing.
+    (start >= 0 && end > start ? whole.slice(start, end + 12) : "(sheet part is compressed here)")
+      .replaceAll("</row>", "</row>\n"),
+    "In XLSX a formula is an <f> element. Search this for one — there is none, so the same payload " +
+      "is inert BY THE STRUCTURE OF THE FORMAT: nothing to unescape, and no apostrophe left " +
+      'polluting the cell as CSV must. Strings are t="inlineStr"; numbers are typed <v> cells.',
+    [/cmd\|/, /withheld/],
+  );
 });
 
 document.getElementById("print")?.addEventListener("click", () => {
   const sheet = printSheetHtml(request(), { title: "Patient roster" });
-  const w = window.open("", "_blank");
-  if (w) {
-    w.document.write(sheet);
-    w.document.close();
-  }
+  showOutput(
+    "The print sheet",
+    sheet,
+    "A real <table> with a <thead>: display:table-header-group is the only thing that repeats a " +
+      "header across printed pages, and a div grid cannot do it. The coverage sentence prints at the " +
+      "top AND in a running footer, because paper is where “See all” stops existing.",
+    [/&#39;[=@+]|&amp;#39;/, /withheld/, /table-header-group/],
+  );
+  void offerSave("roster.html", sheet).then((note) => {
+    if (note) exportOut().append(document.createTextNode(note));
+  });
 });
 
 // ── panels ──────────────────────────────────────────────────────────────────
@@ -475,7 +577,7 @@ function show(name: string): void {
   }
   if (name === "migration") {
     mountMigration({
-      input: document.getElementById("mig-in") as HTMLTextAreaElement,
+      input: document.getElementById("mig-in") as HTMLElement,
       output: document.getElementById("mig-out") as HTMLElement,
       todos: document.getElementById("mig-todos") as HTMLElement,
       source: document.getElementById("mig-source") as HTMLSelectElement,

@@ -15,7 +15,9 @@ import {
   acceptProposal, aiDerived, compareSourced, compileProposal, describeProvenance,
   verified, type Proposal, type Sourced,
 } from "@oxygenui-design/grid-ai";
-import { describeMigration, migrate } from "@oxygenui-design/grid-codemod";
+// Precomputed at build time — see build.mjs. A codemod is a build-time tool,
+// and bundling it for the browser pulled in the whole TypeScript compiler.
+import migrations from "./migrations.generated.json";
 
 const text = (t: string) => ({ kind: "text" as const, text: t });
 
@@ -265,36 +267,16 @@ export function mountAi(refs: AiRefs): void {
 
 // ── migration ───────────────────────────────────────────────────────────────
 
-const SAMPLES: Record<string, string> = {
-  antd: `import { Table, Button } from "antd";
+interface Migrated {
+  readonly input: string;
+  readonly output: string;
+  readonly report: string;
+}
 
-export function Roster({ patients }) {
-  return (
-    <Table
-      columns={columns}
-      dataSource={patients}
-      rowKey="id"
-      pagination={{ pageSize: 20 }}
-      onChange={handleChange}
-    />
-  );
-}`,
-  mui: `import { DataGrid } from "@mui/x-data-grid";
-
-export function Roster({ patients }) {
-  return (
-    <DataGrid
-      rows={patients}
-      columns={columns}
-      getRowId={(r) => r.id}
-      checkboxSelection
-    />
-  );
-}`,
-};
+const MIGRATIONS = migrations as Record<string, Migrated>;
 
 export interface MigrationRefs {
-  readonly input: HTMLTextAreaElement;
+  readonly input: HTMLElement;
   readonly output: HTMLElement;
   readonly todos: HTMLElement;
   readonly source: HTMLSelectElement;
@@ -303,15 +285,16 @@ export interface MigrationRefs {
 
 export function mountMigration(refs: MigrationRefs): void {
   const load = (): void => {
-    refs.input.value = SAMPLES[refs.source.value] ?? "";
+    refs.input.textContent = MIGRATIONS[refs.source.value]?.input ?? "";
     refs.output.textContent = "";
     refs.todos.textContent = "";
   };
 
   refs.run.addEventListener("click", () => {
-    const result = migrate(refs.input.value, refs.source.value as "antd" | "mui");
-    refs.output.textContent = result.code;
-    refs.todos.textContent = describeMigration(result);
+    const m = MIGRATIONS[refs.source.value];
+    if (!m) return;
+    refs.output.textContent = m.output;
+    refs.todos.textContent = m.report;
   });
 
   refs.source.addEventListener("change", load);
