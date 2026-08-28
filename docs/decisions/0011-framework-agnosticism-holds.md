@@ -69,15 +69,29 @@ toolchain with it.
 
 ### What this does not yet cover
 
-`grid-angular` is **not in the cross-adapter parity test.** Mounting an Angular
-directive in the test harness needs the Angular linker or JIT compiler, which is
-another two runtime dependencies in the test path. It is verified today by size
-and by the no-grid-logic assertion; the accessibility-tree comparison still runs
-against React and the custom element only.
+`grid-angular` is **not in the cross-adapter parity test**, and the reason is
+now specific rather than estimated. It was attempted:
 
-That is a real gap and it is named rather than glossed: the next person to touch
-this should either add Angular to `ADAPTERS` in `parity.test.tsx`, or record why
-the cost is not worth paying.
+- The test suite transpiles with vitest 4's **oxc** pipeline, which cannot parse
+  Angular's decorators at all — a file containing nothing but an empty
+  `@Directive()` class fails with `SyntaxError: Invalid or unexpected token`.
+  Legacy-decorator options for oxc did not change it.
+- The published output is **partial-compiled**, so importing `dist` into a test
+  yields declarations the Angular linker still has to process.
+- Instantiating the directive directly does not work either: `input()` and
+  `effect()` require an Angular injection context.
+
+So it is not a matter of adding two dependencies. Angular in the parity harness
+needs **Angular's own build in the test path** — either the linker as a
+transform, or a separate test project compiled by ngtsc. That is a real piece of
+work, and the right home for it is the wave-5 documentation site, which will
+build a real Angular app anyway.
+
+Until then `grid-angular` is verified by two things and not by a third: the size
+gate, and `no-grid-logic.test.ts` reading the built bundle. The
+accessibility-tree comparison runs against React and the custom element only.
+**That is a gap, stated so nobody mistakes the parity test's green tick for
+covering three adapters.**
 
 ## Consequences
 

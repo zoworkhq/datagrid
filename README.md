@@ -211,9 +211,13 @@ The transposed layout is a second component rather than a `layout` prop;
 DuckDB-WASM and a Vue package are declined with reasons; the AI plugin ships
 provenance and refusal and not the model ([0010](docs/decisions/0010-what-wave-six-is-not.md)).
 
-**Still open.** The clinical reviewer — the one thing here nobody can decide
-their way out of. The client-mode ceiling is now a documented default you
-measure and override rather than a number we owe you.
+**Still open, and named rather than glossed.** The clinical reviewer, which is
+the one thing here nobody can decide their way out of — `GridDoseCell` is not
+built, and five shipped cells make no clinical claim *by construction*, which is
+an argument rather than a review. `grid-angular` is not in the parity harness
+([why](docs/decisions/0011-framework-agnosticism-holds.md)). And both
+performance ratchets self-skip until a linux baseline is recorded on a runner,
+so those two CI steps measure and print rather than gate.
 
 Read [`HANDOVER.md`](HANDOVER.md) for the full context, and
 [`docs/decisions/`](docs/decisions/) for the eleven records that gate the code.
