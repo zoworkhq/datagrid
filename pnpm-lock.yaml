@@ -51,11 +51,45 @@ importers:
         specifier: workspace:*
         version: link:../grid-core
 
+  packages/grid-element:
+    dependencies:
+      '@oxygenui-design/grid-core':
+        specifier: workspace:*
+        version: link:../grid-core
+      '@oxygenui-design/grid-dom':
+        specifier: workspace:*
+        version: link:../grid-dom
+    devDependencies:
+      '@oxygenui-design/grid-react':
+        specifier: workspace:*
+        version: link:../grid-react
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: 19.2.5
+        version: 19.2.5(@types/react@19.2.18)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: 19.2.8
+        version: 19.2.8(react@19.2.8)
+
   packages/grid-export:
     dependencies:
       '@oxygenui-design/grid-core':
         specifier: workspace:*
         version: link:../grid-core
+
+  packages/grid-fhir:
+    dependencies:
+      '@oxygenui-design/grid-core':
+        specifier: workspace:*
+        version: link:../grid-core
+      '@oxygenui-design/grid-healthcare':
+        specifier: workspace:*
+        version: link:../grid-healthcare
 
   packages/grid-healthcare:
     dependencies:
