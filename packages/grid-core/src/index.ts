@@ -11,6 +11,7 @@ export * from "./actions.js";
 export * from "./column.js";
 export * from "./errors.js";
 export * from "./filter.js";
+export * from "./geometry.js";
 export * from "./filter-eval.js";
 export * from "./row-model.js";
 export * from "./keymap.js";

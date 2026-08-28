@@ -91,13 +91,20 @@ describe("axe (structural)", () => {
 });
 
 describe("the structural invariants axe cannot check", () => {
-  it("keeps every gridcell inside a row inside a rowgroup inside the grid", () => {
+  it("keeps every gridcell inside a row inside a rowgroup, with only presentational wrappers above", () => {
+    // Virtualisation needs a scroller and a sized canvas between the grid and
+    // its rowgroups. They carry role="presentation" so they do not appear in
+    // the accessibility tree at all -- which is exactly what lets
+    // aria-required-children still pass. Anything else in that chain is a bug.
     mount();
     for (const cell of host.querySelectorAll('[role="gridcell"],[role="columnheader"]')) {
       const row = cell.parentElement;
       expect(row?.getAttribute("role")).toBe("row");
       expect(row?.parentElement?.getAttribute("role")).toBe("rowgroup");
-      expect(row?.parentElement?.parentElement?.getAttribute("role")).toBe("grid");
+
+      let node = row?.parentElement?.parentElement ?? null;
+      while (node && node.getAttribute("role") === "presentation") node = node.parentElement;
+      expect(node?.getAttribute("role")).toBe("grid");
     }
   });
 
