@@ -1,0 +1,99 @@
+# The gates that guard wave 1.
+#
+# "A gate added later never catches the regression that mattered" — so these
+# exist before the code they guard. Seven are live today; what remains is
+# declared and not yet wired, and is listed at the bottom of this file rather
+# than left undiscovered. A gate that is quietly absent is worse than one that is
+# openly pending.
+name: ci
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # 1. Types. Every contract in wave 1 is a type-system decision, so this
+      #    is the gate that actually guards them.
+      - name: typecheck
+        run: pnpm typecheck
+
+      # 2. Behaviour. Includes the security tests that exist because the
+      #    architecture review found three defects, the keyboard-only suite
+      #    (no test in it dispatches a pointer event), the structural axe gate
+      #    — which caught a critical role="grid" violation on the day it was
+      #    wired — and the memory-leak gate, which mounts and unmounts 200
+      #    times under --expose-gc and asserts bounded heap growth. Verified by
+      #    injecting a leak: it reported 102 MB against a 12 MB threshold.
+      - name: test
+        run: pnpm test
+
+      # 3. Layers. Implements ADR 0006; each rule names the record it enforces.
+      - name: layer rules
+        run: pnpm lint:layers
+
+      # 4. Bundle budgets, per package, ratcheted.
+      - name: size
+        run: pnpm size
+
+      # 5. Engine performance. Sort, filter, geometry and row-model heap at
+      #    1k/10k/100k, compared against a recorded baseline with 40% headroom
+      #    for runner noise — a ratchet that fails on noise gets disabled,
+      #    which is worse than no ratchet.
+      #
+      #    NOTE: the ratchet SELF-SKIPS when the baseline's platform differs
+      #    from the runner's, and the only baseline committed today is
+      #    darwin-arm64. On linux-x64 CI it therefore prints and passes without
+      #    comparing. To arm it, run `pnpm bench:write` on a runner and commit
+      #    bench/baseline.linux-x64.json. Until then this step is a measurement,
+      #    not a gate, and should not be described as one.
+      - name: performance (engine)
+        run: pnpm bench:check
+
+      # 6. Browser performance. First paint, sort, filter keystroke and scroll
+      #    frame time in a real Chromium, CPU-throttled 4x over CDP. This is
+      #    what makes the paint and 60 fps columns of the budget table measured
+      #    rather than claimed — it found an O(rows) scan in the scroll path on
+      #    the day it was written.
+      #
+      #    Still NOT a ward workstation: the throttle emulates a slower CPU, not
+      #    4 GB of contended memory with an EHR in another tab. Treat the numbers
+      #    as a floor, not a prediction. Same platform caveat as step 5.
+      - name: performance (browser)
+        run: pnpm exec playwright install --with-deps chromium && pnpm bench:browser:check
+
+  # ── Declared, not yet wired ────────────────────────────────────────────────
+  #
+  # accessibility  PARTIAL. Structural axe runs in jsdom on every commit. What
+  #                is NOT covered: every rule needing layout — colour contrast,
+  #                target size, focus-not-obscured — plus the NVDA / JAWS /
+  #                VoiceOver x 3-engine matrix, which cannot be automated and
+  #                governs leaving `experimental`. Plan it as work, not as a
+  #                discovery. The cross-adapter tree assertion becomes
+  #                meaningful when the second adapter exists (wave 4).
+  # performance    LIVE, steps 5 and 6. Engine work in node, and paint, sort,
+  #                filter and scroll frame time in a CPU-throttled Chromium.
+  #                What remains: the ratchet self-skips until a linux-x64
+  #                baseline is committed, and no harness here is a ward
+  #                workstation — the client-mode refusal constant still needs
+  #                one.
+  # memory         LIVE, inside step 2. What is NOT yet covered: plugin
+  #                teardown, because the plugin registry does not exist until
+  #                wave 3 proper. Cell-renderer teardown IS asserted.

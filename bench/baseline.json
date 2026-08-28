@@ -1,0 +1,35 @@
+{
+  "note": "Engine operations only. Paint, scroll frame time and INP are NOT measured here.",
+  "node": "v22.17.0",
+  "platform": "darwin-arm64",
+  "gc": true,
+  "results": {
+    "1000": {
+      "sortMs": 0.21,
+      "sortTwoKeyMs": 0.4,
+      "filterMs": 0.27,
+      "windowMs": 0.0049,
+      "modelHeapMb": 0.1
+    },
+    "10000": {
+      "sortMs": 1.54,
+      "sortTwoKeyMs": 5.66,
+      "filterMs": 2.08,
+      "windowMs": 0.0027,
+      "modelHeapMb": 0.6
+    },
+    "100000": {
+      "sortMs": 23.71,
+      "sortTwoKeyMs": 114.57,
+      "filterMs": 21.06,
+      "windowMs": 0.0037,
+      "modelHeapMb": 5.4
+    }
+  },
+  "refusalProbe": {
+    "brokeAt": 200000,
+    "ms": 308.8,
+    "budgetMs": 120
+  },
+  "refusalConstantMeasured": false
+}

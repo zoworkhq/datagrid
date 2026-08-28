@@ -1,0 +1,40 @@
+{
+  "name": "@oxygenui-design/datagrid",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "tsc --build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint:layers": "pnpm build && depcruise packages --config .dependency-cruiser.cjs",
+    "size": "turbo run size",
+    "gate": "pnpm typecheck && pnpm test && pnpm lint:layers && pnpm size",
+    "changeset": "changeset",
+    "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo .turbo",
+    "bench": "pnpm build && node --expose-gc bench/run.mjs",
+    "bench:check": "pnpm build && node --expose-gc bench/run.mjs --check",
+    "bench:write": "pnpm build && node --expose-gc bench/run.mjs --write",
+    "bench:browser": "pnpm build && node bench/browser.mjs",
+    "bench:browser:check": "pnpm build && node bench/browser.mjs --check",
+    "bench:browser:write": "pnpm build && node bench/browser.mjs --write"
+  },
+  "devDependencies": {
+    "@changesets/cli": "3.0.1",
+    "@size-limit/preset-small-lib": "13.0.3",
+    "@types/node": "22.10.5",
+    "axe-core": "4.13.0",
+    "dependency-cruiser": "18.2.0",
+    "esbuild": "0.28.2",
+    "jsdom": "30.0.1",
+    "playwright": "1.62.1",
+    "size-limit": "13.0.3",
+    "turbo": "2.10.12",
+    "typescript": "5.7.3",
+    "vitest": "4.1.11"
+  }
+}

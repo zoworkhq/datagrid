@@ -1,0 +1,23 @@
+{
+  "name": "@oxygenui-design/grid-export",
+  "version": "0.0.0",
+  "private": true,
+  "description": "CSV, XLSX and the print sheet, with formula-injection defence built into the writer",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest run --passWithNoTests",
+    "size": "size-limit"
+  },
+  "oxygen": { "layer": "plugin", "budget": "7 KB", "wave": 2 },
+  "size-limit": [
+    { "path": "dist/index.js", "limit": "7 KB", "ignore": ["@oxygenui-design/grid-core"] }
+  ],
+  "dependencies": { "@oxygenui-design/grid-core": "workspace:*" }
+}

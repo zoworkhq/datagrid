@@ -93,6 +93,10 @@ string; a masked cell asserting the clipboard.
 
 ## 4. Five ADRs to write before code
 
+> **Status, 27 August 2026: written.** All five are accepted in
+> [`docs/decisions/`](docs/decisions/), plus a sixth for the naming fix below.
+> The list here is kept as the record of why each was needed.
+
 The grid inherits `oxygenui`'s accepted decisions. Five of them conflict with
 this architecture and each needs an ADR in **this** repo.
 
@@ -118,6 +122,10 @@ this architecture and each needs an ADR in **this** repo.
    superseding ADR, not by a paragraph in an HTML file.
 
 ### And one naming fix — my error, fix it before anyone writes a lint rule
+
+> **Settled by [ADR 0006](docs/decisions/0006-the-grids-layers-are-named-not-numbered.md):**
+> the grid's layers are named — `foundation / engine / render / domain /
+> adapter / plugin` — and `L0`–`L4` is not used in this repository at all.
 
 `oxygenui`'s `ENGINEERING.md` §2 already defines a layer model:
 
