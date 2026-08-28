@@ -11,5 +11,6 @@
 export * from "./csv.js";
 export * from "./injection.js";
 export * from "./model.js";
+export * from "./print.js";
 export * from "./xlsx.js";
 export { zip, type ZipEntry } from "./zip.js";

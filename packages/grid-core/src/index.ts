@@ -9,6 +9,7 @@
  */
 export * from "./actions.js";
 export * from "./aggregate.js";
+export * from "./bulk.js";
 export * from "./group.js";
 export * from "./live.js";
 export * from "./lazy-groups.js";
@@ -20,6 +21,7 @@ export * from "./filter.js";
 export * from "./geometry.js";
 export * from "./filter-eval.js";
 export * from "./row-model.js";
+export * from "./selection.js";
 export * from "./keymap.js";
 export * from "./query.js";
 export * from "./sort.js";
