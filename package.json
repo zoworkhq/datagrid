@@ -9,8 +9,8 @@
   "scripts": {
     "build": "turbo run build",
     "typecheck": "tsc --build",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "pnpm build && vitest run",
+    "test:watch": "pnpm build && vitest",
     "lint:layers": "pnpm build && depcruise packages --config .dependency-cruiser.cjs",
     "size": "turbo run size",
     "gate": "pnpm typecheck && pnpm test && pnpm lint:layers && pnpm size && pnpm typecheck:playground",
