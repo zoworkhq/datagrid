@@ -1,0 +1,15 @@
+{
+  "name": "@oxygenui-design/grid-clipboard",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Range selection, clipboard and undo. Off by default in clinical recipes.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist"],
+  "scripts": { "build": "tsc --build", "test": "vitest run --passWithNoTests", "size": "size-limit" },
+  "oxygen": { "layer": "plugin", "budget": "5 KB", "wave": 5 },
+  "size-limit": [{ "path": "dist/index.js", "limit": "5 KB", "ignore": ["@oxygenui-design/grid-core"] }],
+  "dependencies": { "@oxygenui-design/grid-core": "workspace:*" }
+}

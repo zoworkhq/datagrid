@@ -14,7 +14,7 @@ const ENGINE  = "^packages/(grid-core|grid-signals)/";
 const RENDER  = "^packages/(grid-dom)/";
 const DOMAIN  = "^packages/(grid-healthcare|grid-fhir)/";
 const ADAPTER = "^packages/(grid-react|grid-angular|grid-vue|grid-element)/";
-const PLUGIN  = "^packages/(grid-export|grid-filters|grid-analytics|grid-ai)/";
+const PLUGIN  = "^packages/(grid-export|grid-filters|grid-analytics|grid-ai|grid-clipboard)/";
 
 const ABOVE_ENGINE = `${RENDER}|${DOMAIN}|${ADAPTER}|${PLUGIN}`;
 const ABOVE_RENDER = `${DOMAIN}|${ADAPTER}|${PLUGIN}`;

@@ -24,6 +24,9 @@
     },
     {
       "path": "packages/grid-element"
+    },
+    {
+      "path": "packages/grid-clipboard"
     }
   ]
 }

@@ -10,3 +10,4 @@ export * from "./cell-contract.js";
 export * from "./cells.js";
 export * from "./coverage.js";
 export * from "./disclosure.js";
+export * from "./policy.js";
