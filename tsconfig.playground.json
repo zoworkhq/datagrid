@@ -7,8 +7,15 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@oxygenui-design/*": ["packages/*/dist/index.d.ts"]
-    }
+      "@oxygenui-design/*": [
+        "packages/*/dist/index.d.ts"
+      ]
+    },
+    "allowJs": true
   },
-  "include": ["examples/playground/*.ts"]
+  "include": [
+    "examples/playground/*.ts",
+    "examples/playground/*.mts",
+    "examples/playground/*.mjs"
+  ]
 }

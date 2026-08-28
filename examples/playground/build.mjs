@@ -91,11 +91,7 @@ export function Roster({ patients }) {
  * Prefixing on extraction means the demo opts in by putting `.antd` on a
  * container, and nothing leaks into the page chrome by accident.
  */
-function extractBriefCss() {
-  const brief = readFileSync(
-    join(HERE, "..", "..", "docs", "research", "2026-08-27-product-brief.html"),
-    "utf8",
-  );
+export function liftDesignSystem(brief) {
   const styles = [...brief.matchAll(/<style>([\s\S]*?)<\/style>/g)]
     .map((m) => m[1])
     .join("\n")
@@ -164,20 +160,31 @@ function extractBriefCss() {
     i = j;
   }
 
-  const css = [
-    "/*",
-    " * GENERATED — do not edit. See extractBriefCss() in build.mjs.",
-    " * Lifted from docs/research/2026-08-27-product-brief.html and namespaced",
-    " * under .antd, so the demo and the brief cannot disagree about what the",
-    " * component looks like.",
-    " */",
-    "",
-    ...kept,
-    "",
-  ].join("\n");
+  return {
+    rules: kept,
+    css: [
+      "/*",
+      " * GENERATED — do not edit. See liftDesignSystem() in build.mjs.",
+      " * Lifted from docs/research/2026-08-27-product-brief.html and namespaced",
+      " * under .antd, so the demo and the brief cannot disagree about what the",
+      " * component looks like.",
+      " */",
+      "",
+      ...kept,
+      "",
+    ].join("\n"),
+  };
+}
 
+/** The IO half. Everything decidable lives in `liftDesignSystem`. */
+function extractBriefCss() {
+  const brief = readFileSync(
+    join(HERE, "..", "..", "docs", "research", "2026-08-27-product-brief.html"),
+    "utf8",
+  );
+  const { css, rules } = liftDesignSystem(brief);
   writeFileSync(join(HERE, "brief.generated.css"), css);
-  console.log(`lifted ${kept.length} rules from the brief — ${(css.length / 1024).toFixed(0)} kB`);
+  console.log(`lifted ${rules.length} rules from the brief — ${(css.length / 1024).toFixed(0)} kB`);
 }
 
 export function copyStatic() {

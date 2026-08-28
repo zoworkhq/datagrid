@@ -13,6 +13,12 @@
  *     node outlives the row it was created for, so nothing may be captured
  *     from the first context — every field is written on update.
  *
+ *     `mount()` builds the skeleton and then DELEGATES to `update()`. The
+ *     renderer calls one or the other, never both (renderer.ts:266), so a
+ *     mount that only builds an empty skeleton paints a blank cell. That is
+ *     invisible in the demo, where a second render follows immediately and
+ *     fills it in — and wrong for any consumer that renders once.
+ *
  *   · Nothing is set through `innerHTML`. The renderer forbids it one layer
  *     down; a cell that reached around that would put patient-supplied text
  *     into a parser, which is the same defect the export writers exist to
@@ -83,7 +89,7 @@ function tone(seed: string): string {
  * away before the name is.
  */
 export const identityCell: CellRenderer<Patient> = {
-  mount(node) {
+  mount(node, ctx) {
     const idc = el("div", "idc");
     idc.append(el("span", "a-avatar"), (() => {
       const who = el("div", "who");
@@ -91,6 +97,7 @@ export const identityCell: CellRenderer<Patient> = {
       return who;
     })());
     node.append(idc);
+    identityCell.update(node, ctx);
   },
   update(node, ctx) {
     const { row } = ctx;
@@ -125,10 +132,11 @@ export const identityCell: CellRenderer<Patient> = {
 
 /** A dot AND a word. Colour alone would fail every colour-blind reader. */
 export const statusCell: CellRenderer<Patient> = {
-  mount(node) {
+  mount(node, ctx) {
     const pill = el("span", "cs");
     pill.append(el("i", "gl gl-dot"), el("span", "cs-t"));
     node.append(pill);
+    statusCell.update(node, ctx);
   },
   update(node, ctx) {
     const pill = node.querySelector(".cs") as HTMLElement;
@@ -157,8 +165,9 @@ const SHOWN = 2;
  * can act on — it says how much is missing. "…" says only that something is.
  */
 export const problemsCell: CellRenderer<Patient> = {
-  mount(node) {
+  mount(node, ctx) {
     node.append(el("div", "chips"));
+    problemsCell.update(node, ctx);
   },
   update(node, ctx) {
     const chips = node.querySelector(".chips") as HTMLElement;
@@ -193,8 +202,9 @@ export const problemsCell: CellRenderer<Patient> = {
  * nobody ordered. Each of those is a different clinical situation.
  */
 export const resultCell: CellRenderer<Patient> = {
-  mount(node) {
+  mount(node, ctx) {
     node.append(el("span", "res-v"));
+    resultCell.update(node, ctx);
   },
   update(node, ctx) {
     const span = node.querySelector(".res-v") as HTMLElement;
