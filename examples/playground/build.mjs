@@ -4,7 +4,7 @@
  * locally and what deploys are the same artifact.
  */
 import { context, build as esbuild } from "esbuild";
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -77,15 +77,121 @@ export function Roster({ patients }) {
   console.log("precomputed migrations for", Object.keys(out).join(", "));
 }
 
+/**
+ * Lifts the mockup design system out of the checked-in component brief.
+ *
+ * The brief IS the design. Copying its CSS here would mean two copies drifting
+ * apart the first time a generator changes, and the demo quietly ceasing to
+ * show what was signed off. Extracting it at build time makes the resemblance
+ * structural: regenerate the brief and the demo follows.
+ *
+ * Everything is namespaced under `.antd` on the way out — the brief already
+ * scopes most of its mockup primitives that way, but a few (`.cov`, `.stage`)
+ * are bare, and those would collide with the playground's own class names.
+ * Prefixing on extraction means the demo opts in by putting `.antd` on a
+ * container, and nothing leaks into the page chrome by accident.
+ */
+function extractBriefCss() {
+  const brief = readFileSync(
+    join(HERE, "..", "..", "docs", "research", "2026-08-27-product-brief.html"),
+    "utf8",
+  );
+  const styles = [...brief.matchAll(/<style>([\s\S]*?)<\/style>/g)]
+    .map((m) => m[1])
+    .join("\n")
+    // Comments come out FIRST. This parser matches braces to find a rule's
+    // extent, and the brief documents its own CSS in prose that quotes
+    // declarations — `.tile.crit { border-color: currentColor }` inside a
+    // comment. Those braces are counted, the parser loses its place, and whole
+    // @media blocks silently vanish from the output. Five of them did, which is
+    // why the demo rendered dark text on light rules.
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+
+  // Element-only selectors are the document's prose (body, h1, p). Everything
+  // carrying a class or a custom-property root is design system.
+  const isDesign = (sel) => /\.[a-zA-Z]|:root|\[data-theme/.test(sel);
+  const scope = (sel) =>
+    sel
+      .split(",")
+      .map((part) => {
+        const t = part.trim();
+        if (!t || t.startsWith("@")) return t;
+        if (/\.antd|\.ox\b/.test(t)) return t;
+        // :root needs the class on a descendant, not on :root itself.
+        if (t.startsWith(":root")) return t.replace(/^:root/, ":root").concat(" .antd");
+        return `.antd ${t}`;
+      })
+      .join(", ");
+
+  const kept = [];
+  let i = 0;
+  while (i < styles.length) {
+    const open = styles.indexOf("{", i);
+    if (open < 0) break;
+    let depth = 1;
+    let j = open + 1;
+    while (j < styles.length && depth > 0) {
+      if (styles[j] === "{") depth++;
+      else if (styles[j] === "}") depth--;
+      j++;
+    }
+    const rule = styles.slice(i, j);
+    const sel = rule.slice(0, rule.indexOf("{")).trim();
+    const body = rule.slice(rule.indexOf("{") + 1, rule.lastIndexOf("}"));
+
+    if (sel.startsWith("@")) {
+      // A conditional group: scope the rules inside it, keep the condition.
+      const inner = [];
+      let k = 0;
+      while (k < body.length) {
+        const o = body.indexOf("{", k);
+        if (o < 0) break;
+        let d = 1;
+        let m = o + 1;
+        while (m < body.length && d > 0) {
+          if (body[m] === "{") d++;
+          else if (body[m] === "}") d--;
+          m++;
+        }
+        const s2 = body.slice(k, o).trim();
+        if (isDesign(s2)) inner.push(`${scope(s2)} {${body.slice(o + 1, m - 1)}}`);
+        k = m;
+      }
+      if (inner.length > 0) kept.push(`${sel} {\n${inner.join("\n")}\n}`);
+    } else if (isDesign(sel)) {
+      kept.push(`${scope(sel)} {${body}}`);
+    }
+    i = j;
+  }
+
+  const css = [
+    "/*",
+    " * GENERATED — do not edit. See extractBriefCss() in build.mjs.",
+    " * Lifted from docs/research/2026-08-27-product-brief.html and namespaced",
+    " * under .antd, so the demo and the brief cannot disagree about what the",
+    " * component looks like.",
+    " */",
+    "",
+    ...kept,
+    "",
+  ].join("\n");
+
+  writeFileSync(join(HERE, "brief.generated.css"), css);
+  console.log(`lifted ${kept.length} rules from the brief — ${(css.length / 1024).toFixed(0)} kB`);
+}
+
 export function copyStatic() {
   mkdirSync(DIST, { recursive: true });
-  for (const f of ["index.html", "style.css"]) copyFileSync(join(HERE, f), join(DIST, f));
+  for (const f of ["index.html", "style.css", "brief.generated.css"]) {
+    copyFileSync(join(HERE, f), join(DIST, f));
+  }
   // Tells GitHub Pages not to run the output through Jekyll.
   writeFileSync(join(DIST, ".nojekyll"), "");
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   await precomputeMigrations();
+  extractBriefCss();
   copyStatic();
   if (process.argv.includes("--watch")) {
     const ctx = await context(options);

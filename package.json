@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "lint:layers": "pnpm build && depcruise packages --config .dependency-cruiser.cjs",
     "size": "turbo run size",
-    "gate": "pnpm typecheck && pnpm test && pnpm lint:layers && pnpm size",
+    "gate": "pnpm typecheck && pnpm test && pnpm lint:layers && pnpm size && pnpm typecheck:playground",
     "changeset": "changeset",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo .turbo",
     "bench": "pnpm build && node --expose-gc bench/run.mjs",
@@ -23,7 +23,8 @@
     "bench:browser:check": "pnpm build && node bench/browser.mjs --check",
     "bench:browser:write": "pnpm build && node bench/browser.mjs --write",
     "playground": "pnpm build && node examples/playground/build.mjs --watch",
-    "playground:build": "pnpm build && node examples/playground/build.mjs"
+    "playground:build": "pnpm build && node examples/playground/build.mjs",
+    "typecheck:playground": "tsc -p tsconfig.playground.json"
   },
   "devDependencies": {
     "@angular/core": "22.1.4",

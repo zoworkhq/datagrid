@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@oxygenui-design/*": ["packages/*/dist/index.d.ts"]
+    }
+  },
+  "include": ["examples/playground/*.ts"]
+}

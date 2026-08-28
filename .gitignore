@@ -19,3 +19,6 @@ __pycache__/
 .size-limit.json
 examples/playground/dist/
 packages/grid-angular/dist-ng/
+
+# lifted from the component brief at build time — see extractBriefCss()
+examples/playground/brief.generated.css

@@ -7,13 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="./brief.generated.css" />
 <link rel="stylesheet" href="./style.css" />
 </head>
-<body>
-<header class="bar">
+<body class="antd">
+<header class="p-bar">
   <div>
     <h1>Oxygen Data Grid</h1>
-    <p class="sub">Every row is synthetic. No PHI appears anywhere.</p>
+    <p class="p-sub">Every row is synthetic. No PHI appears anywhere.</p>
   </div>
   <nav class="tabs" role="tablist" aria-label="Demonstrations">
     <button role="tab" data-tab="roster" aria-selected="true">Roster</button>
@@ -44,25 +45,25 @@
 
 <!-- The coverage claim. Required, rendered in a fixed place, and printed. -->
 <div class="coverage" id="coverage" role="status" data-roster-only></div>
-<div class="arrivals" id="arrivals" hidden data-roster-only></div>
+<div class="p-arrivals" id="arrivals" hidden data-roster-only></div>
 <div class="refusal" id="refusal" hidden role="alert" data-roster-only></div>
 
 <section class="panel" data-panel="roster">
-  <div class="hint" id="roster-hint"></div>
+  <div class="p-hint" id="roster-hint"></div>
   <div class="grid-slot" id="grid-host"></div>
   <pre class="exportout" id="export-out" hidden></pre>
 </section>
 
 <section class="panel" data-panel="clinical" hidden>
-  <div class="hint">The five cells that do not exist in the component library, each rendering a state the
+  <div class="p-hint">The five cells that do not exist in the component library, each rendering a state the
   application supplies. <b>None derives one</b> — no clock is read and no threshold is applied. The
   scheduled-dose cell is deliberately absent and says so.</div>
   <div class="grid-slot" id="clinical-host"></div>
-  <div class="held" id="held-note"></div>
+  <div class="p-held" id="held-note"></div>
 </section>
 
 <section class="panel" data-panel="disclosure" hidden>
-  <div class="hint">One policy object driving four behaviours. A withheld column is <b>stated</b>, a restricted
+  <div class="p-hint">One policy object driving four behaviours. A withheld column is <b>stated</b>, a restricted
   row is <b>marked and keeps its slot</b>, a masked region <b>spans</b> its columns, and break-glass
   <b>asks</b> — it never grants.</div>
   <div class="controls inline">
@@ -76,7 +77,7 @@
 </section>
 
 <section class="panel" data-panel="grouping" hidden>
-  <div class="hint">Grouping with aggregation that <b>refuses incompatible units</b>, and a lazily-loaded
+  <div class="p-hint">Grouping with aggregation that <b>refuses incompatible units</b>, and a lazily-loaded
   branch that renders as <em>unresolved</em> — never as empty.</div>
   <div class="controls inline">
     <label>Group by
@@ -92,7 +93,7 @@
 </section>
 
 <section class="panel" data-panel="working" hidden>
-  <div class="hint">Editing and the inspector. A failed write <b>restores the original and keeps your draft</b>.
+  <div class="p-hint">Editing and the inspector. A failed write <b>restores the original and keeps your draft</b>.
   Opening the inspector changes exactly one thing — what is inspected — and <b>cannot touch focus or
   selection</b>, by signature. The URL carries the row <em>and</em> the query that produced the list.</div>
   <div class="controls inline">
@@ -114,7 +115,7 @@
 </section>
 
 <section class="panel" data-panel="ai" hidden>
-  <div class="hint">The features are table stakes. <b>Refusal and provenance</b> are not, and neither needs a
+  <div class="p-hint">The features are table stakes. <b>Refusal and provenance</b> are not, and neither needs a
   model. A proposal that names a column this grid lacks <b>runs nothing</b>; a proposal is never applied; and an
   AI-derived value is a different <em>shape</em> from a verified one, so nothing can rank them together.</div>
   <div class="controls inline">
@@ -129,13 +130,13 @@
     <button id="ai-run" type="button">Compile</button>
     <button id="ai-accept" type="button" disabled>Accept</button>
   </div>
-  <div class="chips" id="ai-chips"></div>
+  <div class="p-chips" id="ai-chips"></div>
   <div class="refusal" id="ai-refusal" hidden role="alert"></div>
   <div class="grid-slot" id="ai-host"></div>
 </section>
 
 <section class="panel" data-panel="migration" hidden>
-  <div class="hint">The codemod renames what means the same thing, <b>leaves what does not</b> with the reason
+  <div class="p-hint">The codemod renames what means the same thing, <b>leaves what does not</b> with the reason
   attached, and <b>refuses to write a coverage claim</b> — it emits a placeholder that does not compile.</div>
   <div class="controls inline">
     <label>From
@@ -151,13 +152,13 @@
 </section>
 
 <section class="panel" data-panel="devtools" hidden>
-  <div class="hint">The action log, and <b>why</b> the grid is in the state it is in. It has no transport:
+  <div class="p-hint">The action log, and <b>why</b> the grid is in the state it is in. It has no transport:
   nothing here leaves this machine. It is the compensating control for errors that carry no values.</div>
   <div class="controls inline"><button id="dt-clear" type="button">Clear</button><span id="dt-stats"></span></div>
   <pre class="devtools" id="devtools-out"></pre>
 </section>
 
-<footer class="legend">
+<footer class="p-legend">
   <span id="legend"><b>Keyboard</b> — Tab in, then arrows. Enter or click a header sorts. Space selects.
   F2 edits. Ctrl+C copies. Ctrl+Z undoes. The body is one tab stop.</span>
   <span id="stats"></span>

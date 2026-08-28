@@ -19,12 +19,13 @@ import {
   type Comparator,
   type GridAction,
   type GridState,
-  type Measured,
 } from "@oxygenui-design/grid-core";
 import { createGridRenderer, type GridRenderer, type GridViewModel } from "@oxygenui-design/grid-dom";
+import { ROSTER_CELLS, type Patient, type Status } from "./cells.js";
 import {
   describeAbsence,
   describeCoverage,
+  isAbsent,
   type Absent,
   type Coverage,
 } from "@oxygenui-design/grid-healthcare";
@@ -45,17 +46,14 @@ import {
 
 // ── synthetic data ──────────────────────────────────────────────────────────
 
-interface Patient {
-  readonly id: string;
-  readonly name: string;
-  readonly mrn: string;
-  readonly ward: string;
-  /** A result, or a typed reason there is not one. */
-  readonly potassium: Measured | Absent;
-  readonly reviewed: string;
-}
 
 const WARDS = ["Ashgrove", "Beeches", "Cedar", "Dunlin", "Elmwood"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const STATUSES: readonly Status[] = ["Stable", "Needs review", "Deteriorating", "Newly admitted"];
+const PROBLEMS = [
+  "Depression", "Anxiety", "Type 2 diabetes", "Hypertension", "Asthma",
+  "Insomnia", "COPD", "Atrial fibrillation", "Chronic kidney disease",
+];
 const SURNAMES = [
   "Okafor", "Lindqvist", "Rahman", "Müller", "Nakamura", "Oyelaran", "Kowalski",
   "Ferreira", "Haddad", "Bianchi", "Novak", "Petrov", "Dlamini", "Marchetti",
@@ -88,6 +86,9 @@ function makePatients(n: number): Patient[] {
       potassium: absent
         ? (ABSENCES[i % ABSENCES.length] as Absent)
         : { value: Math.round((3 + ((i * 37) % 30) / 10) * 10) / 10, unit: "mmol/L" },
+      dob: `${String((i % 28) + 1).padStart(2, "0")} ${MONTHS[i % 12]} ${1938 + (i % 62)}`,
+      status: STATUSES[i % STATUSES.length] as Status,
+      problems: PROBLEMS.slice(i % 4, (i % 4) + 1 + (i % 5)),
       reviewed: `2026-08-${String((i % 27) + 1).padStart(2, "0")}`,
     };
   }
@@ -100,16 +101,16 @@ function makePatients(n: number): Patient[] {
   return rows;
 }
 
-const isAbsent = (v: Measured | Absent): v is Absent => "reason" in v;
 
 // ── the grid ────────────────────────────────────────────────────────────────
 
 const columns = [
-  { key: "name", header: "Patient", sortable: true, width: 190 },
-  { key: "mrn", header: "MRN", width: 130 },
-  { key: "ward", header: "Ward", sortable: true, width: 130 },
-  { key: "potassium", header: "Potassium", sortable: true, width: 230 },
-  { key: "reviewed", header: "Last reviewed", sortable: true, width: 150 },
+  { key: "name", header: "Patient", sortable: true, width: 238 },
+  { key: "status", header: "Clinical status", sortable: true, width: 150 },
+  { key: "problems", header: "Problem list", width: 210 },
+  { key: "ward", header: "Ward", sortable: true, width: 120 },
+  { key: "potassium", header: "Potassium", sortable: true, width: 200 },
+  { key: "reviewed", header: "Last seen", sortable: true, width: 120 },
 ];
 
 const comparators: Record<string, Comparator<Patient>> = {
@@ -243,10 +244,13 @@ function mount(): void {
   host.textContent = "";
   renderer = createGridRenderer<Patient>(host, {
     label: "Patient roster",
-    rowHeight: 38,
+    // The identity cell is two lines, which is what makes the roster legible
+    // and what sets the row height. 56px is the brief's own measurement.
+    rowHeight: 56,
     overscan: 6,
     onAction: onAction,
     onError: (e) => console.warn("grid error (coordinates only):", e),
+    cells: ROSTER_CELLS,
     fallback: (row, key) => ({ kind: "text", text: cellText(row, key) }),
   });
   render();

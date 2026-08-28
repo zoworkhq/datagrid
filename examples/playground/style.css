@@ -1,189 +1,400 @@
-/* Palette inherited from the Oxygen brief series. */
-:root {
-  --paper:#f6faf8; --surface:#fff; --surface-2:#eef4f2;
-  --ink:#0e1c19; --ink-2:#33473f; --muted:#5d716b;
-  --rule:#d8e4df; --rule-2:#c3d3cd;
-  --accent:#059478; --accent-soft:#e6f7f1; --accent-ink:#045b4b;
-  --warn:#b7791f; --warn-soft:#fbf3e0; --warn-rule:#e4c98a;
-  --bad:#b4423a; --bad-soft:#fbeceb; --bad-rule:#e8b5b0;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper:#0b1514; --surface:#101d1b; --surface-2:#142522;
-    --ink:#e7f2ee; --ink-2:#c3d6d0; --muted:#93aca5;
-    --rule:#1f312e; --rule-2:#2c423e;
-    --accent:#5fe0c9; --accent-soft:#10302b; --accent-ink:#b8f3e7;
-    --warn:#e2b04a; --warn-soft:#2a2410; --warn-rule:#4d4020;
-    --bad:#f0928a; --bad-soft:#2c1614; --bad-rule:#552a26;
-    color-scheme: dark;
-  }
-}
+/*
+ * The playground's own stylesheet.
+ *
+ * The look is NOT defined here. `brief.generated.css` is lifted from the
+ * checked-in component brief at build time and carries the whole mockup design
+ * system, namespaced under `.antd`. This file does two things and nothing else:
+ *
+ *   1. dresses the page chrome (`.p-*`) in the brief's tokens, and
+ *   2. maps the REAL renderer's DOM onto the brief's table treatment.
+ *
+ * (2) is the interesting half. The brief's prototypes are static `<table
+ * class="dgt">`; the shipped renderer virtualises, so it emits absolutely
+ * positioned `[role=row]` divs with an inline width per cell — a `<table>`
+ * cannot be windowed, and the ARIA grid contract needs an absolute
+ * `aria-rowindex` a table would not give. The two therefore CANNOT share
+ * markup, and the resemblance has to be rebuilt against the real DOM.
+ *
+ * Which is the honest test of a claim the brief makes: that the library ships
+ * no CSS and takes its appearance entirely from the host. If the design only
+ * worked on the mockups' markup, it was never a design system — it was a
+ * screenshot.
+ */
+
+/* ── page ───────────────────────────────────────────────────────────────── */
+
 * { box-sizing: border-box; }
+
 body {
-  margin: 0; background: var(--paper); color: var(--ink);
-  font: 15px/1.5 "Mulish", -apple-system, "Segoe UI", system-ui, sans-serif;
-  display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif);
+  font-size: var(--fs-md, 13.5px);
+  line-height: 1.5;
 }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 2px; }
 
-.bar {
-  display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;
-  padding: .9rem 1.2rem; background: var(--surface); border-bottom: 1px solid var(--rule);
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--r-xs, 2px);
 }
-.bar h1 { font-size: 1.05rem; font-weight: 800; margin: 0; letter-spacing: -.02em; }
-.sub { margin: .1rem 0 0; font-size: .78rem; color: var(--muted); }
-.controls { display: flex; gap: .55rem; align-items: center; flex-wrap: wrap; margin-left: auto; }
-.controls label { font-size: .78rem; color: var(--muted); display: flex; gap: .35rem; align-items: center; }
-select, input[type="search"], button {
-  font: inherit; font-size: .82rem; padding: .34rem .6rem;
-  border: 1px solid var(--rule-2); border-radius: 3px;
-  background: var(--surface); color: var(--ink);
-}
-input[type="search"] { min-width: 170px; }
-button { cursor: pointer; }
-button:hover { border-color: var(--accent); color: var(--accent-ink); }
 
-/* The coverage claim: a fixed place, in words. Never a tooltip. */
+/* ── header ─────────────────────────────────────────────────────────────── */
+
+.p-bar {
+  flex: none;
+  display: flex;
+  gap: var(--sp-5, 20px);
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: var(--sp-3, 12px) var(--sp-4, 16px);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.p-bar h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.p-sub {
+  margin: 2px 0 0;
+  font-size: var(--fs-xs, 11.5px);
+  color: var(--ink-3);
+}
+
+.tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+.tabs button {
+  height: var(--ctl-md, 28px);
+  padding: 0 var(--sp-3, 12px);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm, 4px);
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: var(--fs-sm, 12.5px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 140ms, color 140ms, border-color 140ms;
+}
+.tabs button:hover { background: var(--sunken); color: var(--ink-2); }
+.tabs button[aria-selected="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.controls { display: flex; gap: var(--sp-2, 8px); align-items: center; flex-wrap: wrap; margin-left: auto; }
+.controls label {
+  display: flex; gap: 6px; align-items: center;
+  font-size: var(--fs-xs, 11.5px); color: var(--ink-3);
+}
+
+/* Controls borrow the brief's `.a-btn` geometry rather than inventing one. */
+select,
+input[type="search"],
+.controls button {
+  height: var(--ctl-md, 28px);
+  padding: 0 var(--sp-3, 12px);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm, 4px);
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--fs-sm, 12.5px);
+  font-weight: 500;
+}
+.controls button { cursor: pointer; transition: background-color 140ms, border-color 140ms, color 140ms; }
+.controls button:hover { background: var(--sunken); border-color: var(--line-3); color: var(--ink); }
+input[type="search"] { min-width: 200px; }
+input[type="checkbox"] { accent-color: var(--accent); }
+
+/* ── the coverage claim ─────────────────────────────────────────────────── */
+
+/* A fixed place, in words, never a tooltip — and never below the fold. */
 .coverage {
-  padding: .5rem 1.2rem; font-size: .82rem; color: var(--ink-2);
-  background: var(--accent-soft); border-bottom: 1px solid var(--rule);
-  border-left: 3px solid var(--accent);
+  flex: none;
+  padding: var(--sp-2, 8px) var(--sp-4, 16px);
+  font-size: var(--fs-sm, 12.5px);
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--accent-line);
 }
-.arrivals {
-  padding: .45rem 1.2rem; font-size: .82rem; font-weight: 700;
-  background: var(--warn-soft); color: var(--warn); cursor: pointer;
-  border-bottom: 1px solid var(--warn-rule);
+.p-arrivals {
+  flex: none;
+  padding: var(--sp-2, 8px) var(--sp-4, 16px);
+  font-size: var(--fs-sm, 12.5px);
+  font-weight: 600;
+  color: var(--warn-ink, #7a5b12);
+  background: var(--warn-soft, #fffbe6);
+  border-bottom: 1px solid var(--warn-line, #ffe58f);
+  cursor: pointer;
 }
 .refusal {
-  padding: .7rem 1.2rem; font-size: .84rem; line-height: 1.55;
-  background: var(--bad-soft); color: var(--bad); border-bottom: 1px solid var(--bad-rule);
+  flex: none;
+  padding: var(--sp-3, 12px) var(--sp-4, 16px);
+  font-size: var(--fs-sm, 12.5px);
+  line-height: 1.55;
+  color: var(--bad-ink, #a8071a);
+  background: var(--bad-soft, #fff2f0);
+  border-bottom: 1px solid var(--bad-line, #ffccc7);
 }
 
-main { flex: 1 1 auto; min-height: 0; padding: 0 1.2rem 1.2rem; }
+/* ── THE GRID ───────────────────────────────────────────────────────────────
+   Mapping the renderer's real DOM onto the brief's `.dgt` treatment.
 
-/* ── the grid ─────────────────────────────────────────────────────────────
-   The library ships no CSS: tokens come from the host application, which is
-   why grid-element uses light DOM. This is a host application's stylesheet. */
+     brief (static)              renderer (virtualised)
+     ─────────────────────────   ──────────────────────────────────
+     .dg                         .oxg-root > [role=grid]
+     table.dgt > thead > th      .oxg-head [role=columnheader]
+     tbody > tr                  .oxg-body [role=row]   (absolute)
+     td                          [role=gridcell]        (inline width)
+   ------------------------------------------------------------------------ */
+
 .oxg-root { height: 100%; display: flex; flex-direction: column; }
-.oxg { height: 100%; display: flex; flex-direction: column; min-height: 0;
-       border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); overflow: hidden; }
-.oxg-head { flex: none; background: var(--surface-2); border-bottom: 1px solid var(--rule-2); }
+
+/* `.dg` in the brief: the shell. Same border, radius and ground. */
+.oxg-root > [role="grid"] {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface);
+  overflow: hidden;
+  /* The brief's `.dg.standard` density, verbatim — and 40px is also the
+     `rowHeight` the renderer is given, so geometry and paint agree. */
+  --dg-row-h: 40px;
+  --dg-pad-x: 10px;
+  --dg-pad-y: 8px;
+  --dg-fs: 13px;
+  --dg-head-h: 34px;
+}
+
+/* The ground belongs to the header, not to its cells: the brief's `<thead>`
+   spans the table, and a flex row of fixed-width cells stops at the last one. */
+.oxg-head {
+  flex: none;
+  background: var(--sunken);
+  border-bottom: 1px solid var(--line-2);
+}
 .oxg-head [role="row"] { display: flex; }
+
+/* The brief's table is `width:100%; table-layout:fixed`, so its columns fill
+   the stage. Columns here carry an inline pixel width for virtualisation, so
+   the last one absorbs the remainder instead. */
+.oxg-head [role="columnheader"]:last-child,
+.oxg-body [role="row"] [role="gridcell"]:last-child { flex: 1 1 auto; }
+
+.oxg-head [role="columnheader"] {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: var(--dg-head-h);
+  padding: 0 var(--dg-pad-x);
+  color: var(--ink-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: start;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+  position: relative;
+}
+/* The grip, from the brief — a hairline that only appears under the pointer. */
+.oxg-head [role="columnheader"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 6px;
+  inset-inline-end: 0;
+  width: 1px;
+  background: transparent;
+  transition: background-color 140ms;
+}
+.oxg-head [role="columnheader"]:hover::before { background: var(--accent); }
+
+/* The sort mark is latent at 0, half-visible on hover, full when sorted —
+   so a sortable column advertises itself without shouting. */
+.oxg-head [role="columnheader"][aria-sort]::after {
+  content: "↕";
+  opacity: 0;
+  font-size: 10px;
+  color: var(--ink-4);
+  transition: opacity 140ms;
+}
+.oxg-head [role="columnheader"][aria-sort]:hover::after { opacity: 0.5; }
+.oxg-head [role="columnheader"][aria-sort="ascending"],
+.oxg-head [role="columnheader"][aria-sort="descending"] {
+  color: var(--ink);
+  background: color-mix(in oklab, var(--accent) 8%, var(--sunken));
+}
+.oxg-head [role="columnheader"][aria-sort="ascending"]::after { content: "↑"; opacity: 1; color: var(--accent); }
+.oxg-head [role="columnheader"][aria-sort="descending"]::after { content: "↓"; opacity: 1; color: var(--accent); }
+
 .oxg-viewport { flex: 1 1 auto; min-height: 0; }
-[role="columnheader"] {
-  padding: .55rem .7rem; font-size: .76rem; font-weight: 800;
-  letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
-  white-space: nowrap; user-select: none; cursor: pointer;
+
+.oxg-body [role="row"] { display: flex; }
+.oxg-body [role="row"]:hover [role="gridcell"] {
+  background: color-mix(in oklab, var(--accent) 4%, transparent);
 }
-[role="columnheader"][aria-sort="ascending"]::after { content: " ↑"; color: var(--accent); }
-[role="columnheader"][aria-sort="descending"]::after { content: " ↓"; color: var(--accent); }
-.oxg-body [role="row"] { display: flex; border-bottom: 1px solid var(--rule); }
-.oxg-body [role="row"]:hover { background: var(--surface-2); }
-.oxg-body [role="row"][aria-selected="true"] { background: var(--accent-soft); }
+.oxg-body [role="row"][aria-selected="true"] [role="gridcell"] {
+  background: color-mix(in oklab, var(--accent) 9%, transparent);
+}
+.oxg-body [role="row"][aria-selected="true"]:hover [role="gridcell"] {
+  background: color-mix(in oklab, var(--accent) 13%, transparent);
+}
+
 [role="gridcell"] {
-  padding: .5rem .7rem; font-size: .85rem; height: 38px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: flex;
+  align-items: center;
+  height: var(--dg-row-h, 40px);
+  padding: 0 var(--dg-pad-x, 10px);
+  font-size: var(--dg-fs, 13px);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 140ms;
 }
-[role="gridcell"][data-col-key="mrn"] { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .78rem; color: var(--muted); }
-[role="gridcell"][data-col-key="potassium"] { font-variant-numeric: tabular-nums; }
-/* A typed absence reads as a reason, never as a blank. */
-[role="gridcell"][data-col-key="potassium"]:not([data-error]) { color: var(--ink); }
-.oxg-body [role="row"] [role="gridcell"][data-col-key="potassium"] { color: var(--ink); }
 [role="gridcell"]:focus-visible { background: var(--accent-soft); }
 
-.legend {
-  flex: none; display: flex; gap: 1.5rem; justify-content: space-between; flex-wrap: wrap;
-  padding: .55rem 1.2rem; font-size: .76rem; color: var(--muted);
-  background: var(--surface); border-top: 1px solid var(--rule);
+/* Identifiers are monospaced and quieter than the name they belong to: an MRN
+   is for matching against a wristband, not for reading. */
+[role="gridcell"][data-col-key="mrn"] {
+  font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
 }
+[role="gridcell"][data-col-key="potassium"],
+[role="gridcell"][data-col-key="reviewed"] { font-variant-numeric: tabular-nums; }
 
-.boundary {
-  flex: none; padding: .6rem 1.2rem; font-size: .74rem; line-height: 1.5;
-  color: var(--muted); background: var(--surface-2); border-top: 1px solid var(--rule);
-}
-.boundary b { color: var(--ink-2); }
+/* Disclosure states, carried on the renderer's own data attributes. */
+[role="row"][data-restricted] [role="gridcell"] { background: var(--bad-soft, #fff2f0); }
+[role="gridcell"][data-masked] { color: var(--ink-4); font-style: italic; }
+[role="row"][data-pinned] [role="gridcell"] { background: var(--sunken); font-weight: 600; }
+[role="gridcell"][data-editing] { background: var(--accent-soft); outline: 2px solid var(--accent); outline-offset: -2px; }
+[role="row"][data-ai="true"] [role="gridcell"]:first-child { box-shadow: inset 3px 0 0 var(--warn, #faad14); }
 
-/* ── tabs ─────────────────────────────────────────────────────────────── */
-.tabs { display: flex; gap: .2rem; flex-wrap: wrap; }
-.tabs button {
-  font-size: .8rem; padding: .32rem .7rem; border-radius: 3px 3px 0 0;
-  border: 1px solid transparent; border-bottom: 0; background: transparent; color: var(--muted);
-}
-.tabs button[aria-selected="true"] {
-  background: var(--surface-2); border-color: var(--rule); color: var(--ink); font-weight: 700;
-}
-.panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 0 1.2rem 1rem; }
+/* ── panels ─────────────────────────────────────────────────────────────── */
+
+main { flex: 1 1 auto; min-height: 0; padding: 0 var(--sp-4, 16px) var(--sp-4, 16px); }
+.panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 0; }
 .panel[hidden] { display: none; }
 .grid-slot { flex: 1 1 auto; min-height: 0; }
 .grid-slot.tree .oxg-viewport { height: 100%; }
-.hint {
-  font-size: .82rem; color: var(--ink-2); padding: .6rem 0 .7rem; line-height: 1.5; max-width: 90ch;
-}
-.hint b { color: var(--ink); }
-.controls.inline { margin: 0 0 .7rem; }
-.controls.inline label { display: flex; gap: .3rem; align-items: center; }
-.withheld, .held {
-  font-size: .8rem; padding: .5rem .8rem; margin-bottom: .6rem; border-radius: 3px;
-  background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-rule);
-}
-.held { background: var(--bad-soft); color: var(--bad); border-color: var(--bad-rule); }
-.devtools {
-  flex: 1 1 auto; min-height: 0; overflow: auto; margin: 0;
-  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .76rem; line-height: 1.6;
-  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; padding: .8rem 1rem;
-  color: var(--ink-2); white-space: pre-wrap;
-}
-[role="row"][data-restricted] { background: var(--bad-soft); }
-[role="gridcell"][data-masked] { color: var(--muted); font-style: italic; }
-[role="row"][data-pinned] { background: var(--surface-2); font-weight: 600; }
-[role="gridcell"][data-editing] { background: var(--accent-soft); outline: 2px solid var(--accent); }
-.grouprow { font-weight: 700; }
 
-/* ── working / ai / migration ─────────────────────────────────────────── */
-.split { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 340px; gap: .8rem; }
-.inspector {
-  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
-  padding: .8rem .9rem; overflow: auto; font-size: .85rem;
+.p-hint {
+  padding: var(--sp-3, 12px) 0;
+  font-size: var(--fs-sm, 12.5px);
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 92ch;
 }
-.inspector h3 { margin: 0 0 .5rem; font-size: .95rem; }
-.inspector dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .3rem .7rem; }
-.inspector dt { color: var(--muted); font-size: .78rem; }
-.inspector dd { margin: 0; }
-.muted-note { color: var(--muted); font-size: .78rem; }
-.urlbar {
-  flex: none; margin-top: .6rem; padding: .45rem .7rem; border-radius: 3px;
-  background: var(--surface-2); border: 1px solid var(--rule);
-  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .74rem; color: var(--muted);
-  overflow-x: auto; white-space: nowrap;
+.p-hint b { color: var(--ink); font-weight: 600; }
+
+.controls.inline { margin: 0 0 var(--sp-3, 12px); }
+
+.withheld, .p-held {
+  font-size: var(--fs-sm, 12.5px);
+  padding: var(--sp-2, 8px) var(--sp-3, 12px);
+  margin-bottom: var(--sp-2, 8px);
+  border-radius: var(--r-sm, 4px);
+  background: var(--warn-soft, #fffbe6);
+  color: var(--warn-ink, #7a5b12);
+  border: 1px solid var(--warn-line, #ffe58f);
 }
-.editnote { font-size: .82rem; padding: .45rem .7rem; margin-bottom: .6rem; border-radius: 3px; min-height: 1.9rem; }
-.editnote[data-state="ok"] { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent); }
-.editnote[data-state="fail"] { background: var(--bad-soft); color: var(--bad); border: 1px solid var(--bad-rule); }
-.chips { display: flex; gap: .35rem; flex-wrap: wrap; margin-bottom: .6rem; min-height: 1.6rem; }
-.chip {
-  font-size: .76rem; padding: .18rem .5rem; border-radius: 999px;
-  background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent);
+.p-held { background: var(--bad-soft, #fff2f0); color: var(--bad-ink, #a8071a); border-color: var(--bad-line, #ffccc7); }
+
+.p-legend, .boundary {
+  flex: none;
+  display: flex; gap: var(--sp-5, 20px); justify-content: space-between; flex-wrap: wrap;
+  padding: var(--sp-2, 8px) 0;
+  font-size: var(--fs-xs, 11.5px);
+  color: var(--ink-3);
 }
-.chip.ai { background: var(--warn-soft); color: var(--warn); border-color: var(--warn-rule); }
-#mig-in, .migout {
-  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .74rem; line-height: 1.6;
-  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
-  padding: .7rem .8rem; overflow: auto; margin: 0; color: var(--ink-2); white-space: pre-wrap;
+.boundary { display: block; line-height: 1.55; }
+.boundary b { color: var(--ink-2); }
+
+/* ── code surfaces ──────────────────────────────────────────────────────── */
+
+.devtools, .exportout, #mig-in, .migout, .urlbar {
+  font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+  font-size: 11.5px;
+  line-height: 1.6;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md, 8px);
+  padding: var(--sp-3, 12px);
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  margin: 0;
+  overflow: auto;
 }
+.devtools { flex: 1 1 auto; min-height: 0; }
+.exportout { flex: none; max-height: 32vh; margin-top: var(--sp-3, 12px); }
+.exportout b { color: var(--accent-ink); font-weight: 600; }
+.urlbar { flex: none; margin-top: var(--sp-2, 8px); white-space: nowrap; font-size: 11px; }
 #mig-in { resize: none; }
+
+/* ── working / ai / migration ───────────────────────────────────────────── */
+
+.split { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 340px; gap: var(--sp-3, 12px); }
 .split:has(#mig-in) { grid-template-columns: 1fr 1fr; }
+
+.inspector {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg, 12px);
+  padding: var(--sp-4, 16px);
+  overflow: auto;
+  font-size: var(--fs-sm, 12.5px);
+}
+.inspector h3 { margin: 0 0 var(--sp-2, 8px); font-size: 14px; font-weight: 650; }
+.inspector dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px var(--sp-3, 12px); }
+.inspector dt { color: var(--ink-3); font-size: var(--fs-xs, 11.5px); }
+.inspector dd { margin: 0; }
+.muted-note { color: var(--ink-3); font-size: var(--fs-xs, 11.5px); line-height: 1.55; }
+
+.editnote {
+  font-size: var(--fs-sm, 12.5px);
+  padding: var(--sp-2, 8px) var(--sp-3, 12px);
+  margin-bottom: var(--sp-2, 8px);
+  border-radius: var(--r-sm, 4px);
+  min-height: 30px;
+}
+.editnote[data-state="ok"] { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent-line); }
+.editnote[data-state="fail"] { background: var(--bad-soft, #fff2f0); color: var(--bad-ink, #a8071a); border: 1px solid var(--bad-line, #ffccc7); }
+
+.p-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: var(--sp-2, 8px); min-height: 24px; }
+/* `.chip` itself is the BRIEF's chip — deliberately not redefined here. Only
+   the AI variant is ours, and it must out-specify `.antd .chip`. */
+.antd .chip.ai {
+  background: var(--warn-soft, #fffbe6);
+  color: var(--warn-ink, #7a5b12);
+  border-color: var(--warn-line, #ffe58f);
+}
+
 .todos {
-  flex: none; margin-top: .6rem; font-size: .8rem; padding: .55rem .8rem; border-radius: 3px;
-  background: var(--bad-soft); color: var(--bad); border: 1px solid var(--bad-rule); white-space: pre-wrap;
+  flex: none;
+  margin-top: var(--sp-2, 8px);
+  font-size: var(--fs-sm, 12.5px);
+  padding: var(--sp-2, 8px) var(--sp-3, 12px);
+  border-radius: var(--r-sm, 4px);
+  background: var(--bad-soft, #fff2f0);
+  color: var(--bad-ink, #a8071a);
+  border: 1px solid var(--bad-line, #ffccc7);
+  white-space: pre-wrap;
 }
 .todos:empty { display: none; }
 
-.exportout {
-  flex: none; max-height: 30vh; overflow: auto; margin: .6rem 0 0;
-  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .74rem; line-height: 1.6;
-  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
-  padding: .7rem .85rem; color: var(--ink-2); white-space: pre-wrap;
-}
-.exportout b { color: var(--accent-ink); }
-.exportout mark { background: var(--warn-soft); color: var(--warn); padding: 0 .15rem; border-radius: 2px; }
+.grouprow { font-weight: 600; }
