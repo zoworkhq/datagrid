@@ -51,6 +51,12 @@ importers:
         specifier: workspace:*
         version: link:../grid-core
 
+  packages/grid-export:
+    dependencies:
+      '@oxygenui-design/grid-core':
+        specifier: workspace:*
+        version: link:../grid-core
+
   packages/grid-healthcare:
     dependencies:
       '@oxygenui-design/grid-core':

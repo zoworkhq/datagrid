@@ -11,7 +11,7 @@
  * only a flat value cannot tell the export writer that the value must not
  * leave.
  */
-import type { GridError } from "@oxygenui-design/grid-core";
+import type { ExportValue, GridError, PrintValue } from "@oxygenui-design/grid-core";
 
 /** The only three things a cell may produce. Note the absence of an `html` variant. */
 export type CellContent =
@@ -22,12 +22,10 @@ export type CellContent =
 
 export const text = (value: string): CellContent => ({ kind: "text", text: value });
 
-/** Carries mask state, which is what makes mask-preserving export possible at all. */
-export type ExportValue =
-  | { readonly kind: "value"; readonly value: string | number | boolean | null }
-  | { readonly kind: "masked"; readonly reason: string };
-
-export type PrintValue = ExportValue;
+// ExportValue and PrintValue are engine contracts, re-exported here because
+// they are part of the cell contract. The export plugin reads them from
+// grid-core without depending on the render layer.
+export type { ExportValue, PrintValue } from "@oxygenui-design/grid-core";
 
 export interface CellContext<TRow> {
   readonly row: TRow;
