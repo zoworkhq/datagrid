@@ -29,6 +29,9 @@ import {
   type Coverage,
 } from "@oxygenui-design/grid-healthcare";
 import { printSheetHtml, toCsv, toXlsx, type ExportColumn } from "@oxygenui-design/grid-export";
+import { copyRange, emptyUndo, invert, record, undo as undoStep } from "@oxygenui-design/grid-clipboard";
+import { createDevtools, explain } from "@oxygenui-design/grid-devtools";
+import { mountClinical, mountDisclosure, mountGrouping } from "./panels.js";
 import {
   arrivalCount,
   createLiveState,
@@ -242,7 +245,16 @@ function mount(): void {
   render();
 }
 
+const devtools = createDevtools({ limit: 300 });
+let undoStack = emptyUndo();
+
 function onAction(action: GridAction): void {
+  const started = performance.now();
+  const inverse = invert(action, { selection: state.selection });
+  if (inverse) undoStack = record(undoStack, { action, inverse });
+  devtools.action(action, performance.now() - started);
+  devtools.state(state);
+
   switch (action.type) {
     case "sort/toggle":
       state = { ...state, sort: toggleSort(state.sort, action.key, action.additive) };
@@ -397,4 +409,109 @@ document.getElementById("print")?.addEventListener("click", () => {
   }
 });
 
+// ── panels ──────────────────────────────────────────────────────────────────
+
+const panels = Array.from(document.querySelectorAll<HTMLElement>("[data-panel]"));
+const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+let mounted = new Set<string>();
+
+function show(name: string): void {
+  for (const p of panels) p.hidden = p.dataset["panel"] !== name;
+  for (const t of tabs) t.setAttribute("aria-selected", String(t.dataset["tab"] === name));
+  // The roster's controls and its coverage claim belong to the roster. A
+  // coverage sentence above a different grid is a claim about the wrong set.
+  for (const el of document.querySelectorAll<HTMLElement>("[data-roster-only]")) {
+    el.style.display = name === "roster" ? "" : "none";
+  }
+  if (mounted.has(name)) {
+    if (name === "devtools") renderDevtools();
+    return;
+  }
+  mounted.add(name);
+
+  if (name === "clinical") {
+    mountClinical(
+      document.getElementById("clinical-host") as HTMLElement,
+      document.getElementById("held-note") as HTMLElement,
+    );
+  }
+  if (name === "disclosure") {
+    mountDisclosure({
+      host: document.getElementById("disclosure-host") as HTMLElement,
+      note: document.getElementById("withheld-note") as HTMLElement,
+      maySeeNotes: document.getElementById("p-notes") as HTMLInputElement,
+      restrictPart2: document.getElementById("p-part2") as HTMLInputElement,
+      mayExport: document.getElementById("p-export") as HTMLInputElement,
+      breakGlass: document.getElementById("breakglass") as HTMLButtonElement,
+    });
+  }
+  if (name === "grouping") {
+    mountGrouping({
+      host: document.getElementById("group-host") as HTMLElement,
+      groupBy: document.getElementById("groupby") as HTMLSelectElement,
+      mixUnits: document.getElementById("mixed-units") as HTMLInputElement,
+    });
+  }
+  if (name === "devtools") renderDevtools();
+}
+
+function renderDevtools(): void {
+  const out = document.getElementById("devtools-out") as HTMLElement;
+  const stats = document.getElementById("dt-stats") as HTMLElement;
+  const snap = devtools.snapshot();
+  out.textContent = [
+    "── why this grid is in its current state ──",
+    ...explain(snap),
+    "",
+    devtools.report(),
+  ].join("\n");
+  stats.textContent = `${snap.stats.actions} actions · ${snap.stats.errors} errors · p95 ${snap.stats.p95FrameMs} ms`;
+}
+
+for (const t of tabs) t.addEventListener("click", () => show(t.dataset["tab"] as string));
+document.getElementById("dt-clear")?.addEventListener("click", () => {
+  devtools.clear();
+  renderDevtools();
+});
+
+// ── copy and undo, on the roster ────────────────────────────────────────────
+
+document.addEventListener("keydown", (e) => {
+  const meta = e.ctrlKey || e.metaKey;
+  if (!meta) return;
+
+  if (e.key === "c" && state.focus) {
+    // A masked cell copies masked: the clipboard is an export.
+    const index = visible.findIndex((p) => p.id === state.focus?.rowId);
+    if (index < 0) return;
+    const out = copyRange({
+      shape: { rows: [index], columns: columns.map((c) => c.key) },
+      rowAt: (i) => visible[i],
+      valueAt: (row, key) => exportColumns.find((c) => c.key === key)?.value(row) ?? { kind: "value", value: "" },
+    });
+    if (out.ok) {
+      void navigator.clipboard?.writeText(out.text);
+      note(`Copied 1 row${out.masked ? ` (${out.masked} masked cell kept masked)` : ""}`);
+    }
+  }
+
+  if (e.key === "z") {
+    const back = undoStep(undoStack);
+    undoStack = back.stack;
+    if (back.action) {
+      onAction(back.action);
+      note("Undid the last invertible action");
+    } else note("Nothing to undo — a write is never un-sent");
+  }
+});
+
+function note(message: string): void {
+  const el = document.getElementById("roster-hint") as HTMLElement;
+  el.textContent = message;
+  window.setTimeout(() => {
+    el.textContent = "";
+  }, 3200);
+}
+
+show("roster");
 load(50_000);

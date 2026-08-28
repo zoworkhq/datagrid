@@ -103,3 +103,39 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 1.2rem 1.2rem; }
   color: var(--muted); background: var(--surface-2); border-top: 1px solid var(--rule);
 }
 .boundary b { color: var(--ink-2); }
+
+/* ── tabs ─────────────────────────────────────────────────────────────── */
+.tabs { display: flex; gap: .2rem; flex-wrap: wrap; }
+.tabs button {
+  font-size: .8rem; padding: .32rem .7rem; border-radius: 3px 3px 0 0;
+  border: 1px solid transparent; border-bottom: 0; background: transparent; color: var(--muted);
+}
+.tabs button[aria-selected="true"] {
+  background: var(--surface-2); border-color: var(--rule); color: var(--ink); font-weight: 700;
+}
+.panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 0 1.2rem 1rem; }
+.panel[hidden] { display: none; }
+.grid-slot { flex: 1 1 auto; min-height: 0; }
+.grid-slot.tree .oxg-viewport { height: 100%; }
+.hint {
+  font-size: .82rem; color: var(--ink-2); padding: .6rem 0 .7rem; line-height: 1.5; max-width: 90ch;
+}
+.hint b { color: var(--ink); }
+.controls.inline { margin: 0 0 .7rem; }
+.controls.inline label { display: flex; gap: .3rem; align-items: center; }
+.withheld, .held {
+  font-size: .8rem; padding: .5rem .8rem; margin-bottom: .6rem; border-radius: 3px;
+  background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-rule);
+}
+.held { background: var(--bad-soft); color: var(--bad); border-color: var(--bad-rule); }
+.devtools {
+  flex: 1 1 auto; min-height: 0; overflow: auto; margin: 0;
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .76rem; line-height: 1.6;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; padding: .8rem 1rem;
+  color: var(--ink-2); white-space: pre-wrap;
+}
+[role="row"][data-restricted] { background: var(--bad-soft); }
+[role="gridcell"][data-masked] { color: var(--muted); font-style: italic; }
+[role="row"][data-pinned] { background: var(--surface-2); font-weight: 600; }
+[role="gridcell"][data-editing] { background: var(--accent-soft); outline: 2px solid var(--accent); }
+.grouprow { font-weight: 700; }

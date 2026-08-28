@@ -15,7 +15,14 @@
     <h1>Oxygen Data Grid</h1>
     <p class="sub">Every row is synthetic. No PHI appears anywhere.</p>
   </div>
-  <div class="controls">
+  <nav class="tabs" role="tablist" aria-label="Demonstrations">
+    <button role="tab" data-tab="roster" aria-selected="true">Roster</button>
+    <button role="tab" data-tab="clinical" aria-selected="false">Clinical cells</button>
+    <button role="tab" data-tab="disclosure" aria-selected="false">Disclosure</button>
+    <button role="tab" data-tab="grouping" aria-selected="false">Grouping</button>
+    <button role="tab" data-tab="devtools" aria-selected="false">Devtools</button>
+  </nav>
+  <div class="controls" data-roster-only>
     <label>Rows
       <select id="size">
         <option value="1000">1,000</option>
@@ -33,14 +40,63 @@
 </header>
 
 <!-- The coverage claim. Required, rendered in a fixed place, and printed. -->
-<div class="coverage" id="coverage" role="status"></div>
-<div class="arrivals" id="arrivals" hidden></div>
-<div class="refusal" id="refusal" hidden role="alert"></div>
+<div class="coverage" id="coverage" role="status" data-roster-only></div>
+<div class="arrivals" id="arrivals" hidden data-roster-only></div>
+<div class="refusal" id="refusal" hidden role="alert" data-roster-only></div>
 
-<main id="grid-host"></main>
+<section class="panel" data-panel="roster">
+  <div class="hint" id="roster-hint"></div>
+  <div class="grid-slot" id="grid-host"></div>
+</section>
+
+<section class="panel" data-panel="clinical" hidden>
+  <div class="hint">The five cells that do not exist in the component library, each rendering a state the
+  application supplies. <b>None derives one</b> — no clock is read and no threshold is applied. The
+  scheduled-dose cell is deliberately absent and says so.</div>
+  <div class="grid-slot" id="clinical-host"></div>
+  <div class="held" id="held-note"></div>
+</section>
+
+<section class="panel" data-panel="disclosure" hidden>
+  <div class="hint">One policy object driving four behaviours. A withheld column is <b>stated</b>, a restricted
+  row is <b>marked and keeps its slot</b>, a masked region <b>spans</b> its columns, and break-glass
+  <b>asks</b> — it never grants.</div>
+  <div class="controls inline">
+    <label><input type="checkbox" id="p-notes" checked /> May see Notes</label>
+    <label><input type="checkbox" id="p-part2" checked /> Restrict Part 2 rows</label>
+    <label><input type="checkbox" id="p-export" checked /> May export</label>
+    <button id="breakglass" type="button">Request break-glass</button>
+  </div>
+  <div class="withheld" id="withheld-note"></div>
+  <div class="grid-slot" id="disclosure-host"></div>
+</section>
+
+<section class="panel" data-panel="grouping" hidden>
+  <div class="hint">Grouping with aggregation that <b>refuses incompatible units</b>, and a lazily-loaded
+  branch that renders as <em>unresolved</em> — never as empty.</div>
+  <div class="controls inline">
+    <label>Group by
+      <select id="groupby">
+        <option value="ward">Ward</option>
+        <option value="ward,team">Ward, then team</option>
+        <option value="">Nothing</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="mixed-units" /> Mix mg and mL in ward Cedar</label>
+  </div>
+  <div class="grid-slot tree" id="group-host"></div>
+</section>
+
+<section class="panel" data-panel="devtools" hidden>
+  <div class="hint">The action log, and <b>why</b> the grid is in the state it is in. It has no transport:
+  nothing here leaves this machine. It is the compensating control for errors that carry no values.</div>
+  <div class="controls inline"><button id="dt-clear" type="button">Clear</button><span id="dt-stats"></span></div>
+  <pre class="devtools" id="devtools-out"></pre>
+</section>
 
 <footer class="legend">
-  <span><b>Keyboard</b> — Tab into the grid, then arrows. Enter or click a header sorts. Space selects. The body is one tab stop.</span>
+  <span id="legend"><b>Keyboard</b> — Tab in, then arrows. Enter or click a header sorts. Space selects.
+  F2 edits. Ctrl+C copies. Ctrl+Z undoes. The body is one tab stop.</span>
   <span id="stats"></span>
 </footer>
 <div class="boundary">
