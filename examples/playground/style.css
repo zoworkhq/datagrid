@@ -25,9 +25,13 @@
 
 * { box-sizing: border-box; }
 
-body {
-  margin: 0;
-  height: 100vh;
+body { margin: 0; height: 100%; }
+
+/* Layout hangs off the NAMESPACE element, not off `body`.
+   `.antd` is the body here, and a wrapper <div> in the published artifact —
+   where the host writes its own <body> and a rule aimed at it reaches nothing. */
+.antd {
+  height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
