@@ -15,6 +15,7 @@ export * from "./live.js";
 export * from "./lazy-groups.js";
 export * from "./column.js";
 export * from "./columns.js";
+export * from "./editing.js";
 export * from "./errors.js";
 export * from "./export-value.js";
 export * from "./filter.js";
