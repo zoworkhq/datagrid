@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Oxygen Data Grid — playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<header class="bar">
+  <div>
+    <h1>Oxygen Data Grid</h1>
+    <p class="sub">Every row is synthetic. No PHI appears anywhere.</p>
+  </div>
+  <div class="controls">
+    <label>Rows
+      <select id="size">
+        <option value="1000">1,000</option>
+        <option value="10000">10,000</option>
+        <option value="50000" selected>50,000</option>
+        <option value="200000">200,000 — refuses</option>
+      </select>
+    </label>
+    <input id="filter" type="search" placeholder="Filter by name…" autocomplete="off" />
+    <button id="arrivals-toggle" type="button">Start live updates</button>
+    <button id="csv" type="button">CSV</button>
+    <button id="xlsx" type="button">XLSX</button>
+    <button id="print" type="button">Print sheet</button>
+  </div>
+</header>
+
+<!-- The coverage claim. Required, rendered in a fixed place, and printed. -->
+<div class="coverage" id="coverage" role="status"></div>
+<div class="arrivals" id="arrivals" hidden></div>
+<div class="refusal" id="refusal" hidden role="alert"></div>
+
+<main id="grid-host"></main>
+
+<footer class="legend">
+  <span><b>Keyboard</b> — Tab into the grid, then arrows. Enter or click a header sorts. Space selects. The body is one tab stop.</span>
+  <span id="stats"></span>
+</footer>
+<div class="boundary">
+  <b>All data on this page is synthetic.</b> No PHI appears anywhere. This library is not a compliance
+  boundary, is not clinical decision support, and is not a medical device — it renders a policy, it does not
+  decide one and it cannot enforce one. <b>No clinician has reviewed the clinical rules demonstrated here.</b>
+</div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

@@ -621,6 +621,29 @@ export function createGridRenderer<TRow>(
     }
   }
 
+  /**
+   * Pointer sorting.
+   *
+   * The keymap has always bound Enter on a header, so sorting was reachable by
+   * keyboard from the first commit — and only by keyboard, which the playground
+   * exposed immediately. Shift-click adds to the sort rather than replacing it,
+   * matching `sort.additive`.
+   *
+   * A column that is not `sortable` does nothing, rather than emitting an
+   * action the caller has to know to ignore.
+   */
+  function onHeaderClick(e: MouseEvent): void {
+    if (!current) return;
+    const th = (e.target as HTMLElement | null)?.closest<HTMLElement>('[role="columnheader"]');
+    if (!th) return;
+    const key = th.dataset["colKey"];
+    if (!key) return;
+    if (current.columns.find((c) => c.key === key)?.sortable !== true) return;
+
+    e.preventDefault();
+    options.onAction({ type: "sort/toggle", key, additive: e.shiftKey });
+  }
+
   function onFocusIn(e: FocusEvent): void {
     const el = (e.target as HTMLElement | null)?.closest<HTMLElement>("[data-col-key]");
     const rowEl = el?.closest<HTMLElement>("[data-row-id]");
@@ -662,6 +685,7 @@ export function createGridRenderer<TRow>(
 
   grid.addEventListener("keydown", onKeyDown);
   grid.addEventListener("focusin", onFocusIn);
+  headGroup.addEventListener("click", onHeaderClick);
   viewport.addEventListener("scroll", onScroll);
 
   return {
@@ -678,6 +702,7 @@ export function createGridRenderer<TRow>(
     destroy() {
       grid.removeEventListener("keydown", onKeyDown);
       grid.removeEventListener("focusin", onFocusIn);
+      headGroup.removeEventListener("click", onHeaderClick);
       viewport.removeEventListener("scroll", onScroll);
       observer?.disconnect();
       for (const [el, r] of mounted) r.unmount(el);

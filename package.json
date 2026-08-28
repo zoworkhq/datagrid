@@ -21,7 +21,9 @@
     "bench:write": "pnpm build && node --expose-gc bench/run.mjs --write",
     "bench:browser": "pnpm build && node bench/browser.mjs",
     "bench:browser:check": "pnpm build && node bench/browser.mjs --check",
-    "bench:browser:write": "pnpm build && node bench/browser.mjs --write"
+    "bench:browser:write": "pnpm build && node bench/browser.mjs --write",
+    "playground": "pnpm build && node examples/playground/build.mjs --watch",
+    "playground:build": "pnpm build && node examples/playground/build.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "3.0.1",

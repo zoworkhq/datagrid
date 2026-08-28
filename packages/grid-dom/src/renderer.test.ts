@@ -241,3 +241,35 @@ describe("teardown", () => {
     expect(host.querySelector('[role="grid"]')).toBeNull();
   });
 });
+
+describe("pointer sorting", () => {
+  const click = (el: Element | null, shiftKey = false) =>
+    el?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, shiftKey }));
+
+  it("sorts when a sortable header is clicked", () => {
+    // Sorting was keyboard-only until the playground exposed it: the keymap
+    // bound Enter on a header from the first commit and nothing bound a click.
+    mount();
+    click(host.querySelector('[role="columnheader"][data-col-key="potassium"]'));
+    expect(actions.at(-1)).toEqual({ type: "sort/toggle", key: "potassium", additive: false });
+  });
+
+  it("adds to the sort on shift-click", () => {
+    mount();
+    click(host.querySelector('[role="columnheader"][data-col-key="name"]'), true);
+    expect(actions.at(-1)).toEqual({ type: "sort/toggle", key: "name", additive: true });
+  });
+
+  it("does nothing for a column that is not sortable", () => {
+    // Better than emitting an action the caller has to know to ignore.
+    mount(model({ columns: [{ key: "name", header: "Patient" }] }));
+    click(host.querySelector('[role="columnheader"][data-col-key="name"]'));
+    expect(actions.some((a) => a.type === "sort/toggle")).toBe(false);
+  });
+
+  it("does nothing when a body cell is clicked", () => {
+    mount();
+    click(host.querySelector('[role="gridcell"]'));
+    expect(actions.some((a) => a.type === "sort/toggle")).toBe(false);
+  });
+});

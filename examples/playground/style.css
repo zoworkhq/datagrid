@@ -1,0 +1,105 @@
+/* Palette inherited from the Oxygen brief series. */
+:root {
+  --paper:#f6faf8; --surface:#fff; --surface-2:#eef4f2;
+  --ink:#0e1c19; --ink-2:#33473f; --muted:#5d716b;
+  --rule:#d8e4df; --rule-2:#c3d3cd;
+  --accent:#059478; --accent-soft:#e6f7f1; --accent-ink:#045b4b;
+  --warn:#b7791f; --warn-soft:#fbf3e0; --warn-rule:#e4c98a;
+  --bad:#b4423a; --bad-soft:#fbeceb; --bad-rule:#e8b5b0;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:#0b1514; --surface:#101d1b; --surface-2:#142522;
+    --ink:#e7f2ee; --ink-2:#c3d6d0; --muted:#93aca5;
+    --rule:#1f312e; --rule-2:#2c423e;
+    --accent:#5fe0c9; --accent-soft:#10302b; --accent-ink:#b8f3e7;
+    --warn:#e2b04a; --warn-soft:#2a2410; --warn-rule:#4d4020;
+    --bad:#f0928a; --bad-soft:#2c1614; --bad-rule:#552a26;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 15px/1.5 "Mulish", -apple-system, "Segoe UI", system-ui, sans-serif;
+  display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 2px; }
+
+.bar {
+  display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;
+  padding: .9rem 1.2rem; background: var(--surface); border-bottom: 1px solid var(--rule);
+}
+.bar h1 { font-size: 1.05rem; font-weight: 800; margin: 0; letter-spacing: -.02em; }
+.sub { margin: .1rem 0 0; font-size: .78rem; color: var(--muted); }
+.controls { display: flex; gap: .55rem; align-items: center; flex-wrap: wrap; margin-left: auto; }
+.controls label { font-size: .78rem; color: var(--muted); display: flex; gap: .35rem; align-items: center; }
+select, input[type="search"], button {
+  font: inherit; font-size: .82rem; padding: .34rem .6rem;
+  border: 1px solid var(--rule-2); border-radius: 3px;
+  background: var(--surface); color: var(--ink);
+}
+input[type="search"] { min-width: 170px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); color: var(--accent-ink); }
+
+/* The coverage claim: a fixed place, in words. Never a tooltip. */
+.coverage {
+  padding: .5rem 1.2rem; font-size: .82rem; color: var(--ink-2);
+  background: var(--accent-soft); border-bottom: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+}
+.arrivals {
+  padding: .45rem 1.2rem; font-size: .82rem; font-weight: 700;
+  background: var(--warn-soft); color: var(--warn); cursor: pointer;
+  border-bottom: 1px solid var(--warn-rule);
+}
+.refusal {
+  padding: .7rem 1.2rem; font-size: .84rem; line-height: 1.55;
+  background: var(--bad-soft); color: var(--bad); border-bottom: 1px solid var(--bad-rule);
+}
+
+main { flex: 1 1 auto; min-height: 0; padding: 0 1.2rem 1.2rem; }
+
+/* ── the grid ─────────────────────────────────────────────────────────────
+   The library ships no CSS: tokens come from the host application, which is
+   why grid-element uses light DOM. This is a host application's stylesheet. */
+.oxg-root { height: 100%; display: flex; flex-direction: column; }
+.oxg { height: 100%; display: flex; flex-direction: column; min-height: 0;
+       border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); overflow: hidden; }
+.oxg-head { flex: none; background: var(--surface-2); border-bottom: 1px solid var(--rule-2); }
+.oxg-head [role="row"] { display: flex; }
+.oxg-viewport { flex: 1 1 auto; min-height: 0; }
+[role="columnheader"] {
+  padding: .55rem .7rem; font-size: .76rem; font-weight: 800;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+  white-space: nowrap; user-select: none; cursor: pointer;
+}
+[role="columnheader"][aria-sort="ascending"]::after { content: " ↑"; color: var(--accent); }
+[role="columnheader"][aria-sort="descending"]::after { content: " ↓"; color: var(--accent); }
+.oxg-body [role="row"] { display: flex; border-bottom: 1px solid var(--rule); }
+.oxg-body [role="row"]:hover { background: var(--surface-2); }
+.oxg-body [role="row"][aria-selected="true"] { background: var(--accent-soft); }
+[role="gridcell"] {
+  padding: .5rem .7rem; font-size: .85rem; height: 38px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+[role="gridcell"][data-col-key="mrn"] { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .78rem; color: var(--muted); }
+[role="gridcell"][data-col-key="potassium"] { font-variant-numeric: tabular-nums; }
+/* A typed absence reads as a reason, never as a blank. */
+[role="gridcell"][data-col-key="potassium"]:not([data-error]) { color: var(--ink); }
+.oxg-body [role="row"] [role="gridcell"][data-col-key="potassium"] { color: var(--ink); }
+[role="gridcell"]:focus-visible { background: var(--accent-soft); }
+
+.legend {
+  flex: none; display: flex; gap: 1.5rem; justify-content: space-between; flex-wrap: wrap;
+  padding: .55rem 1.2rem; font-size: .76rem; color: var(--muted);
+  background: var(--surface); border-top: 1px solid var(--rule);
+}
+
+.boundary {
+  flex: none; padding: .6rem 1.2rem; font-size: .74rem; line-height: 1.5;
+  color: var(--muted); background: var(--surface-2); border-top: 1px solid var(--rule);
+}
+.boundary b { color: var(--ink-2); }

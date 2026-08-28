@@ -1,0 +1,67 @@
+# Deploys the playground to GitHub Pages.
+#
+# ── READ THIS BEFORE ENABLING ───────────────────────────────────────────────
+#
+# A GitHub Pages site is PUBLIC even when the repository is private (outside
+# GitHub Enterprise with access control). Enabling this publishes the demo to
+# the open internet.
+#
+# Two decisions are still open that bear on that, both recorded in HANDOVER.md:
+# the licence and support posture, and the fact that NO CLINICIAN HAS REVIEWED
+# the clinical rules the demo shows. The page states both, but stating them is
+# not the same as having settled them.
+#
+# Pages on a private repository also requires a paid plan. On a free plan the
+# deploy step fails with a clear message rather than silently publishing.
+#
+# It is deliberately NOT triggered by push. Run it from the Actions tab when
+# you have decided to publish.
+name: pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # The playground is a consumer of the built packages, so the gate runs
+      # first: a demo built from code that does not pass its own gate is worse
+      # than no demo.
+      - name: gate
+        run: pnpm gate
+
+      - name: build playground
+        run: pnpm playground:build
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: examples/playground/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
