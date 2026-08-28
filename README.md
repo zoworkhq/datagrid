@@ -11,7 +11,7 @@ built in — for EHR, behavioural-health, clinical, operational and billing work
 <img alt="engine 7.3 KB of a 22 KB budget" src="https://img.shields.io/badge/engine-7.3%20KB%20%2F%2022%20KB-0E7C66.svg" />
 <img alt="React adapter 456 bytes" src="https://img.shields.io/badge/react%20adapter-456%20B-0E7C66.svg" />
 <img alt="one external runtime dependency" src="https://img.shields.io/badge/runtime%20deps-1-0E7C66.svg" />
-<img alt="413 tests" src="https://img.shields.io/badge/tests-413-0E7C66.svg" />
+<img alt="430 tests" src="https://img.shields.io/badge/tests-430-0E7C66.svg" />
 <img alt="11 accepted decision records" src="https://img.shields.io/badge/ADRs-11%20accepted-0E7C66.svg" />
 <img alt="not published to npm" src="https://img.shields.io/badge/npm-not%20published-b7791f.svg" />
 <img alt="MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" />
@@ -173,6 +173,7 @@ there is nothing in them to be large
 | [`grid-angular`](packages/grid-angular) | adapter | 1.09 KB | 8 KB |
 | [`grid-element`](packages/grid-element) | adapter | 585 B | 6 KB |
 | [`grid-export`](packages/grid-export) | plugin | 2.76 KB | 7 KB |
+| [`grid-codemod`](packages/grid-codemod) | tooling | 1.68 KB | 12 KB |
 | [`grid-clipboard`](packages/grid-clipboard) | plugin | 1.05 KB | 5 KB |
 | [`grid-devtools`](packages/grid-devtools) | plugin | 893 B | 6 KB |
 | [`grid-ai`](packages/grid-ai) | plugin | 868 B | 6 KB |
@@ -196,7 +197,7 @@ taxonomy and disclosure types · serialisable views with a precedence chain ·
 selection algebra with drift detection · bulk review · CSV, XLSX and the print
 sheet · the FHIR source · SSR with adoption.
 
-**Gated in CI.** Types · 413 tests · 15 layer rules · per-package size budgets ·
+**Gated in CI.** Types · 430 tests · 15 layer rules · per-package size budgets ·
 structural axe · a memory-leak gate over 200 mount/unmount cycles · engine and
 browser performance harnesses.
 
@@ -245,6 +246,21 @@ bad things get, not a prediction.
 The [full list](HANDOVER.md) is kept in the repository because most of these
 will be proposed again, some annually.
 
+## Migrating
+
+```ts
+import { migrate, describeMigration } from "@oxygenui-design/grid-codemod";
+
+const result = migrate(source, "antd");   // or "mui"
+console.log(describeMigration(result));
+```
+
+It renames what means the same thing, **leaves what does not** with the reason
+attached, and refuses to write a `coverage` claim. A codemod that filled that in
+would manufacture a false completeness claim across every table in a codebase,
+in one commit nobody reads line by line — so it emits a placeholder that does not
+compile, and a person supplies the truth.
+
 ## Development
 
 ```bash
@@ -258,7 +274,7 @@ pnpm install && pnpm gate
 
 ```
 HANDOVER.md              the seed context — read this first
-packages/                twelve packages across five layers
+packages/                thirteen packages across five layers
 bench/                   engine and browser performance harnesses
 docs/
 ├─ decisions/            eleven ADRs, accepted — the ones that gate code

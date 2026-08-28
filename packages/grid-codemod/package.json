@@ -1,0 +1,17 @@
+{
+  "name": "@oxygenui-design/grid-codemod",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Migrations from antd Table and MUI DataGrid. Refuses to invent a coverage claim.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist"],
+  "scripts": { "build": "tsc --build", "test": "vitest run --passWithNoTests", "size": "size-limit" },
+  "oxygen": { "layer": "tooling", "budget": "12 KB", "wave": 5 },
+  "size-limit": [{ "path": "dist/index.js", "limit": "12 KB", "ignore": ["typescript"] }],
+  "dependencies": {},
+  "peerDependencies": { "typescript": ">=5.7" },
+  "devDependencies": { "typescript": "5.7.3" }
+}

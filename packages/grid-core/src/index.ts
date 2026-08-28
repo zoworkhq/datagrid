@@ -11,6 +11,7 @@ export * from "./actions.js";
 export * from "./aggregate.js";
 export * from "./bulk.js";
 export * from "./group.js";
+export * from "./inspector.js";
 export * from "./live.js";
 export * from "./lazy-groups.js";
 export * from "./column.js";
