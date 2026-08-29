@@ -98,10 +98,26 @@ for (const n of SIZES) {
     return m.result();
   });
 
-  // Grouping and aggregation, where the category's engines usually fall over.
+  // Grouping and aggregation. The audit flagged both as having tests and no
+  // benchmark at any size, which for a claims-processing workload is the least
+  // evidenced part of the engine.
   if (typeof groupRows === "function") {
-    out.groupMs = time(
+    const half = Math.max(1, Math.floor(iterations / 2));
+    out.groupOneKeyMs = time(
       () => groupRows(rows, { by: ["ward"], expanded: new Set(WARDS), rowKey, get }),
+      half,
+    );
+    out.groupTwoKeyMs = time(
+      () => groupRows(rows, { by: ["ward", "seen"], expanded: new Set(WARDS), rowKey, get }),
+      half,
+    );
+  }
+  if (typeof aggregate === "function") {
+    // `aggregate` takes Measured values, because a mean with no unit is a
+    // number nobody can act on.
+    const values = rows.map((r) => (r.k === null ? null : { value: r.k, unit: "mmol/L" }));
+    out.aggregateMs = time(
+      () => aggregate("mean", values),
       Math.max(1, Math.floor(iterations / 2)),
     );
   }
@@ -119,7 +135,8 @@ for (const n of SIZES) {
   console.log(
     `${String(n).padStart(9)} rows  sort ${String(out.sortMs).padStart(9)}ms  ` +
       `2-key ${String(out.sortTwoKeyMs).padStart(9)}ms  filter ${String(out.filterMs).padStart(8)}ms  ` +
-      `model ${String(out.modelFirstResultMs).padStart(9)}ms  heap ${out.modelHeapMb}MB`,
+      `group ${String(out.groupOneKeyMs ?? "-").padStart(9)}ms  ` +
+      `agg ${String(out.aggregateMs ?? "-").padStart(7)}ms  heap ${out.modelHeapMb}MB`,
   );
 }
 

@@ -13,7 +13,7 @@
     "test:watch": "pnpm build && vitest",
     "lint:layers": "pnpm build && depcruise packages --config .dependency-cruiser.cjs",
     "size": "turbo run size",
-    "gate": "pnpm typecheck && pnpm test && pnpm lint:layers && pnpm size && pnpm typecheck:playground && pnpm smoke:playground",
+    "gate": "pnpm typecheck && pnpm test && pnpm lint:layers && pnpm size && pnpm size:composed && pnpm typecheck:playground && pnpm smoke:playground",
     "changeset": "changeset",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo .turbo",
     "bench": "pnpm build && node --expose-gc bench/run.mjs",
@@ -25,7 +25,8 @@
     "playground": "pnpm build && node examples/playground/build.mjs --watch",
     "playground:build": "pnpm build && node examples/playground/build.mjs",
     "typecheck:playground": "tsc -p tsconfig.playground.json",
-    "smoke:playground": "pnpm build && node examples/playground/smoke.browser.mjs"
+    "smoke:playground": "pnpm build && node examples/playground/smoke.browser.mjs",
+    "size:composed": "size-limit"
   },
   "devDependencies": {
     "@angular/core": "22.1.4",
@@ -42,5 +43,12 @@
     "turbo": "2.10.12",
     "typescript": "5.7.3",
     "vitest": "4.1.11"
-  }
+  },
+  "size-limit": [
+    {
+      "name": "the whole grid a consumer downloads",
+      "path": "bench/composed/index.js",
+      "limit": "16 KB"
+    }
+  ]
 }

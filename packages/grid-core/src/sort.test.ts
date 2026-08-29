@@ -46,6 +46,25 @@ describe("sorting", () => {
     expect(out.rows.map((r) => r.id)).toContain(6);
   });
 
+  it("does NOT gather incomparable rows at the end, and the docs no longer say it does", () => {
+    // `"incomparable"` is a property of a PAIR; "sorts to the end" is a
+    // property of a ROW, and deriving one from the other needs every pair.
+    // This test exists so the limitation is asserted rather than assumed —
+    // `createSortIndex` is the path that CAN gather absences, because it works
+    // from values instead of comparisons.
+    const many: readonly Row[] = [
+      { id: 1, ward: "A", k: 5 },
+      { id: 2, ward: "A", k: null },
+      { id: 3, ward: "A", k: 1 },
+      { id: 4, ward: "A", k: null },
+      { id: 5, ward: "A", k: 3 },
+    ];
+    const out = sortRows(many, [{ key: "k", direction: "asc" }], cmp);
+    const ids = out.rows.map((r) => r.id);
+    const lastTwo = ids.slice(-2);
+    expect(lastTwo.includes(2) && lastTwo.includes(4)).toBe(false);
+  });
+
   it("leaves rows untouched when there is no sort", () => {
     expect(sortRows(rows, [], cmp).rows).toBe(rows);
   });
