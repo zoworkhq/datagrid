@@ -137,7 +137,7 @@ const columns = [
   { key: "status", header: "Clinical status", sortable: true, width: 150 },
   { key: "problems", header: "Problem list", width: 210 },
   { key: "ward", header: "Ward", sortable: true, width: 120 },
-  { key: "potassium", header: "Potassium", sortable: true, width: 200 },
+  { key: "potassium", header: "Potassium", sortable: true, width: 250 },
   { key: "reviewed", header: "Last seen", sortable: true, width: 130 },
 ];
 

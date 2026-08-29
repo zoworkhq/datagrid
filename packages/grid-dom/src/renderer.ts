@@ -568,10 +568,13 @@ export function createGridRenderer<TRow>(
    * scroll offset fixes the second. `translate` rather than `scrollLeft` so it
    * does not become a scroll container of its own and start emitting events.
    */
-  function syncHeader(totalWidth: number): void {
+  function syncHeader(trackWidth: string): void {
     const row = headGroup.firstElementChild as HTMLElement | null;
     if (!row) return;
-    if (totalWidth > 0) row.style.width = `${totalWidth}px`;
+    // The SAME width the canvas got, whatever that is. Two flex containers of
+    // different widths distribute slack differently, and the header drifts off
+    // its cells — which is exactly how this shipped broken.
+    if (trackWidth) row.style.width = trackWidth;
     row.style.transform = `translateX(${-viewport.scrollLeft}px)`;
   }
 
@@ -663,8 +666,16 @@ export function createGridRenderer<TRow>(
     canvas.style.height = `${w.totalHeight}px`;
     // Width comes from the column geometry, not from the rendered cells: the
     // scrollbar must span every column, including the ones not in the DOM.
-    if (cols.total > 0) canvas.style.width = `${cols.total}px`;
-    syncHeader(cols.total);
+    //
+    // …UNLESS the columns are narrower than the viewport, in which case a fixed
+    // width leaves dead space to the right and pins every column to its
+    // declared size. Handing the row `100%` instead gives it slack, so a column
+    // declaring `flex: 1` can take it — which is how a host stretches the one
+    // column that should absorb the leftovers.
+    const fits = cols.total > 0 && cols.total <= (viewport.clientWidth || 0);
+    const trackWidth = cols.total > 0 ? (fits ? "100%" : `${cols.total}px`) : "";
+    if (trackWidth) canvas.style.width = trackWidth;
+    syncHeader(trackWidth);
 
     const visible = bands.scrollable.slice(w.start, w.end);
     // Keep the focused row rendered even when it has scrolled out of the
@@ -798,8 +809,9 @@ export function createGridRenderer<TRow>(
   function onScroll(): void {
     if (suppressScroll || !current) return;
     // Before the repaint: a header that catches up one frame later is a header
-    // that visibly lags its columns during a drag.
-    syncHeader(0);
+    // that visibly lags its columns during a drag. Width is left alone — only
+    // the offset changed.
+    syncHeader("");
     paint(current);
   }
 

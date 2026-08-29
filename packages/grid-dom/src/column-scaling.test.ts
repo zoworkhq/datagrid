@@ -120,6 +120,15 @@ describe("what windowing must not break", () => {
     expect(parseInt(canvas?.style.width ?? "0", 10)).toBe(70_000);
   });
 
+  it("lets a narrow column set fill the viewport instead of leaving dead space", () => {
+    // Four columns of 140px in a 1200px viewport. Pinning the canvas to 560px
+    // leaves 640px of empty grid AND pins every column to its declared width,
+    // so a host that marks one column `flex: 1` gets no slack to give it.
+    mount(4);
+    expect(host.querySelector<HTMLElement>(".oxg-canvas")?.style.width).toBe("100%");
+    expect(host.querySelector<HTMLElement>('.oxg-head [role="row"]')?.style.width).toBe("100%");
+  });
+
   it("gives the header row the canvas's width, not the grid's", () => {
     mount(500);
     const headRow = host.querySelector<HTMLElement>('.oxg-head [role="row"]');

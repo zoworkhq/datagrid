@@ -846,3 +846,15 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 var(--sp-4, 16px) var(--sp-4, 1
 [role="gridcell"][data-col-key="reviewed"],
 .antd .idc .sub2,
 .devtools, .exportout, #mig-in, .migout, .urlbar { font-family: var(--font-mono); }
+
+/* A chip cut mid-word reads as a broken layout; an ellipsis reads as a chip
+   that did not fit. The `+N` beside it already says how many are missing. */
+.antd .a-tag {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  line-height: 22px;
+}
+.antd .a-tag.plain { flex: 0 0 auto; }
