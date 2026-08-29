@@ -277,7 +277,7 @@ reads as *we asked and the server does not know*. Only the second is a claim.
 
 ## 8 · Healthcare cells
 
-Ten hosts ship, each answering eight obligations — measure, truncate, focus,
+Eighteen hosts ship, each answering eight obligations — measure, truncate, focus,
 read, compare, export, print, **mask state**. The eighth is what makes
 mask-preserving export possible: a cell returning a flat value cannot tell the
 writer that the value must not leave.
@@ -299,6 +299,21 @@ value is abnormal, or whether something is too old to trust. Enforced by
 | `maskedCell` | a masked region spans its columns and states the policy |
 | `eligibilityCell` | coverage state, not a guess from a date |
 | `ledgerCell` | amounts with their currency |
+| `labResultCell` | the interpretation comes from the lab, not from comparing to a range |
+| `medicationCell` | held ≠ stopped ≠ never prescribed — all look like "no dose today" |
+| `appointmentCell` | no-show ≠ cancelled — one freed the slot, one did not |
+| `careTeamCell` | never invents a primary when the source named none |
+| `clinicalAlertCell` | acknowledgement names **who** — an alert nobody owns is alert fatigue |
+| `documentationCell` | an unsigned note is not a note yet |
+| `assessmentCell` | a PHQ-9 does not rank against a GAD-7 |
+| `aiSummaryCell` | **masked until a person reviews it** — see below |
+
+### The one cell that refuses to export
+
+`aiSummaryCell` masks itself until `reviewedBy` is set. Unreviewed model text
+in a CSV arrives looking exactly like a clinician's note, and there is no way
+back from that. `toExport` returns `{ kind: "masked" }` until a person has
+checked it.
 
 `GridDoseCell` is deliberately **withheld** pending review by a named
 clinician. Shipping it quietly is the one thing ADR 0008 forbids.
