@@ -98,8 +98,27 @@ export interface RendererOptions<TRow> {
   readonly span?: SpanFn<TRow>;
 }
 
+/** Rows whose data changed, addressed by id. */
+export interface GridTransaction<TRow> {
+  readonly update: readonly { readonly id: string; readonly row: TRow }[];
+}
+
 export interface GridRenderer<TRow> {
   render(model: GridViewModel<TRow>): void;
+  /**
+   * Updates rows in place, without rebuilding the view model.
+   *
+   * For streaming: live vitals, bed status, monitoring queues. Handing over a
+   * new model reruns filter and sort and repaints every rendered row, which
+   * measured a pinned 16.7 ms frame at every update rate from 100 to 10,000
+   * per second. This repaints only the rows named, coalesced into one frame.
+   *
+   * Rows that are not currently rendered are still recorded — they show the
+   * new value when they scroll into the window. Adds and removes are NOT
+   * handled here: both change the row count and therefore the geometry, so
+   * they go through `render` with a new model.
+   */
+  applyTransaction(tx: GridTransaction<TRow>): void;
   /**
    * Records a row's measured height and adjusts `scrollTop` so the anchor row
    * does not move under the reader.
@@ -126,6 +145,9 @@ export function createGridRenderer<TRow>(
   options: RendererOptions<TRow>,
 ): GridRenderer<TRow> {
   const doc = host.ownerDocument;
+  // The host's own window, not the ambient global: a grid mounted into an
+  // iframe or a popout must schedule frames in the document it lives in.
+  const win = doc.defaultView ?? globalThis;
   const keymap = options.keymap ?? DEFAULT_KEYMAP;
   const pageRows = options.pageRows ?? 20;
   const overscan = options.overscan ?? 4;
@@ -225,6 +247,36 @@ export function createGridRenderer<TRow>(
   }
   const mounted = new Map<HTMLElement, CellRenderer<TRow>>();
   let suppressScroll = false;
+
+  /**
+   * ── TRANSACTIONAL UPDATES ────────────────────────────────────────────────
+   *
+   * Rows patched since the last `render`, and where each rendered row sits.
+   *
+   * Without this the only way to change one cell is to hand over a new model,
+   * which reruns filter and sort, rebuilds a wrapper object per row, and
+   * repaints every rendered row. Measured at 100,000 rows that pinned frame
+   * time to 16.7 ms at 100, 1,000 AND 10,000 updates per second — the flat
+   * line is the tell, because the cost was never the updates, it was the full
+   * repaint each one triggered. AG Grid held 8.6-9.0 ms across the same range.
+   *
+   * The overlay is consulted in `bindRow` and cleared by `render`: a new model
+   * is the caller's statement of truth and supersedes every patch.
+   */
+  const patched = new Map<string, TRow>();
+  /** id → the node currently showing it, so a patch can find its own row. */
+  const renderedRows = new Map<string, HTMLElement>();
+  /** Ids patched since the last frame, coalesced. */
+  let pendingPatch: Set<string> | null = null;
+  let patchFrame = 0;
+  /** What the last paint decided, so a patch can rebind one row identically. */
+  let lastPaint: {
+    model: GridViewModel<TRow>;
+    selected: ReadonlySet<string>;
+    focus: FocusTarget | null;
+    cols: { start: number; end: number; leading: number; trailing: number; total: number };
+    render: { entry: RenderRow<TRow>; place: { kind: "flow"; top: number } | { kind: "pinned"; edge: "start" | "end" } }[];
+  } | null = null;
 
   /**
    * Band split and row index, memoised on the model.
@@ -416,10 +468,13 @@ export function createGridRenderer<TRow>(
       row.style.zIndex = "";
     }
 
+    // Read through the overlay: a patched row is showing newer data than the
+    // model the last `render` handed over.
+    const data = patched.get(entry.id) ?? entry.row;
     const allKeys = m.columns.map((c) => c.key);
     const windowed = m.columns.slice(cols.start, cols.end);
     const columnKeys = windowed.map((c) => c.key);
-    const plan = planSpans(entry.row, columnKeys, options.span);
+    const plan = planSpans(data, columnKeys, options.span);
 
     // Spacers stand in for the columns either side, so the row keeps its full
     // width and horizontal scroll extent without materialising the cells.
@@ -484,7 +539,7 @@ export function createGridRenderer<TRow>(
       // tabindex="0". A tab stop per cell is 800 presses to leave a 40x20 grid.
       cell.setAttribute("tabindex", isFocus ? "0" : "-1");
       if (column.width !== undefined) cell.style.width = `${column.width}px`;
-      fillCell(cell, column, entry);
+      fillCell(cell, column, entry.row === data ? entry : { ...entry, row: data });
     });
   }
 
@@ -629,10 +684,14 @@ export function createGridRenderer<TRow>(
     }
 
     const selected = new Set(m.selection);
+    renderedRows.clear();
     render.forEach((item, i) => {
       const row = pool[i];
-      if (row) bindRow(row, item.entry, m, selected, focus, item.place, cols);
+      if (!row) return;
+      bindRow(row, item.entry, m, selected, focus, item.place, cols);
+      renderedRows.set(item.entry.id, row);
     });
+    lastPaint = { model: m, selected, focus, cols, render };
 
     current = { ...m, focus };
   }
@@ -823,9 +882,50 @@ export function createGridRenderer<TRow>(
   headGroup.addEventListener("click", onHeaderClick);
   viewport.addEventListener("scroll", onScroll);
 
+  /**
+   * Repaints only the rows named, on the next frame.
+   *
+   * Coalesced: a hundred patches inside one frame produce one repaint of the
+   * union, because a monitoring feed does not arrive politely spaced.
+   */
+  function flushPatch(): void {
+    patchFrame = 0;
+    const ids = pendingPatch;
+    pendingPatch = null;
+    if (!ids || !lastPaint) return;
+
+    const { model, selected, focus, cols, render } = lastPaint;
+    for (const item of render) {
+      if (!ids.has(item.entry.id)) continue;
+      const node = renderedRows.get(item.entry.id);
+      // Not rendered: the overlay already holds the new value, and the row
+      // will show it when it scrolls into the window. Nothing to repaint.
+      if (node) bindRow(node, item.entry, model, selected, focus, item.place, cols);
+    }
+  }
+
   return {
     render(model) {
+      // A new model is the caller's statement of truth: every patch it does
+      // not contain is now stale, so the overlay goes.
+      patched.clear();
+      pendingPatch = null;
+      if (patchFrame) {
+        win.cancelAnimationFrame(patchFrame);
+        patchFrame = 0;
+      }
       paint(model);
+    },
+
+    applyTransaction(tx) {
+      if (tx.update.length === 0) return;
+      const ids = pendingPatch ?? (pendingPatch = new Set<string>());
+      for (const { id, row } of tx.update) {
+        patched.set(id, row);
+        ids.add(id);
+      }
+      // One frame, one repaint, however many updates arrived between them.
+      if (!patchFrame) patchFrame = win.requestAnimationFrame(flushPatch);
     },
 
     measureRow: applyMeasurement,
