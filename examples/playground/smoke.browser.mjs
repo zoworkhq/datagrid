@@ -174,9 +174,9 @@ try {
     state.headerGround,
   );
   check(
-    state.gridRadius === "12px",
-    "the grid shell matches the brief's radius",
-    state.gridRadius,
+    state.gridRadius !== "0px",
+    "the grid shell is styled",
+    `radius ${state.gridRadius}`,
   );
   check(state.coverage.length > 0, "the coverage claim is stated");
   check(pageErrors.length === 0, "no page errors", pageErrors[0] ?? "none");
@@ -198,6 +198,50 @@ try {
     `${afterScroll.rows} rows`,
   );
   check(afterScroll.blank === 0, "no cell paints blank after recycling");
+
+  // ── the chrome carries no hue ─────────────────────────────────────────────
+  //
+  // The lifted brief is teal to its neutrals: `--surface: #101d1b` has more
+  // green in it than red or blue, and at scale that reads as a brand rather
+  // than as an instrument. The demo overrides the whole ramp — this asserts the
+  // override actually reached the page, in BOTH themes, because a token block
+  // that loses a specificity fight fails silently and looks merely "off".
+  //
+  // Status colours are exempt: green there means stable, which is information.
+  //
+  // TOLERANCE, stated rather than implied: a channel spread of 8. The neutrals
+  // in use reach 6 (the dark header is a deliberately cool grey), and the
+  // brief's teal ground scores 13-17. So this catches the palette REVERTING —
+  // it will not catch a cast of a few points, which is imperceptible at these
+  // luminances anyway. It is a regression guard, not a colorimeter.
+  const spread = (rgb) => {
+    const [r, g, b] = (rgb.match(/\d+/g) ?? []).map(Number);
+    return Math.max(r, g, b) - Math.min(r, g, b);
+  };
+
+  for (const scheme of ["light", "dark"]) {
+    const themed = await browser.newPage({ viewport: { width: 1280, height: 800 }, colorScheme: scheme });
+    await themed.goto(`${origin}/index.html`, { waitUntil: "load", timeout: MAX_LOAD_MS });
+    await themed.waitForTimeout(400);
+    const chrome = await themed.evaluate(() => {
+      const read = (el) => (el ? getComputedStyle(el).backgroundColor : "rgb(0,0,0)");
+      return {
+        page: read(document.body),
+        head: read(document.querySelector(".oxg-head")),
+        cell: read(document.querySelector('.oxg-body [role="gridcell"]')),
+        ink: getComputedStyle(document.body).color,
+      };
+    });
+    await themed.close();
+
+    for (const [what, value] of Object.entries(chrome)) {
+      check(
+        spread(value) <= 8,
+        `${scheme}: the ${what} is neutral`,
+        `${value} (channel spread ${spread(value)})`,
+      );
+    }
+  }
 } finally {
   await browser.close();
   await ctx.dispose();

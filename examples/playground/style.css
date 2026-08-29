@@ -21,6 +21,107 @@
  * screenshot.
  */
 
+/* ── palette ─────────────────────────────────────────────────────────────────
+   The lifted brief carries a teal identity: every neutral in it is green-cast
+   (`--ink: #0e1c19`, `--surface: #101d1b`, `--accent: #059478`), which reads as
+   a brand rather than as an instrument. A ward tool wants the opposite — the
+   chrome should be colourless so that the only colour on screen is carrying
+   meaning: a status, a threshold, a refusal.
+
+   So the ramp is replaced with true neutrals and one blue accent. Status
+   colours are deliberately NOT touched: "Stable" is green because green means
+   stable, and that is information rather than decoration.
+
+   Specificity is (0,4,0) so it outranks the brief's dark override
+   `:root:not([data-theme="light"]) .antd`, which is (0,3,0). ------------------ */
+
+:root .antd.antd.antd {
+  --bg:        #ffffff;
+  --surface:   #ffffff;
+  --sunken:    #f6f7f9;
+  --raised:    #ffffff;
+  --overlay:   #ffffff;
+
+  --ink:    #17191c;
+  --ink-2:  #43484e;
+  --ink-3:  #6a7079;
+  --ink-4:  #878d96;
+  --ink-5:  #c3c7cd;
+
+  --line:   #e3e6ea;
+  --line-2: #d3d7dd;
+  --line-3: #aeb4bc;
+
+  --accent:       #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-press: #1e40af;
+  --accent-soft:  #eff4ff;
+  --accent-line:  #bfd3fe;
+  --accent-ink:   #1c3faa;
+  --on-accent:    #ffffff;
+  --ring: rgb(37 99 235 / 0.35);
+
+  /* The brief's document-level names, which the mockups also read. */
+  --paper: #ffffff;
+  --surface-2: #f6f7f9;
+  --rule: #e3e6ea;
+  --rule-2: #d3d7dd;
+  --muted: #6a7079;
+  --shadow-ink: 23 25 28;
+
+  color-scheme: light;
+}
+
+/* Dark: greys, not a dark green. #17181a ground, #1e2023 surface, #26282c
+   header — a flat neutral stack, the way a desktop tool looks at night. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .antd.antd.antd {
+    --bg:        #17181a;
+    --surface:   #1e2023;
+    --sunken:    #26282c;
+    --raised:    #26282c;
+    --overlay:   #2a2d31;
+
+    --ink:    #e8eaed;
+    --ink-2:  #b9bec4;
+    --ink-3:  #949aa1;
+    --ink-4:  #787e85;
+    --ink-5:  #4a4f56;
+
+    --line:   #303338;
+    --line-2: #3c4046;
+    --line-3: #565b62;
+
+    --accent:       #5b9bff;
+    --accent-hover: #7db0ff;
+    --accent-press: #4a86e8;
+    --accent-soft:  #1b2740;
+    --accent-line:  #2f4a7a;
+    --accent-ink:   #a8c8ff;
+    --on-accent:    #10131a;
+    --ring: rgb(91 155 255 / 0.4);
+
+    --paper: #17181a;
+    --surface-2: #26282c;
+    --rule: #303338;
+    --rule-2: #3c4046;
+    --muted: #949aa1;
+    --shadow-ink: 0 0 0;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] .antd.antd.antd {
+  --bg: #17181a; --surface: #1e2023; --sunken: #26282c; --raised: #26282c; --overlay: #2a2d31;
+  --ink: #e8eaed; --ink-2: #b9bec4; --ink-3: #949aa1; --ink-4: #787e85; --ink-5: #4a4f56;
+  --line: #303338; --line-2: #3c4046; --line-3: #565b62;
+  --accent: #5b9bff; --accent-hover: #7db0ff; --accent-press: #4a86e8;
+  --accent-soft: #1b2740; --accent-line: #2f4a7a; --accent-ink: #a8c8ff; --on-accent: #10131a;
+  --paper: #17181a; --surface-2: #26282c; --rule: #303338; --rule-2: #3c4046; --muted: #949aa1;
+  color-scheme: dark;
+}
+
 /* ── page ───────────────────────────────────────────────────────────────── */
 
 * { box-sizing: border-box; }
@@ -410,3 +511,202 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 var(--sp-4, 16px) var(--sp-4, 1
 .todos:empty { display: none; }
 
 .grouprow { font-weight: 600; }
+
+/* ── enterprise grid treatment ────────────────────────────────────────────────
+   The brief's prototypes are figures in a document: generous radius, no column
+   rules, colour used decoratively. A tool people sit in front of all shift
+   wants the opposite — a dense, ruled, colourless surface where the eye can
+   travel along a row without losing its line. --------------------------------- */
+
+/* Squarer. A 12px radius reads as a card; this is a work surface. */
+.oxg-root > [role="grid"] { border-radius: 6px; }
+
+/* Column rules. The single biggest difference between a list and a GRID: with
+   fifty thousand rows and six columns, the eye needs verticals to track along. */
+.oxg-body [role="gridcell"],
+.oxg-head [role="columnheader"] { border-inline-end: 1px solid var(--line); }
+.oxg-body [role="gridcell"]:last-child,
+.oxg-head [role="columnheader"]:last-child { border-inline-end: 0; }
+.oxg-head [role="columnheader"] { border-inline-end-color: var(--line-2); }
+
+/* Header: quieter than the data it labels. Letter-spaced small caps read as
+   chrome, which is what a header is — it is not a row. */
+.oxg-head [role="columnheader"] {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.oxg-head [role="columnheader"][aria-sort="ascending"],
+.oxg-head [role="columnheader"][aria-sort="descending"] {
+  color: var(--accent);
+  background: transparent;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* Row banding. At this density a hairline alone stops separating rows once the
+   reader is three columns in; alternating grounds carry the eye across. */
+.oxg-body [role="row"]:nth-child(even) [role="gridcell"] {
+  background: color-mix(in oklab, var(--ink) 2.5%, transparent);
+}
+.oxg-body [role="row"]:hover [role="gridcell"] {
+  background: color-mix(in oklab, var(--accent) 7%, transparent);
+}
+.oxg-body [role="row"][aria-selected="true"] [role="gridcell"] {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent);
+}
+
+/* Focus is a ring, not a fill: a filled focus cell is indistinguishable from a
+   selected one, and they mean different things. */
+[role="gridcell"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--accent-soft);
+}
+
+/* ── the identity cell ─────────────────────────────────────────────────────── */
+
+.antd .idc { gap: 10px; align-items: center; }
+
+/* The portrait. Sized here rather than in the SVG so one cached image serves
+   every density; the initials sit underneath as the fallback. */
+.antd .idc .a-avatar {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center top;
+  background-color: var(--sunken);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 10%, transparent);
+  font-size: 0;            /* the initials are the fallback, not the label */
+  color: transparent;
+}
+
+.antd .idc .pname { font-weight: 600; font-size: 13px; color: var(--ink); }
+.antd .idc .sub2 {
+  font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+  font-size: 11px;
+  color: var(--ink-4);
+  letter-spacing: -0.01em;
+}
+
+/* ── chips ────────────────────────────────────────────────────────────────────
+   These wrapped to a second line, which pushed rows out of alignment and is
+   what made the roster look ragged. A row is a fixed height; content that does
+   not fit is what the "+N" is for. */
+.antd .chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow: hidden;
+  align-items: center;
+}
+.antd .a-tag {
+  height: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 3px;
+  background: var(--sunken);
+  border-color: var(--line-2);
+  color: var(--ink-2);
+  flex: 0 0 auto;
+}
+.antd .a-tag.plain { color: var(--ink-4); background: transparent; }
+
+/* Status pills: the dot carries the colour, the pill stays neutral. A row of
+   saturated lozenges is the thing that made this look like a dashboard. */
+.antd .cs {
+  height: 22px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 3px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-2);
+  padding-inline: 0;
+}
+.antd .cs .gl-dot { width: 7px; height: 7px; }
+.antd .cs.cs-none {
+  color: var(--ink-4);
+  font-style: italic;
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Numbers align on their decimal, which is the only way a column of results
+   can be scanned for an outlier. */
+[role="gridcell"][data-col-key="potassium"],
+[role="gridcell"][data-col-key="reviewed"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ── chrome ──────────────────────────────────────────────────────────────── */
+
+.coverage {
+  background: var(--sunken);
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  color: var(--ink-2);
+}
+
+.tabs button[aria-selected="true"] {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--accent);
+  border-radius: 0;
+}
+.tabs button:hover { background: var(--sunken); }
+
+/* The pill's text is neutral, so the DOT has to carry the status — and the
+   neutral `color` above out-specifies the brief's `.cs-*`, which set both.
+   Stating the dot explicitly keeps the signal and drops the lozenge. */
+.antd .cs-ok   .gl-dot { background: #16a34a; }
+.antd .cs-cau  .gl-dot { background: #d97706; }
+.antd .cs-crit .gl-dot { background: #dc2626; }
+.antd .cs-info .gl-dot { background: #2563eb; }
+.antd .cs-none .gl-dot { background: var(--ink-5); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .antd .cs-ok   .gl-dot { background: #4ade80; }
+  :root:not([data-theme="light"]) .antd .cs-cau  .gl-dot { background: #fbbf24; }
+  :root:not([data-theme="light"]) .antd .cs-crit .gl-dot { background: #f87171; }
+  :root:not([data-theme="light"]) .antd .cs-info .gl-dot { background: #60a5fa; }
+}
+:root[data-theme="dark"] .antd .cs-ok   .gl-dot { background: #4ade80; }
+:root[data-theme="dark"] .antd .cs-cau  .gl-dot { background: #fbbf24; }
+:root[data-theme="dark"] .antd .cs-crit .gl-dot { background: #f87171; }
+:root[data-theme="dark"] .antd .cs-info .gl-dot { background: #60a5fa; }
+
+/* Spare width goes to the column that can USE it. Giving it to whichever
+   column happens to be last left "Last seen" three times wider than a date
+   needs, and the problem list — the one column whose content is open-ended —
+   clipped at its declared width. */
+.oxg-head [role="columnheader"]:last-child,
+.oxg-body [role="row"] [role="gridcell"]:last-child { flex: 0 0 auto; }
+.oxg-head [role="columnheader"][data-col-key="problems"],
+.oxg-body [role="gridcell"][data-col-key="problems"] { flex: 1 1 auto; min-width: 0; }
+
+/* Spare width is shared, and capped where more of it buys nothing: the problem
+   list can use another 100px, not another 400. */
+.oxg-head [role="columnheader"][data-col-key="problems"],
+.oxg-body [role="gridcell"][data-col-key="problems"] { max-width: 340px; }
+.oxg-head [role="columnheader"]:last-child,
+.oxg-body [role="row"] [role="gridcell"]:last-child { flex: 1 1 auto; }
+
+/* Measurements and dates align right. A column of left-aligned numbers cannot
+   be scanned for an outlier, because the digits never line up. */
+[role="gridcell"][data-col-key="potassium"],
+[role="gridcell"][data-col-key="reviewed"],
+.oxg-head [role="columnheader"][data-col-key="potassium"],
+.oxg-head [role="columnheader"][data-col-key="reviewed"] {
+  justify-content: flex-end;
+  text-align: end;
+}
+/* …except a stated absence, which is prose and belongs on the left where the
+   eye expects a sentence. */
+[role="gridcell"][data-col-key="potassium"]:has(.cs-none) { justify-content: flex-start; }

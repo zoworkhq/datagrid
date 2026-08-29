@@ -25,6 +25,7 @@
  *     prevent.
  */
 import type { CellRenderer } from "@oxygenui-design/grid-dom";
+import { avatarFor } from "./avatar.js";
 import type { ExportValue, Measured } from "@oxygenui-design/grid-core";
 // The real absence union — eight typed reasons, not a string. `describeAbsence`
 // turns one into the sentence a clinician reads, so the cell never composes it.
@@ -71,13 +72,6 @@ function initials(name: string): string {
   return (first + last).toUpperCase();
 }
 
-/** A stable tone per person, so the same patient keeps the same colour. */
-function tone(seed: string): string {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  return `b${(h % 5) + 1}`;
-}
-
 // ── the identity cell ───────────────────────────────────────────────────────
 
 /**
@@ -102,7 +96,9 @@ export const identityCell: CellRenderer<Patient> = {
   update(node, ctx) {
     const { row } = ctx;
     const avatar = node.querySelector(".a-avatar") as HTMLElement;
-    avatar.className = `a-avatar ${tone(row.id)}`;
+    // A drawn portrait, deterministic from the row id. The initials stay
+    // underneath as the fallback if the image cannot paint.
+    avatar.style.backgroundImage = avatarFor(row.id);
     avatar.textContent = initials(row.name);
     avatar.setAttribute("aria-hidden", "true");
 

@@ -88,15 +88,24 @@ describe("the identity cell", () => {
     expect(node.querySelector(".a-avatar")?.textContent).toBe("");
   });
 
-  it("gives one person the same avatar tone every time", () => {
+  it("gives one person the same portrait every time", () => {
     identityCell.mount(node, ctx(patient()));
-    identityCell.update(node, ctx(patient()));
-    const first = node.querySelector(".a-avatar")?.className;
+    const avatar = () => (node.querySelector(".a-avatar") as HTMLElement).style.backgroundImage;
+    const first = avatar();
+    expect(first).toContain("data:image/svg+xml");
 
+    // Recycled onto someone else and back: a face that changes between scrolls
+    // is worse than no face at all.
     identityCell.update(node, ctx(patient({ id: "other" })));
+    expect(avatar()).not.toBe(first);
     identityCell.update(node, ctx(patient()));
-    expect(node.querySelector(".a-avatar")?.className).toBe(first);
-    expect(first).toMatch(/\ba-avatar b[1-5]\b/);
+    expect(avatar()).toBe(first);
+  });
+
+  it("keeps the initials underneath as the fallback", () => {
+    identityCell.mount(node, ctx(patient()));
+    // The image is a background, so if it fails to paint the cell is not blank.
+    expect(node.querySelector(".a-avatar")?.textContent).toBe("AO");
   });
 
   it("rewrites every field when the node is recycled onto another patient", () => {
