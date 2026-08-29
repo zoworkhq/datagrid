@@ -111,6 +111,30 @@ export interface RowModel<TRow> {
  *
  * `bench/browser.mjs` runs the interaction half of that on a CPU-throttled
  * Chromium; the heap half needs the real machine.
+ *
+ * ── AND IT IS OPTIMISTIC. MEASURED. ─────────────────────────────────────────
+ *
+ * `bench/device-profile.mjs` walks a size ladder until an interaction crosses
+ * an interaction budget — 100 ms for a sort or filter, one frame for a scroll.
+ * On the machine this library is developed on:
+ *
+ *   8 cores, unthrottled     50,000 rows      (sort crosses 100 ms at 100k)
+ *   the same, 4x throttled   10,000 rows
+ *   the same, 8x throttled    1,000 rows
+ *
+ * So this default is roughly 2x optimistic on a developer laptop and an order
+ * of magnitude optimistic on anything slower — and a shared ward workstation
+ * with an EHR already open is slower than 4x throttling, which emulates a
+ * slower CPU and not a contended one.
+ *
+ * The number is NOT lowered here, deliberately. Lowering it would make the
+ * grid refuse work that many deployments handle fine, and the right ceiling
+ * genuinely is a property of the device rather than of the library. What has
+ * changed is that there is now a tool that measures it:
+ *
+ *     node bench/device-profile.mjs            # on the machine that matters
+ *
+ * Run it on the target device class and pass the number it prints.
  */
 export const DEFAULT_CLIENT_ROW_CEILING = 100_000;
 

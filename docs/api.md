@@ -349,7 +349,40 @@ because colour fails colour-blind readers and prints grey.
 
 ---
 
-## 11 · Performance budgets
+## 11 · Measure your own ceiling
+
+Every number in this guide came from a developer laptop. Yours will differ, and
+the one that decides whether client mode is viable is a property of **your**
+device class:
+
+```bash
+node bench/device-profile.mjs              # this machine
+node bench/device-profile.mjs --throttle 6 # approximate a slower one
+node bench/device-profile.mjs --json       # for CI
+```
+
+It walks a size ladder until an interaction crosses a budget — 100 ms for a
+sort or filter, one frame for a scroll — and prints the last size that held,
+which is the `maxRows` to pass.
+
+Measured on the machine this library is developed on:
+
+| device | ceiling |
+|---|---|
+| 8 cores, unthrottled | **50,000 rows** |
+| the same, 4× throttled | **10,000 rows** |
+| the same, 8× throttled | **1,000 rows** |
+
+`DEFAULT_CLIENT_ROW_CEILING` is 100,000. That is **roughly 2× optimistic on a
+developer laptop and an order of magnitude optimistic on anything slower** —
+and CPU throttling emulates a slower processor, not a contended one, so a
+shared workstation with an EHR already open is worse again. The default is not
+lowered, because the right ceiling is a property of the device and lowering it
+would refuse work many deployments handle fine. Measure, and pass the number.
+
+---
+
+## 12 · Performance budgets
 
 Gate your own build on these; ours are in `pnpm gate`.
 
