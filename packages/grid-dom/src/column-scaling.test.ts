@@ -120,6 +120,41 @@ describe("what windowing must not break", () => {
     expect(parseInt(canvas?.style.width ?? "0", 10)).toBe(70_000);
   });
 
+  it("gives the header row the canvas's width, not the grid's", () => {
+    mount(500);
+    const headRow = host.querySelector<HTMLElement>('.oxg-head [role="row"]');
+    const canvas = host.querySelector<HTMLElement>(".oxg-canvas");
+    // They are separate flex containers. Laid out against different widths,
+    // any column with `flex: 1` absorbs a different amount of slack in each
+    // and the header drifts off its cells — measured at 1440px, the last
+    // column was 426px in the header and 130px in the body.
+    expect(headRow?.style.width).toBe(canvas?.style.width);
+  });
+
+  it("moves the header when the body scrolls sideways", () => {
+    const { r, model } = mount(500);
+    const viewport = host.querySelector<HTMLElement>(".oxg-viewport") as HTMLElement;
+    // Re-queried after every render, never captured. Scrolling sideways changes
+    // which headers exist, so the row is REBUILT — a held reference points at
+    // a detached node that will never update, and the test would pass on a
+    // broken renderer for a reason that has nothing to do with the renderer.
+    const headRow = () => host.querySelector<HTMLElement>('.oxg-head [role="row"]') as HTMLElement;
+    expect(headRow().style.transform).toBe("translateX(0px)");
+
+    // The header is a SIBLING of the viewport — it has to be, or it would
+    // scroll away vertically — so horizontal scroll does not move it for free.
+    // It shipped not moving at all: at scrollLeft 1500 the first body cell sat
+    // at x=-1500 and its header at x=0.
+    Object.defineProperty(viewport, "scrollLeft", { configurable: true, value: 1500 });
+    r.render(model);
+    expect(headRow().style.transform).toBe("translateX(-1500px)");
+  });
+
+  it("clips the header, so a row wider than the grid does not spill", () => {
+    mount(500);
+    expect(host.querySelector<HTMLElement>(".oxg-head")?.style.overflow).toBe("hidden");
+  });
+
   it("keeps the focused column rendered even when it is outside the window", () => {
     const { r, model } = mount(500);
     r.render({ ...model, focus: { rowId: "r0", columnKey: "c400" } });

@@ -182,6 +182,10 @@ export function createGridRenderer<TRow>(
   grid.setAttribute("aria-label", options.label);
 
   const headGroup = make("div", "oxg-head", within(grid, ':scope > .oxg-head'));
+  // The header row is as wide as every column, not as wide as the grid, so it
+  // has to clip — and it lives OUTSIDE the scrolling viewport, so it also has
+  // to be moved by hand. See `syncHeader`.
+  if (!hydrating) headGroup.style.overflow = "hidden";
   headGroup.setAttribute("role", "rowgroup");
 
   // The scroller and the canvas carry role="presentation" so they do not appear
@@ -543,6 +547,34 @@ export function createGridRenderer<TRow>(
     });
   }
 
+  /**
+   * Keeps the header over its columns.
+   *
+   * The header is a SIBLING of the scrolling viewport — it has to be, or it
+   * would scroll away vertically — which means two things it does not get for
+   * free, and both shipped broken:
+   *
+   *   · its row is laid out against the GRID's width while the body rows are
+   *     laid out against the canvas's. Any column with `flex: 1` then absorbs
+   *     a different amount of slack in each, and the header drifts off its
+   *     cells. Measured at 1440px: the last column was 426px in the header and
+   *     130px in the body.
+   *
+   *   · horizontal scrolling moves the canvas and not the header at all. At
+   *     `scrollLeft: 1500` the first body cell sat at x=-1500 and its header
+   *     at x=0 — the columns were simply not related any more.
+   *
+   * Giving the row the canvas's width fixes the first; translating it by the
+   * scroll offset fixes the second. `translate` rather than `scrollLeft` so it
+   * does not become a scroll container of its own and start emitting events.
+   */
+  function syncHeader(totalWidth: number): void {
+    const row = headGroup.firstElementChild as HTMLElement | null;
+    if (!row) return;
+    if (totalWidth > 0) row.style.width = `${totalWidth}px`;
+    row.style.transform = `translateX(${-viewport.scrollLeft}px)`;
+  }
+
   function paint(m: GridViewModel<TRow>): void {
     grid.setAttribute("aria-rowcount", String(ariaRowCount(m.total)));
     grid.setAttribute("aria-colcount", String(m.columns.length));
@@ -632,6 +664,7 @@ export function createGridRenderer<TRow>(
     // Width comes from the column geometry, not from the rendered cells: the
     // scrollbar must span every column, including the ones not in the DOM.
     if (cols.total > 0) canvas.style.width = `${cols.total}px`;
+    syncHeader(cols.total);
 
     const visible = bands.scrollable.slice(w.start, w.end);
     // Keep the focused row rendered even when it has scrolled out of the
@@ -764,6 +797,9 @@ export function createGridRenderer<TRow>(
 
   function onScroll(): void {
     if (suppressScroll || !current) return;
+    // Before the repaint: a header that catches up one frame later is a header
+    // that visibly lags its columns during a drag.
+    syncHeader(0);
     paint(current);
   }
 
