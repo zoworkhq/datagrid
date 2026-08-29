@@ -30,5 +30,7 @@ export * from "./reorder.js";
 export * from "./sort.js";
 export * from "./sort-index.js";
 export * from "./column-store.js";
+export * from "./block-model.js";
+export * from "./worker.js";
 export * from "./state.js";
 export * from "./view.js";

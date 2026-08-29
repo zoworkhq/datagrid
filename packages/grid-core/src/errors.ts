@@ -21,7 +21,24 @@ export type GridErrorCode =
   | "filter-not-compilable"
   | "export-refused"
   | "disclosure-refused"
-  | "client-mode-refused";
+  | "client-mode-refused"
+  /**
+   * A block was asked for that a cursor-paged source cannot reach.
+   *
+   * FHIR pages by an opaque `link.next` and has no offset, so block 500 is
+   * reachable only by walking 0 through 499 — five hundred round trips to
+   * answer one scrollbar drag. The grid says which row it could not reach and
+   * lets the application decide, rather than issuing them or silently showing
+   * somewhere else.
+   */
+  | "cursor-jump-unsupported"
+  /**
+   * The off-thread path is not available here, or the worker died.
+   *
+   * Not fatal: the caller does the work on the main thread instead. A slow
+   * grid is a working grid.
+   */
+  | "worker-unavailable";
 
 /** Where it happened. Not a stack trace — a stack trace can carry a value. */
 export type GridPhase =
