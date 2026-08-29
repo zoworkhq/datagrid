@@ -23,8 +23,20 @@ const workspaceAliases = Object.fromEntries(
     .map((e) => [`@oxygenui-design/${e.name}`, `${packagesDir}/${e.name}/dist/index.js`]),
 );
 
+// React belongs to the React adapter, not to the playground, so it resolves
+// from there — the same alias `build.mjs` uses. One copy, deliberately: two
+// Reacts is two dispatchers and every hook throws.
+const reactDir = `${packagesDir}/grid-react/node_modules`;
+const reactAliases = {
+  "react/jsx-runtime": `${reactDir}/react/jsx-runtime.js`,
+  "react/jsx-dev-runtime": `${reactDir}/react/jsx-dev-runtime.js`,
+  "react-dom/client": `${reactDir}/react-dom/client.js`,
+  "react-dom": `${reactDir}/react-dom/index.js`,
+  react: `${reactDir}/react/index.js`,
+};
+
 export default defineConfig({
-  resolve: { alias: workspaceAliases },
+  resolve: { alias: { ...workspaceAliases, ...reactAliases } },
   test: {
     include: [
       "packages/*/src/**/*.test.{ts,tsx}",

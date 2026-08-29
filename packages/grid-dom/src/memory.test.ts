@@ -91,7 +91,12 @@ describe("the renderer does not leak across mount and unmount", () => {
     // gets disabled. A real leak here is unbounded, not marginal: 200 cycles of
     // 200 rows x 2 columns retains tens of MB if nothing is released.
     expect(growth, `heap grew ${growth.toFixed(1)} MB across ${CYCLES} cycles`).toBeLessThan(12);
-  });
+    // 220 mount/unmount cycles and four forced collections. It runs in about
+    // three seconds alone and takes longer when the rest of the suite is
+    // competing for the machine — the default five seconds made it fail on a
+    // busy runner and pass on a quiet one, which is the only kind of gate
+    // failure that teaches people to ignore gates.
+  }, 30_000);
 
   it("leaves no grid in the host after destroy", () => {
     const host = document.createElement("div");

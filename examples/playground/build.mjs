@@ -15,8 +15,14 @@ const pkg = (n) => join(HERE, "..", "..", "packages", n, "dist", "index.js");
 const PACKAGES = [
   "grid-core", "grid-dom", "grid-signals",
   "grid-healthcare", "grid-export", "grid-fhir", "grid-element",
-  "grid-clipboard", "grid-devtools", "grid-ai", "grid-codemod",
+  "grid-clipboard", "grid-devtools", "grid-ai", "grid-codemod", "grid-react",
 ];
+
+/* React is not a workspace dependency of the playground — it belongs to the
+   React adapter, and the playground is a consumer of that adapter exactly as an
+   application would be. Resolving it from there keeps one copy in the bundle,
+   which matters: two Reacts is two dispatchers and hooks that throw. */
+const REACT = (n) => join(HERE, "..", "..", "packages", "grid-react", "node_modules", n);
 
 export const options = {
   entryPoints: [join(HERE, "main.ts")],
@@ -27,7 +33,12 @@ export const options = {
   sourcemap: true,
   // Aliased to built output rather than added as root dependencies: the
   // playground is a consumer of the packages, not a member of the workspace.
-  alias: Object.fromEntries(PACKAGES.map((n) => [`@oxygenui-design/${n}`, pkg(n)])),
+  alias: {
+    ...Object.fromEntries(PACKAGES.map((n) => [`@oxygenui-design/${n}`, pkg(n)])),
+    react: REACT("react"),
+    "react-dom": REACT("react-dom"),
+  },
+  define: { "process.env.NODE_ENV": '"production"' },
 };
 
 /**

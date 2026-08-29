@@ -89,7 +89,26 @@ export function DataGrid<TRow>(props: DataGridProps<TRow>) {
   // the grid lives in an element React does not own, which is what lets a
   // server-rendered first page survive to be adopted. See ADR 0007.
   if (props.host) return null;
-  return <div ref={host} className={props.className} />;
+
+  // ── WHY THIS DIV IS SIZED, AND INLINE ─────────────────────────────────────
+  //
+  // The renderer fills its host, and the host chain has to carry a real height
+  // down from something that HAS one — that is the contract, and breaking it
+  // is not a cosmetic bug. An unbounded host makes `clientHeight` large enough
+  // to window in every row, so virtualisation quietly stops: 50,000 rows all
+  // render, and the tab hangs. That exact defect has already shipped here once,
+  // from `body { height: 100% }` with no height on `html`.
+  //
+  // This div sits between the caller's laid-out element and the grid. Left at
+  // `height: auto` it breaks the chain for EVERY React consumer, silently, and
+  // the playground is where that showed up: a 268px slot held a 642px grid
+  // spilling over the section beneath it.
+  //
+  // Inline, and structural rather than decorative — the same treatment the
+  // renderer already gives `overflow` on the viewport and `position` on the
+  // canvas. `className` still styles everything else; a caller that genuinely
+  // wants an auto-height grid passes its own `host`.
+  return <div ref={host} className={props.className} style={{ height: "100%" }} />;
 }
 
 /**

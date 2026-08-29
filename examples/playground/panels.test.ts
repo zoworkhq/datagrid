@@ -265,12 +265,42 @@ describe("migration", () => {
     expect(todos).toMatch(/pagination|onChange/);
   });
 
-  it("clears the previous output when the source changes", () => {
+  it("never leaves the previous source's output beside the new source's input", () => {
     setSelect("mig-source", "antd");
     click(byId("mig-run"));
+    const antd = textOf("mig-out");
     setSelect("mig-source", "mui");
-    expect(textOf("mig-out")).toBe("");
-    expect(textOf("mig-todos")).toBe("");
+
+    // The panel used to blank both panes here, which is one way to be correct
+    // and a poor one: a migration panel that arrives empty reads as a panel
+    // that failed. It now shows the NEW source's result, so what matters is
+    // that nothing from the old one survives the switch.
+    expect(textOf("mig-out")).not.toBe(antd);
+    expect(textOf("mig-out")).not.toBe("");
+    expect(textOf("mig-in")).toContain("@mui/x-data-grid");
+    expect(textOf("mig-out")).not.toContain("antd");
+  });
+
+  it("shows a result on arrival rather than an empty pane", () => {
+    // The codemod runs at BUILD time, so there is nothing to wait for and no
+    // reason to make anyone press a button to see anything at all.
+    expect(textOf("mig-out").trim()).not.toBe("");
+    expect(textOf("mig-todos").trim()).not.toBe("");
+  });
+});
+
+describe("claims stay with the grid they are about", () => {
+  it("never states the roster's coverage or count under another panel", () => {
+    openTab("scale");
+    for (const el of document.querySelectorAll<HTMLElement>("[data-roster-only]")) {
+      // A row count or a coverage sentence beside a DIFFERENT grid is a claim
+      // about the wrong set, which is worse than no claim at all.
+      expect(el.style.display).toBe("none");
+    }
+    openTab("roster");
+    for (const el of document.querySelectorAll<HTMLElement>("[data-roster-only]")) {
+      expect(el.style.display).not.toBe("none");
+    }
   });
 });
 

@@ -96,6 +96,40 @@ describe("the React adapter", () => {
       root = createRoot(container); // so afterEach has something to unmount
     });
   });
+
+  /**
+   * The mount point must not break the height chain.
+   *
+   * The renderer fills its host and reads `clientHeight` to decide how many
+   * rows to build. A wrapper left at `height: auto` between the caller's laid
+   * out element and the grid makes that height unbounded, every row renders,
+   * and virtualisation is silently gone — the same defect that once shipped in
+   * the playground from `body { height: 100% }` with no height on `html`.
+   *
+   * jsdom has no layout, so this asserts the STRUCTURE that makes the layout
+   * right rather than the resulting height, which jsdom would report as 0
+   * whatever we did.
+   */
+  it("gives its mount point a height, so the grid does not become unbounded", () => {
+    act(() => {
+      root.render(<DataGrid model={model(2)} label="g" onAction={() => {}} fallback={fallback} />);
+    });
+    const mount = container.firstElementChild as HTMLElement;
+    expect(mount.style.height).toBe("100%");
+    // …and the grid really is inside it, so the height is on the right element.
+    expect(mount.querySelector('[role="grid"]')).not.toBeNull();
+  });
+
+  it("still applies the caller's className to that mount point", () => {
+    act(() => {
+      root.render(
+        <DataGrid model={model(2)} label="g" onAction={() => {}} fallback={fallback} className="ward-grid" />,
+      );
+    });
+    const mount = container.firstElementChild as HTMLElement;
+    expect(mount.className).toBe("ward-grid");
+    expect(mount.style.height).toBe("100%");
+  });
 });
 
 describe("the SSR boundary", () => {

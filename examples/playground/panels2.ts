@@ -284,10 +284,14 @@ export interface MigrationRefs {
 }
 
 export function mountMigration(refs: MigrationRefs): void {
+  // Populated on arrival, not left blank until a click. An empty pane beside a
+  // full one reads as a panel that failed, and the codemod already ran at build
+  // time — there is nothing to wait for.
   const load = (): void => {
-    refs.input.textContent = MIGRATIONS[refs.source.value]?.input ?? "";
-    refs.output.textContent = "";
-    refs.todos.textContent = "";
+    const m = MIGRATIONS[refs.source.value];
+    refs.input.textContent = m?.input ?? "";
+    refs.output.textContent = m?.output ?? "";
+    refs.todos.textContent = m?.report ?? "";
   };
 
   refs.run.addEventListener("click", () => {

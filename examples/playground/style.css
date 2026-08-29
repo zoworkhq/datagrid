@@ -858,3 +858,82 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 var(--sp-4, 16px) var(--sp-4, 1
   line-height: 22px;
 }
 .antd .a-tag.plain { flex: 0 0 auto; }
+
+/* ── the panels added for the feature sweep ─────────────────────────────────
+   Every colour here comes from a token, so both themes are covered by the
+   token redefinitions above rather than by a second copy of these rules. */
+
+/* Panels that stack several sections scroll as a whole; the ones that are a
+   single grid still give that grid the full height. */
+.panel[data-panel="views"],
+.panel[data-panel="fhir"],
+.panel[data-panel="frameworks"],
+.panel[data-panel="clinical"],
+.panel[data-panel="columns"] { overflow: auto; }
+
+.grid-slot.short { flex: 0 0 auto; height: 268px; }
+.grid-slot.tall  { flex: 0 0 auto; height: 520px; }
+.grid-slot.wide  { flex: 0 0 auto; height: 420px; }
+.panel[data-panel="clinical"] #clinical-host { flex: 0 0 auto; height: 190px; }
+.panel[data-panel="fhir"] #fhir-host { flex: 0 0 auto; height: 340px; }
+.panel[data-panel="scale"] #scale-host { flex: 1 1 auto; min-height: 300px; }
+
+.p-h3 {
+  margin: var(--sp-5, 20px) 0 var(--sp-2, 8px);
+  font-size: var(--fs-sm, 12.5px);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* A measurement is a fact about this machine; it reads as one when it is set
+   in the same face as the figures it reports. */
+.p-stat {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs, 11.5px);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--sp-4, 16px);
+  align-items: start;
+}
+
+.fwgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: var(--sp-4, 16px);
+}
+.fwgrid figure { margin: 0; display: flex; flex-direction: column; min-width: 0; }
+.fwgrid figcaption {
+  font-size: var(--fs-xs, 11.5px);
+  font-weight: 600;
+  color: var(--ink-3);
+  padding-bottom: var(--sp-2, 8px);
+}
+
+.codein {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs, 11.5px);
+  line-height: 1.6;
+  padding: var(--sp-3, 12px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 6px);
+  background: var(--sunken);
+  color: var(--ink);
+  resize: vertical;
+}
+.codein:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.devtools.short { flex: 0 0 auto; max-height: 92px; }
+/* These panels have several of them stacked, so none may claim the whole
+   column the way the devtools panel's single pane does. */
+.panel[data-panel="views"] .devtools,
+.panel[data-panel="fhir"] .devtools,
+.panel[data-panel="frameworks"] .devtools { flex: 0 0 auto; max-height: 260px; }

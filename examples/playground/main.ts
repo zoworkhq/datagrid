@@ -22,7 +22,7 @@ import {
 } from "@oxygenui-design/grid-core";
 import { createGridRenderer, type GridRenderer, type GridViewModel } from "@oxygenui-design/grid-dom";
 import { ROSTER_CELLS, type Patient, type Status } from "./cells.js";
-import type { FacePool } from "./avatar.js";
+import { WARDS, personFor } from "./people.js";
 import { excerpt } from "./excerpt.js";
 import {
   describeAbsence,
@@ -36,6 +36,9 @@ import { copyRange, emptyUndo, invert, record, undo as undoStep } from "@oxygenu
 import { createDevtools, explain } from "@oxygenui-design/grid-devtools";
 import { mountClinical, mountDisclosure, mountGrouping } from "./panels.js";
 import { mountAi, mountMigration, mountWorking } from "./panels2.js";
+import { mountCatalogue, mountScale } from "./panels3.js";
+import { mountColumns, mountViews } from "./panels4.js";
+import { mountFhir, mountFrameworks } from "./panels5.js";
 import {
   arrivalCount,
   createLiveState,
@@ -49,32 +52,11 @@ import {
 // ── synthetic data ──────────────────────────────────────────────────────────
 
 
-const WARDS = ["Ashgrove", "Beeches", "Cedar", "Dunlin", "Elmwood"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const STATUSES: readonly Status[] = ["Stable", "Needs review", "Deteriorating", "Newly admitted"];
 const PROBLEMS = [
   "Depression", "Anxiety", "Type 2 diabetes", "Hypertension", "Asthma",
   "Insomnia", "COPD", "Atrial fibrillation", "Chronic kidney disease",
-];
-const SURNAMES = [
-  "Okafor", "Lindqvist", "Rahman", "Müller", "Nakamura", "Oyelaran", "Kowalski",
-  "Ferreira", "Haddad", "Bianchi", "Novak", "Petrov", "Dlamini", "Marchetti",
-  "Whitfield", "Ashworth", "Delacroix", "Vasquez", "Sørensen", "Ibrahim",
-  "Castellano", "Moreau", "Anand", "Bergström", "Adeyemi", "Callaghan",
-];
-/* Full given names, not initials: a roster shows people, and "A. Okafor" is
-   how a system refers to a record rather than how a ward refers to a person.
-   Each carries the portrait set its face is drawn from — presentation only,
-   and only so a photograph does not visibly contradict the name beside it. */
-const GIVEN: ReadonlyArray<readonly [string, FacePool]> = [
-  ["Amara", "feminine"], ["Daniel", "masculine"], ["Priya", "feminine"],
-  ["Marcus", "masculine"], ["Elena", "feminine"], ["Tobias", "masculine"],
-  ["Fatima", "feminine"], ["Ruth", "feminine"], ["Jonas", "masculine"],
-  ["Yusuf", "masculine"], ["Clara", "feminine"], ["Hassan", "masculine"],
-  ["Ingrid", "feminine"], ["Mateo", "masculine"], ["Nadia", "feminine"],
-  ["Oliver", "masculine"], ["Rosa", "feminine"], ["Samuel", "masculine"],
-  ["Leila", "feminine"], ["Viktor", "masculine"], ["Grace", "feminine"],
-  ["Anton", "masculine"], ["Miriam", "feminine"], ["Felix", "masculine"],
 ];
 
 /** The eight reasons a cell can be empty, cycled so all of them are visible. */
@@ -99,8 +81,8 @@ function makePatients(n: number): Patient[] {
       id: `p${i}`,
       // Co-prime strides, so given and family names do not march in lockstep
       // and the list does not visibly repeat every fourteen rows.
-      name: `${(GIVEN[(i * 7) % GIVEN.length] as readonly [string, FacePool])[0]} ${SURNAMES[(i * 11) % SURNAMES.length]}`,
-      facePool: (GIVEN[(i * 7) % GIVEN.length] as readonly [string, FacePool])[1],
+      name: personFor(i).name,
+      facePool: personFor(i).pool,
       mrn: `MRN-${String(100000 + ((i * 7919) % 899999))}`,
       ward: WARDS[i % WARDS.length] as string,
       potassium: absent
@@ -519,6 +501,8 @@ const panels = Array.from(document.querySelectorAll<HTMLElement>("[data-panel]")
 const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
 let mounted = new Set<string>();
 
+const el = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+
 function show(name: string): void {
   for (const p of panels) p.hidden = p.dataset["panel"] !== name;
   for (const t of tabs) t.setAttribute("aria-selected", String(t.dataset["tab"] === name));
@@ -534,10 +518,42 @@ function show(name: string): void {
   mounted.add(name);
 
   if (name === "clinical") {
-    mountClinical(
-      document.getElementById("clinical-host") as HTMLElement,
-      document.getElementById("held-note") as HTMLElement,
-    );
+    mountClinical(el("clinical-host"), el("held-note"));
+    mountCatalogue(el("catalogue-host"), el("catalogue-note"));
+  }
+  if (name === "scale") {
+    mountScale({
+      out: el("scale-out"), size: el("scale-size"), run: el("scale-run"),
+      host: el("scale-host"), note: el("scale-note"),
+    });
+  }
+  if (name === "columns") {
+    mountColumns({
+      host: el("col-host"), count: el("col-count"), note: el("col-note"),
+      layout: el("col-layout"), moveLeft: el("col-left"), moveRight: el("col-right"),
+      pinFirst: el("col-pin"), spanRow: el("col-span"),
+    });
+  }
+  if (name === "views") {
+    mountViews({
+      out: el("view-out"), scopes: el("view-scopes"), keymapInput: el("keymap-in"),
+      keymapOut: el("keymap-out"), selectionOut: el("sel-out"), selectAll: el("sel-all"),
+      selectSome: el("sel-some"), shrink: el("sel-shrink"), pasteIn: el("paste-in"),
+      pasteOut: el("paste-out"), bulkOut: el("bulk-out"),
+    });
+  }
+  if (name === "fhir") {
+    mountFhir({
+      host: el("fhir-host"), meta: el("fhir-meta"), calls: el("fhir-calls"),
+      filterOut: el("fhir-filter"), note: el("fhir-note"), jump: el("fhir-jump"),
+    });
+  }
+  if (name === "frameworks") {
+    mountFrameworks({
+      vanilla: el("fw-vanilla"), element: el("fw-element"), react: el("fw-react"),
+      signals: el("fw-signals"), ssr: el("fw-ssr"), ssrNote: el("fw-ssr-note"),
+      angular: el("fw-angular"), note: el("fw-note"), shuffle: el("fw-shuffle"),
+    });
   }
   if (name === "disclosure") {
     mountDisclosure({

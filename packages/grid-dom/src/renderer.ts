@@ -896,7 +896,30 @@ export function createGridRenderer<TRow>(
     options.onAction({ type: "focus/cell", rowId, columnKey });
   }
 
+  /**
+   * Records a row's real height.
+   *
+   * ── A HEIGHT OF ZERO IS NOT A HEIGHT ────────────────────────────────────
+   *
+   * A row that measures 0 is not a row that is nothing tall; it is a row that
+   * is not laid out — the grid is inside a `hidden` tab panel, a `display:none`
+   * route, or a collapsed container. ResizeObserver fires for exactly that
+   * transition, so a grid the host hides gets one zero per rendered row.
+   *
+   * Feeding those into the geometry collapses every offset to 0, and a window
+   * of zero-height rows covers the ENTIRE set: the pool grows to one node per
+   * row, on every frame, for as long as the grid stays hidden. Measured in the
+   * playground with two panels open — a hidden 2,000-row grid went from 10
+   * rendered rows to 27,628 nodes in two seconds, and two animation frames
+   * took 4.4 seconds. The tab was still hidden; nobody was looking at it.
+   *
+   * So a non-positive measurement is discarded. The last real height stands,
+   * which is the right answer: the row has not changed size, it has stopped
+   * being displayed, and it will report its true height again on the frame
+   * after the host shows it.
+   */
   function applyMeasurement(index: number, height: number): void {
+    if (!(height > 0)) return;
     const anchor = geometry.indexAt(viewport.scrollTop);
     const delta = geometry.measure(index, height);
     if (delta === 0) return;

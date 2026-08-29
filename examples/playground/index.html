@@ -24,7 +24,12 @@
     <button role="tab" data-tab="clinical" aria-selected="false">Clinical cells</button>
     <button role="tab" data-tab="disclosure" aria-selected="false">Disclosure</button>
     <button role="tab" data-tab="grouping" aria-selected="false">Grouping</button>
+    <button role="tab" data-tab="scale" aria-selected="false">Scale</button>
+    <button role="tab" data-tab="columns" aria-selected="false">250 columns</button>
     <button role="tab" data-tab="working" aria-selected="false">Working on a row</button>
+    <button role="tab" data-tab="views" aria-selected="false">Views &amp; keys</button>
+    <button role="tab" data-tab="fhir" aria-selected="false">FHIR</button>
+    <button role="tab" data-tab="frameworks" aria-selected="false">Frameworks</button>
     <button role="tab" data-tab="ai" aria-selected="false">AI</button>
     <button role="tab" data-tab="migration" aria-selected="false">Migration</button>
     <button role="tab" data-tab="devtools" aria-selected="false">Devtools</button>
@@ -52,7 +57,8 @@
 <div class="refusal" id="refusal" hidden role="alert" data-roster-only></div>
 
 <section class="panel" data-panel="roster">
-  <div class="p-hint" id="roster-hint"></div>
+  <!-- A toast. Empty at rest is correct, so the smoke test skips it. -->
+  <div class="p-hint" id="roster-hint" data-transient></div>
   <div class="grid-slot" id="grid-host"></div>
   <pre class="exportout" id="export-out" hidden></pre>
 </section>
@@ -63,6 +69,9 @@
   scheduled-dose cell is deliberately absent and says so.</div>
   <div class="grid-slot" id="clinical-host"></div>
   <div class="p-held" id="held-note"></div>
+  <h3 class="p-h3">Every cell host that ships</h3>
+  <div class="p-hint" id="catalogue-note"></div>
+  <div class="grid-slot tall" id="catalogue-host"></div>
 </section>
 
 <section class="panel" data-panel="disclosure" hidden>
@@ -154,6 +163,99 @@
   <div class="todos" id="mig-todos"></div>
 </section>
 
+<section class="panel" data-panel="scale" hidden>
+  <div class="p-hint" id="scale-note"></div>
+  <div class="controls inline">
+    <label>Rows
+      <select id="scale-size">
+        <option value="10000">10,000</option>
+        <option value="100000" selected>100,000</option>
+        <option value="250000">250,000 — above the client ceiling</option>
+      </select>
+    </label>
+    <button id="scale-run" type="button">Measure</button>
+    <span id="scale-out" class="p-stat"></span>
+  </div>
+  <div class="grid-slot" id="scale-host"></div>
+</section>
+
+<section class="panel" data-panel="columns" hidden>
+  <div class="p-hint" id="col-note"></div>
+  <div class="controls inline">
+    <button id="col-left" type="button">◀ Move column</button>
+    <button id="col-right" type="button">Move column ▶</button>
+    <label><input type="checkbox" id="col-pin" /> Pin two rows to the top</label>
+    <label><input type="checkbox" id="col-span" /> Span a row across four columns</label>
+  </div>
+  <div class="p-stat" id="col-count"></div>
+  <div class="grid-slot wide" id="col-host"></div>
+  <pre class="devtools short" id="col-layout"></pre>
+</section>
+
+<section class="panel" data-panel="views" hidden>
+  <div class="p-hint">Four things that all mean “the user’s intent survived something”.</div>
+  <div class="two">
+    <div>
+      <h3 class="p-h3">Layered views</h3>
+      <div class="controls inline" id="view-scopes">
+        <label><input type="checkbox" data-scope="default" checked /> default</label>
+        <label><input type="checkbox" data-scope="role" checked /> role</label>
+        <label><input type="checkbox" data-scope="team" checked /> team</label>
+        <label><input type="checkbox" data-scope="personal" checked /> personal</label>
+      </div>
+      <pre class="devtools" id="view-out"></pre>
+      <h3 class="p-h3">Keymap override</h3>
+      <textarea id="keymap-in" class="codein" rows="4" spellcheck="false">{"id":"ward-tablets","bindings":{"cell.right":"Tab","row.select":"Enter","nope.missing":"F9"}}</textarea>
+      <pre class="devtools" id="keymap-out"></pre>
+    </div>
+    <div>
+      <h3 class="p-h3">Selection that outlives the set</h3>
+      <div class="controls inline">
+        <button id="sel-all" type="button">Select everything matching</button>
+        <button id="sel-some" type="button">Select 12 by id</button>
+        <button id="sel-shrink" type="button">Now remove a third of the rows</button>
+      </div>
+      <pre class="devtools" id="sel-out"></pre>
+      <h3 class="p-h3">Paste into a range</h3>
+      <textarea id="paste-in" class="codein" rows="4" spellcheck="false">Amara Okafor	Ashgrove
+Daniel Lindqvist	Beeches
+Priya Rahman	Cedar	MRN-100042</textarea>
+      <pre class="devtools" id="paste-out"></pre>
+      <h3 class="p-h3">Bulk review before a bulk action</h3>
+      <pre class="devtools" id="bulk-out"></pre>
+    </div>
+  </div>
+</section>
+
+<section class="panel" data-panel="fhir" hidden>
+  <div class="p-hint" id="fhir-note"></div>
+  <div class="controls inline">
+    <button id="fhir-jump" type="button">Jump six pages ahead</button>
+    <span class="p-stat" id="fhir-meta"></span>
+  </div>
+  <div class="grid-slot" id="fhir-host"></div>
+  <div class="two">
+    <pre class="devtools" id="fhir-calls"></pre>
+    <pre class="devtools" id="fhir-filter"></pre>
+  </div>
+</section>
+
+<section class="panel" data-panel="frameworks" hidden>
+  <div class="p-hint" id="fw-note"></div>
+  <div class="controls inline"><button id="fw-shuffle" type="button">Shuffle the rows</button></div>
+  <div class="fwgrid">
+    <figure><figcaption>No framework</figcaption><div class="grid-slot short" id="fw-vanilla"></div></figure>
+    <figure><figcaption>Custom element — &lt;ox-data-grid&gt;</figcaption><div class="grid-slot short" id="fw-element"></div></figure>
+    <figure><figcaption>React 19</figcaption><div class="grid-slot short" id="fw-react"></div></figure>
+    <figure><figcaption>Signals</figcaption><div class="grid-slot short" id="fw-signals"></div></figure>
+  </div>
+  <h3 class="p-h3">Server rendered, then adopted</h3>
+  <div class="p-hint" id="fw-ssr-note"></div>
+  <div class="grid-slot short" id="fw-ssr"></div>
+  <h3 class="p-h3">Angular</h3>
+  <pre class="devtools" id="fw-angular"></pre>
+</section>
+
 <section class="panel" data-panel="devtools" hidden>
   <div class="p-hint">The action log, and <b>why</b> the grid is in the state it is in. It has no transport:
   nothing here leaves this machine. It is the compensating control for errors that carry no values.</div>
@@ -164,7 +266,10 @@
 <footer class="p-legend">
   <span id="legend"><b>Keyboard</b> — Tab in, then arrows. Enter or click a header sorts. Space selects.
   F2 edits. Ctrl+C copies. Ctrl+Z undoes. The body is one tab stop.</span>
-  <span id="stats"></span>
+  <!-- A count of the ROSTER's rows, and only ever true of the roster. Shown
+       under another panel's grid it is a claim about the wrong set — the same
+       reason the coverage sentence is roster-only. -->
+  <span id="stats" data-roster-only></span>
 </footer>
 <div class="boundary">
   <b>All data on this page is synthetic.</b> No PHI appears anywhere. This library is not a compliance

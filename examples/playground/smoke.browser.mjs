@@ -199,6 +199,198 @@ try {
   );
   check(afterScroll.blank === 0, "no cell paints blank after recycling");
 
+  // ── every panel mounts, and says something ────────────────────────────────
+  //
+  // Thirteen tabs, and a panel that throws on mount leaves an empty box that
+  // looks exactly like a panel with nothing to show. Every one is opened, and
+  // each is required to produce content — a grid with cells, or prose that is
+  // not the empty string. A panel whose script died produces neither.
+  const TABS = await page.$$eval('[role="tab"]', (els) => els.map((e) => e.dataset.tab));
+  check(TABS.length === 13, "every tab is present", `${TABS.length} tabs`);
+
+  for (const name of TABS) {
+    await page.click(`[role="tab"][data-tab="${name}"]`);
+    // The scale panel measures 100,000 rows on open; give it room.
+    await page.waitForTimeout(name === "scale" ? 3500 : 500);
+    const panel = await page.evaluate((n) => {
+      const p = document.querySelector(`[data-panel="${n}"]`);
+      // A `hidden` block is legitimately empty — #export-out only fills after
+      // an export runs. Everything VISIBLE has to say something.
+      const prose = [...p.querySelectorAll("pre, .p-hint, .p-stat, .p-held, .todos, .migout")]
+        .filter((e) => !e.hidden && e.offsetParent !== null && !("transient" in e.dataset));
+      return {
+        cells: p.querySelectorAll('[role="gridcell"]').length,
+        prose: prose.length,
+        emptyProse: prose.filter((e) => !e.textContent.trim()).map((e) => e.id || e.className),
+      };
+    }, name);
+    check(
+      panel.cells > 0 || panel.prose > 0,
+      `the ${name} panel renders something`,
+      `${panel.cells} cells, ${panel.prose} text blocks`,
+    );
+    check(
+      panel.emptyProse.length === 0,
+      `the ${name} panel leaves no empty text block`,
+      panel.emptyProse.join(", ") || "none",
+    );
+  }
+  check(pageErrors.length === 0, "no page errors across every panel", pageErrors[0] ?? "none");
+
+  // ── the claims the new panels exist to make ───────────────────────────────
+  //
+  // Each of these is the ONE number that panel is about. Asserting "it rendered"
+  // would pass on a panel that renders every column, which is the exact defect
+  // column virtualisation exists to prevent.
+  await page.click('[role="tab"][data-tab="columns"]');
+  await page.waitForTimeout(700);
+  const wide = await page.evaluate(() => {
+    const p = document.querySelector('[data-panel="columns"]');
+    const row = p.querySelector('.oxg-body [role="row"]');
+    return {
+      declared: p.querySelectorAll('[role="columnheader"]').length,
+      perRow: row ? row.querySelectorAll('[role="gridcell"]').length : 0,
+      spacers: row ? row.querySelectorAll('[role="presentation"]').length : 0,
+      viewportWidth: p.querySelector(".oxg-viewport")?.clientWidth ?? 0,
+    };
+  });
+  // The safety valve: an unlaid-out viewport reports 0 and the renderer paints
+  // every column on purpose. Asserting the window without asserting the width
+  // would pass on exactly that case, which is how this nearly shipped untested.
+  check(wide.viewportWidth > 0, "the wide panel's viewport has a width", `${wide.viewportWidth}px`);
+  check(
+    wide.perRow > 0 && wide.perRow < 40,
+    "250 columns render as a window, not as 250 cells",
+    `${wide.perRow} cells per row, ${wide.spacers} spacers`,
+  );
+
+  await page.click('[role="tab"][data-tab="fhir"]');
+  await page.waitForTimeout(900);
+  const fhir = await page.evaluate(async () => {
+    const p = document.querySelector('[data-panel="fhir"]');
+    const vp = p.querySelector(".oxg-viewport");
+    // Each pass reaches the bottom of the runway, which is what asks for the
+    // next page. Headless is slower than a warm tab, so this is generous.
+    for (let i = 0; i < 6; i++) {
+      vp.scrollTop = vp.scrollHeight;
+      vp.dispatchEvent(new Event("scroll"));
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    const calls = p.querySelector("#fhir-calls").textContent;
+    p.querySelector("#fhir-jump").click();
+    await new Promise((r) => setTimeout(r, 500));
+    return {
+      follows: (calls.match(/→ follow/g) ?? []).length,
+      rowcount: p.querySelector('[role="grid"]').getAttribute("aria-rowcount"),
+      refusal: p.querySelector("#fhir-calls").textContent.includes("cursor-jump-unsupported"),
+      leaksRowId: /rowId/i.test(p.querySelector("#fhir-calls").textContent),
+    };
+  });
+  check(fhir.follows >= 3, "scrolling pages through the opaque link.next", `${fhir.follows} follows`);
+  check(fhir.rowcount === "-1", "an unknown total is announced as unknown", `aria-rowcount ${fhir.rowcount}`);
+  check(fhir.refusal, "a cursor source refuses a jump rather than hanging");
+  check(!fhir.leaksRowId, "the refusal names a row index, never a row id");
+
+  await page.click('[role="tab"][data-tab="frameworks"]');
+  await page.waitForTimeout(900);
+  const adapters = await page.evaluate(async () => {
+    const p = document.querySelector('[data-panel="frameworks"]');
+    const first = (id) => {
+      const row = p.querySelector(`#${id} .oxg-body [role="row"]`);
+      return row ? [...row.querySelectorAll('[role="gridcell"]')].map((c) => c.textContent.trim()).join("|") : "";
+    };
+    const live = ["fw-vanilla", "fw-element", "fw-react", "fw-signals"];
+    const before = live.map(first);
+    p.querySelector("#fw-shuffle").click();
+    await new Promise((r) => setTimeout(r, 400));
+    return { before, after: live.map(first), ssr: first("fw-ssr") };
+  });
+  check(
+    new Set(adapters.before).size === 1 && adapters.before[0] !== "",
+    "every adapter starts on the same row",
+    adapters.before[0],
+  );
+  check(
+    new Set(adapters.after).size === 1 && adapters.after[0] !== adapters.before[0],
+    "every adapter moves together — one engine, not four",
+    adapters.after[0],
+  );
+  check(adapters.ssr !== "", "the server-rendered grid is adopted, not blanked", adapters.ssr);
+
+  // Every adapter must SIZE the same, not just show the same rows. An adapter
+  // that inserts an auto-height wrapper breaks the host's height chain, the
+  // renderer reads an unbounded clientHeight, and virtualisation stops — the
+  // grid renders every row it was given. The React adapter did exactly this: a
+  // 268px slot held a 642px grid spilling over the section below it.
+  const heights = await page.evaluate(() => {
+    const p = document.querySelector('[data-panel="frameworks"]');
+    return ["fw-vanilla", "fw-element", "fw-react", "fw-signals"].map((id) => {
+      const host = p.querySelector(`#${id}`);
+      const inner = host.querySelector(".oxg-root");
+      return {
+        id,
+        host: Math.round(host.getBoundingClientRect().height),
+        grid: inner ? Math.round(inner.getBoundingClientRect().height) : -1,
+      };
+    });
+  });
+  const overflowing = heights.filter((h) => h.grid > h.host + 2);
+  check(
+    overflowing.length === 0,
+    "no adapter lets the grid outgrow the box it was given",
+    overflowing.map((h) => `${h.id} ${h.grid}px in ${h.host}px`).join(", ") ||
+      heights.map((h) => `${h.id} ${h.grid}px`).join(", "),
+  );
+
+  await page.click('[role="tab"][data-tab="scale"]');
+  await page.waitForTimeout(3500);
+  const scale = await page.evaluate(() => {
+    const p = document.querySelector('[data-panel="scale"]');
+    const rows = [...p.querySelectorAll('.oxg-body [role="row"]')].map((r) =>
+      [...r.querySelectorAll('[role="gridcell"]')].map((c) => c.textContent.trim()),
+    );
+    return { rows, strategy: rows[0]?.[1] ?? "", store: rows.find((r) => r[0]?.includes("buildColumnStore"))?.[1] ?? "" };
+  });
+  check(scale.rows.length >= 6, "the scale panel measures every model", `${scale.rows.length} measurements`);
+  check(scale.strategy === "columnar", "100,000 rows chooses the columnar store", scale.strategy);
+  check(/MB in/.test(scale.store), "the store reports real bytes", scale.store);
+
+  // ── a hidden grid stays still ─────────────────────────────────────────────
+  //
+  // ResizeObserver reports 0 for every rendered row the moment a grid is
+  // hidden. Taken as a height, that collapses the geometry, the window grows
+  // to cover the whole set, and the pool adds a node per row on every frame —
+  // in a tab nobody is looking at. Measured before the fix: a hidden 2,000-row
+  // grid reached 27,628 nodes in two seconds and made two frames take 4.4 s.
+  //
+  // jsdom cannot see this: it has no layout, so no observer ever fires. This
+  // is the same gap that hid the dead-virtualisation bug this file was written
+  // for, which is why the check lives here and not in a unit test.
+  await page.click('[role="tab"][data-tab="columns"]');
+  await page.waitForTimeout(600);
+  await page.click('[role="tab"][data-tab="working"]');
+  const nodesAt = () => page.evaluate(() => document.querySelectorAll("*").length);
+  await page.waitForTimeout(400);
+  const settled = await nodesAt();
+  await page.waitForTimeout(1800);
+  const later = await nodesAt();
+  check(
+    later - settled < 200,
+    "a hidden grid does not grow the DOM",
+    `${settled} → ${later} nodes over 1.8 s`,
+  );
+  const frameMs = await page.evaluate(async () => {
+    const t0 = performance.now();
+    await new Promise((r) => requestAnimationFrame(r));
+    await new Promise((r) => requestAnimationFrame(r));
+    return Math.round(performance.now() - t0);
+  });
+  check(frameMs < 200, "the page still animates at a sane rate", `two frames in ${frameMs} ms`);
+
+  // Back to the roster, so the theme checks below start where they used to.
+  await page.click('[role="tab"][data-tab="roster"]');
+  await page.waitForTimeout(300);
+
   // ── the chrome carries no hue ─────────────────────────────────────────────
   //
   // The lifted brief is teal to its neutrals: `--surface: #101d1b` has more

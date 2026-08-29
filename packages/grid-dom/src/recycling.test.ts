@@ -225,4 +225,35 @@ describe("scroll anchoring", () => {
     expect(viewportEl().scrollTop).toBe(after);
     expect(after).not.toBe(before);
   });
+
+  /**
+   * The playground found this one, in a hidden tab nobody was looking at.
+   *
+   * ResizeObserver reports 0 for every rendered row the moment the host hides
+   * the grid. Taken as a height, that collapses the geometry: rows stack at
+   * offset 0, the window covers the whole set, and the pool grows by one node
+   * per row on every frame. A hidden 2,000-row grid reached 27,628 nodes in
+   * two seconds and made two animation frames take 4.4 seconds.
+   */
+  it("ignores a height of zero, because that is a row that is not laid out", () => {
+    scrollTo(40_000);
+    const canvas = host.querySelector(".oxg-canvas") as HTMLElement;
+    const before = { top: viewportEl().scrollTop, height: canvas.style.height };
+
+    // What hiding the grid delivers: one zero per rendered row.
+    for (let i = 0; i < 40; i++) r.measureRow(1_000 + i, 0);
+
+    // Not "still roughly right" — IDENTICAL. A discarded measurement changes
+    // nothing at all, and a tolerance here would pass on 40 rows collapsing.
+    expect(canvas.style.height).toBe(before.height);
+    expect(viewportEl().scrollTop).toBe(before.top);
+  });
+
+  it("still accepts a real height after a burst of zeros", () => {
+    scrollTo(40_000);
+    r.measureRow(500, 0);
+    const before = viewportEl().scrollTop;
+    r.measureRow(500, 140); // the host showed it again; this one is real
+    expect(viewportEl().scrollTop).toBe(before + 100);
+  });
 });
