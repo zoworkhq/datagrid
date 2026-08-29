@@ -13,8 +13,8 @@
  */
 import {
   arraySource, buildColumnStore, createAdaptiveRowModel, createBlockRowModel,
-  createGridWorker, createSortIndex, buildSortKeys, isLoadingRow,
-  type StoredColumn,
+  createGridWorker, createServerRowModel, createSortIndex, buildSortKeys, initialState,
+  isLoadingRow, type StoredColumn,
 } from "@oxygenui-design/grid-core";
 import { createGridRenderer, type GridViewModel } from "@oxygenui-design/grid-dom";
 import {
@@ -342,6 +342,22 @@ export function mountScale(refs: ScaleRefs): void {
       why: `capped at 20 x 100 rows, whether the set is ${n.toLocaleString()} or twenty million`,
     });
 
+    // 7 · One page at a time. The block model keeps a window of blocks; this
+    //     keeps exactly the page the server last sent, which is what a grid
+    //     backed by a paginated endpoint actually holds.
+    const server = createServerRowModel<Wide>({
+      dataSource: arraySource(rows), rowKey: (r2) => r2.id,
+    });
+    server.setState(initialState({ pageSize: 50 }));
+    await new Promise((r2) => setTimeout(r2, 0));
+    const page = server.result();
+    lines.push({
+      what: "createServerRowModel — one page",
+      measured: `${page.length} rows held, total ${page.total}`,
+      why: "the whole set stays on the server; the client holds one page and nothing else",
+    });
+    server.destroy();
+
     void first;
     return lines;
   }
@@ -385,7 +401,7 @@ export function mountScale(refs: ScaleRefs): void {
 
   refs.run.addEventListener("click", () => void run());
   refs.note.textContent =
-    "Four row models ship, and the library picks one and says why. Nothing below is quoted from a " +
+    "Five row models ship, and the library picks one and says why. Nothing below is quoted from a " +
     "README: it is measured in this tab, on this machine, at the size you choose. The largest size " +
     "is above the client ceiling on purpose — that is the case the block model exists for.";
   void run();

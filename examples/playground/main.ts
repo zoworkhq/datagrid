@@ -32,7 +32,7 @@ import {
   type Coverage,
 } from "@oxygenui-design/grid-healthcare";
 import { printSheetHtml, toCsv, toXlsx, type ExportColumn } from "@oxygenui-design/grid-export";
-import { copyRange, emptyUndo, invert, record, undo as undoStep } from "@oxygenui-design/grid-clipboard";
+import { copyRange, emptyUndo, invert, record, redo as redoStep, undo as undoStep } from "@oxygenui-design/grid-clipboard";
 import { createDevtools, explain } from "@oxygenui-design/grid-devtools";
 import { mountClinical, mountDisclosure, mountGrouping } from "./panels.js";
 import { mountAi, mountMigration, mountWorking } from "./panels2.js";
@@ -644,13 +644,21 @@ document.addEventListener("keydown", (e) => {
     }
   }
 
-  if (e.key === "z") {
-    const back = undoStep(undoStack);
-    undoStack = back.stack;
-    if (back.action) {
-      onAction(back.action);
-      note("Undid the last invertible action");
-    } else note("Nothing to undo — a write is never un-sent");
+  // Ctrl+Z back, Ctrl+Shift+Z forward. A stack with no way forward is half a
+  // stack, and the redo half was reachable in the API and not from the demo.
+  if (e.key === "z" || e.key === "Z") {
+    const step = e.shiftKey ? redoStep(undoStack) : undoStep(undoStack);
+    undoStack = step.stack;
+    if (step.action) {
+      onAction(step.action);
+      note(e.shiftKey ? "Redid it" : "Undid the last invertible action");
+    } else {
+      note(
+        e.shiftKey
+          ? "Nothing to redo"
+          : "Nothing to undo — a write is never un-sent",
+      );
+    }
   }
 });
 
