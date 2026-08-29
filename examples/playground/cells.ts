@@ -25,7 +25,7 @@
  *     prevent.
  */
 import type { CellRenderer } from "@oxygenui-design/grid-dom";
-import { avatarFor } from "./avatar.js";
+import { avatarFor, type FacePool } from "./avatar.js";
 import type { ExportValue, Measured } from "@oxygenui-design/grid-core";
 // The real absence union — eight typed reasons, not a string. `describeAbsence`
 // turns one into the sentence a clinician reads, so the cell never composes it.
@@ -45,6 +45,8 @@ export interface Patient {
   readonly reviewed: string;
   /** A real photograph, when the record has one. See avatar.ts. */
   readonly photoUrl?: string;
+  /** Which portrait set the generated face comes from. Presentation only. */
+  readonly facePool?: FacePool;
 }
 
 export type Status = "Stable" | "Needs review" | "Deteriorating" | "Newly admitted";
@@ -98,7 +100,7 @@ export const identityCell: CellRenderer<Patient> = {
   update(node, ctx) {
     const { row } = ctx;
     const avatar = node.querySelector(".a-avatar") as HTMLElement;
-    const face = avatarFor(row.id, row.photoUrl);
+    const face = avatarFor(row.id, row.photoUrl, row.facePool);
     // Both states are written every time, because a recycled node arrives
     // carrying whichever one the PREVIOUS patient had.
     if (face.kind === "photo") {

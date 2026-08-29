@@ -809,3 +809,40 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 var(--sp-4, 16px) var(--sp-4, 1
 .oxg-body [role="row"]:hover [role="gridcell"] {
   background: color-mix(in oklab, var(--accent) 5%, transparent);
 }
+
+/* ── type ─────────────────────────────────────────────────────────────────────
+   Noto Sans throughout, with Noto Sans Mono for identifiers and figures.
+
+   The brief's stacks prefer Inter and Avenir Next, neither of which the page
+   loads — so it was quietly falling through to whatever each machine had, and
+   the same screenshot looked different on every desk. One family, stated.
+
+   Every stack still ends in the system sans: Google Fonts is a network
+   dependency, and a page that renders in Times when it is unreachable is a
+   page that has no fallback. -------------------------------------------------- */
+
+:root .antd.antd.antd {
+  --font-ui: "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+             "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-ui);
+  --font-display: var(--font-ui);
+  --font-mono: "Noto Sans Mono", ui-monospace, "SF Mono", Menlo, Consolas,
+               "Liberation Mono", monospace;
+  --font-num: var(--font-mono);
+}
+
+/* The brief sets `font-family` on components directly as well as through the
+   tokens, so the family is stated on the subtree rather than left to inherit. */
+.antd,
+.antd button,
+.antd input,
+.antd select,
+.antd textarea { font-family: var(--font-ui); }
+
+/* Identifiers, measurements and dates are monospaced: an MRN is for matching
+   against a wristband, and a column of figures only scans if the digits align. */
+[role="gridcell"][data-col-key="mrn"],
+[role="gridcell"][data-col-key="potassium"],
+[role="gridcell"][data-col-key="reviewed"],
+.antd .idc .sub2,
+.devtools, .exportout, #mig-in, .migout, .urlbar { font-family: var(--font-mono); }

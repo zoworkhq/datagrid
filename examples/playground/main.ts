@@ -22,6 +22,7 @@ import {
 } from "@oxygenui-design/grid-core";
 import { createGridRenderer, type GridRenderer, type GridViewModel } from "@oxygenui-design/grid-dom";
 import { ROSTER_CELLS, type Patient, type Status } from "./cells.js";
+import type { FacePool } from "./avatar.js";
 import { excerpt } from "./excerpt.js";
 import {
   describeAbsence,
@@ -62,11 +63,18 @@ const SURNAMES = [
   "Castellano", "Moreau", "Anand", "Bergström", "Adeyemi", "Callaghan",
 ];
 /* Full given names, not initials: a roster shows people, and "A. Okafor" is
-   how a system refers to a record rather than how a ward refers to a person. */
-const GIVEN = [
-  "Amara", "Daniel", "Priya", "Marcus", "Elena", "Tobias", "Fatima", "Ruth",
-  "Jonas", "Yusuf", "Clara", "Hassan", "Ingrid", "Mateo", "Nadia", "Oliver",
-  "Rosa", "Samuel", "Leila", "Viktor", "Grace", "Anton", "Miriam", "Felix",
+   how a system refers to a record rather than how a ward refers to a person.
+   Each carries the portrait set its face is drawn from — presentation only,
+   and only so a photograph does not visibly contradict the name beside it. */
+const GIVEN: ReadonlyArray<readonly [string, FacePool]> = [
+  ["Amara", "feminine"], ["Daniel", "masculine"], ["Priya", "feminine"],
+  ["Marcus", "masculine"], ["Elena", "feminine"], ["Tobias", "masculine"],
+  ["Fatima", "feminine"], ["Ruth", "feminine"], ["Jonas", "masculine"],
+  ["Yusuf", "masculine"], ["Clara", "feminine"], ["Hassan", "masculine"],
+  ["Ingrid", "feminine"], ["Mateo", "masculine"], ["Nadia", "feminine"],
+  ["Oliver", "masculine"], ["Rosa", "feminine"], ["Samuel", "masculine"],
+  ["Leila", "feminine"], ["Viktor", "masculine"], ["Grace", "feminine"],
+  ["Anton", "masculine"], ["Miriam", "feminine"], ["Felix", "masculine"],
 ];
 
 /** The eight reasons a cell can be empty, cycled so all of them are visible. */
@@ -91,7 +99,8 @@ function makePatients(n: number): Patient[] {
       id: `p${i}`,
       // Co-prime strides, so given and family names do not march in lockstep
       // and the list does not visibly repeat every fourteen rows.
-      name: `${GIVEN[(i * 7) % GIVEN.length]} ${SURNAMES[(i * 11) % SURNAMES.length]}`,
+      name: `${(GIVEN[(i * 7) % GIVEN.length] as readonly [string, FacePool])[0]} ${SURNAMES[(i * 11) % SURNAMES.length]}`,
+      facePool: (GIVEN[(i * 7) % GIVEN.length] as readonly [string, FacePool])[1],
       mrn: `MRN-${String(100000 + ((i * 7919) % 899999))}`,
       ward: WARDS[i % WARDS.length] as string,
       potassium: absent
