@@ -34,7 +34,7 @@ import { signal, type ReadSignal } from "@oxygenui-design/grid-signals";
 import { gridError, sanitiseError, type GridError } from "./errors.js";
 import type { GridDataSource, GridQuery, SortSpec } from "./query.js";
 import type { GridState } from "./state.js";
-import type { ModelRow, RowModel, RowModelResult } from "./row-model.js";
+import { resultOf, type ModelRow, type RowModel, type RowModelResult } from "./row-model.js";
 
 /** A row the source has not sent yet. Never rendered as an empty row. */
 export interface LoadingRow {
@@ -116,9 +116,9 @@ export function createBlockRowModel<TRow>(
    */
   let errors: GridError[] = [];
 
-  const result = signal<RowModelResult<TRow>>({
-    rows: [], total: "unknown", loading: false, errors: [],
-  });
+  const result = signal<RowModelResult<TRow>>(
+    resultOf<TRow>([], { total: "unknown", loading: false, errors: [] }),
+  );
 
   const blockOf = (index: number): number => Math.floor(index / blockSize);
 
@@ -161,7 +161,7 @@ export function createBlockRowModel<TRow>(
           : { id: rowKey(row), row, index },
       );
     }
-    result.set({ rows, total, loading: inflight.size > 0, errors });
+    result.set(resultOf(rows, { total, loading: inflight.size > 0, errors }));
   }
 
   function queryFor(index: number): GridQuery | null {
