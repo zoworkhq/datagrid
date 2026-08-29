@@ -28,5 +28,6 @@ export * from "./keymap.js";
 export * from "./query.js";
 export * from "./reorder.js";
 export * from "./sort.js";
+export * from "./sort-index.js";
 export * from "./state.js";
 export * from "./view.js";
