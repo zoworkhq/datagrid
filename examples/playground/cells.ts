@@ -43,6 +43,8 @@ export interface Patient {
   readonly problems: readonly string[];
   readonly potassium: Measured | Absent;
   readonly reviewed: string;
+  /** A real photograph, when the record has one. See avatar.ts. */
+  readonly photoUrl?: string;
 }
 
 export type Status = "Stable" | "Needs review" | "Deteriorating" | "Newly admitted";
@@ -96,10 +98,20 @@ export const identityCell: CellRenderer<Patient> = {
   update(node, ctx) {
     const { row } = ctx;
     const avatar = node.querySelector(".a-avatar") as HTMLElement;
-    // A drawn portrait, deterministic from the row id. The initials stay
-    // underneath as the fallback if the image cannot paint.
-    avatar.style.backgroundImage = avatarFor(row.id);
-    avatar.textContent = initials(row.name);
+    const face = avatarFor(row.id, row.photoUrl);
+    // Both states are written every time, because a recycled node arrives
+    // carrying whichever one the PREVIOUS patient had.
+    if (face.kind === "photo") {
+      avatar.style.backgroundImage = face.image;
+      avatar.style.backgroundColor = "";
+      avatar.textContent = "";
+      avatar.dataset["avatar"] = "photo";
+    } else {
+      avatar.style.backgroundImage = "";
+      avatar.style.backgroundColor = face.background;
+      avatar.textContent = initials(row.name);
+      avatar.dataset["avatar"] = "initials";
+    }
     avatar.setAttribute("aria-hidden", "true");
 
     (node.querySelector(".pname") as HTMLElement).textContent = row.name;

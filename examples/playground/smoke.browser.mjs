@@ -242,6 +242,43 @@ try {
       );
     }
   }
+
+  // ── the theme switch ──────────────────────────────────────────────────────
+  //
+  // Three states, and the machine's preference is only the DEFAULT. A two-way
+  // switch has to pick a side on first load, and picking wrong hands a
+  // clinician on a night shift a white screen.
+  const themed = await browser.newPage({ viewport: { width: 1280, height: 800 }, colorScheme: "light" });
+  await themed.goto(`${origin}/index.html`, { waitUntil: "load", timeout: MAX_LOAD_MS });
+  await themed.waitForTimeout(300);
+
+  const themeState = async () =>
+    themed.evaluate(() => ({
+      attr: document.documentElement.dataset.theme ?? "system",
+      bg: getComputedStyle(document.body).backgroundColor,
+    }));
+
+  const start = await themeState();
+  check(start.attr === "system", "the theme defaults to the machine's preference", start.attr);
+
+  await themed.click("#theme");
+  await themed.waitForTimeout(150);
+  await themed.click("#theme");
+  await themed.waitForTimeout(200);
+  const dark = await themeState();
+  // The page is in a LIGHT system context, so this proves the override wins.
+  check(dark.attr === "dark", "an explicit dark theme overrides the system", dark.attr);
+  check(
+    spread(dark.bg) <= 8 && Number((dark.bg.match(/\d+/g) ?? [])[0]) < 60,
+    "dark actually paints dark, and neutral",
+    dark.bg,
+  );
+
+  await themed.reload({ waitUntil: "load", timeout: MAX_LOAD_MS });
+  await themed.waitForTimeout(400);
+  const remembered = await themeState();
+  check(remembered.attr === "dark", "the choice survives a reload", remembered.attr);
+  await themed.close();
 } finally {
   await browser.close();
   await ctx.dispose();

@@ -1,44 +1,69 @@
 /**
- * Portrait avatars, drawn rather than photographed.
+ * Row avatars: a portrait where there is one, coloured initials where there is
+ * not.
  *
- * ── WHY THESE ARE ILLUSTRATIONS AND NOT PHOTOGRAPHS ─────────────────────────
+ * That split is the real pattern, not a decorative one. In any actual system
+ * some people have uploaded a photograph and most have not, so a roster that
+ * shows a face for everyone is lying, and one that shows initials for everyone
+ * throws away information it has. Both states have to look deliberate.
  *
- * A roster of patients wants faces, and the obvious way to get them is a stock
- * photo service or `randomuser.me`. Both are wrong here:
+ * ── ON THE PHOTOGRAPHS ──────────────────────────────────────────────────────
  *
- *   · every one of those images is a REAL PERSON, and captioning a real face
- *     with a fabricated MRN, ward and potassium result is exactly the artefact
- *     nobody should be able to screenshot out of a demo;
- *   · they are remote requests, so they fail closed under the artifact's CSP
- *     and leave the page pocked with broken images;
- *   · they are licensed, and a demo that ships someone's likeness inherits
- *     that licence.
+ * `photoUrl` is honoured when a row supplies one — point it at your own image
+ * host and these become real photographs.
  *
- * So these are generated: deterministic from the row id, self-contained as
- * data URIs, and depicting nobody. They read as portraits at 32px, which is
- * the size the grid actually shows them at.
+ * The demo does not supply any, and generates portraits instead, for three
+ * reasons that are not stylistic:
  *
- * ── AND WHY THEY ARE CACHED ─────────────────────────────────────────────────
+ *   · every face on a stock or `randomuser.me` endpoint is a REAL PERSON, and
+ *     captioning one with a fabricated MRN, ward and potassium result produces
+ *     a screenshot that reads as a real patient record;
+ *   · they are remote requests, so they fail closed under the published
+ *     artifact's CSP and leave the page pocked with broken images;
+ *   · they are licensed likenesses, which a demo would be redistributing.
  *
- * Rows recycle on every scroll frame. Rebuilding an SVG string per cell per
- * frame is the kind of thing that turns a smooth grid into a janky one, so the
- * variants are memoised — there are 2,592 of them, and a viewport shows twenty.
+ * So the generated ones depict nobody, need no network, and survive being
+ * shared. Swap them for real photographs by giving rows a `photoUrl`.
+ *
+ * ── AND WHY EVERYTHING IS CACHED ────────────────────────────────────────────
+ *
+ * Rows recycle on every scroll frame. Building an SVG per cell per frame is
+ * what turns a smooth grid into a janky one.
  */
 
 /** Skin tones, spanning the range a real ward does. */
 const SKIN = [
-  { fill: "#f2d3bd", shade: "#e0bda3" },
-  { fill: "#e8c39e", shade: "#d4ab82" },
-  { fill: "#d9a879", shade: "#c08f60" },
-  { fill: "#b47d56", shade: "#9a6742" },
-  { fill: "#8d5524", shade: "#74441c" },
-  { fill: "#5c3317", shade: "#472711" },
+  { fill: "#f6d9c2", shade: "#e6bfa3", deep: "#d3a586" },
+  { fill: "#eec5a0", shade: "#dbad83", deep: "#c5936a" },
+  { fill: "#dda97b", shade: "#c68f61", deep: "#ac7549" },
+  { fill: "#bb8055", shade: "#a06841", deep: "#855230" },
+  { fill: "#94582a", shade: "#7a441e", deep: "#5f3315" },
+  { fill: "#63381a", shade: "#4d2912", deep: "#3a1d0c" },
 ] as const;
 
-const HAIR = ["#2b2118", "#4a3728", "#6b4423", "#8d6748", "#b8860b", "#9a9a9a", "#e8e4de", "#1c1c1c"] as const;
+const HAIR = [
+  "#241c16", "#3d2c1e", "#5c3a1e", "#7b5230",
+  "#a9793f", "#c9a227", "#8f8f8f", "#e4ded4", "#141414",
+] as const;
 
 /** Muted, professional. Nothing here should compete with a lab value. */
-const CLOTHES = ["#3f5d75", "#4a5568", "#5b6b7c", "#6b7280", "#546e7a", "#455a64"] as const;
+const CLOTHES = [
+  "#3f5d75", "#4a5568", "#5b6b7c", "#6b7280",
+  "#546e7a", "#455a64", "#5a6478", "#4b5f6b",
+] as const;
+
+/**
+ * Initials backgrounds.
+ *
+ * Distinct hues rather than one brand colour: the point of a coloured monogram
+ * is that it is TELLING PEOPLE APART at a glance, which one colour cannot do.
+ * All are dark enough for white text at AA.
+ */
+const INITIAL_COLOURS = [
+  "#2563eb", "#7c3aed", "#db2777", "#e11d48",
+  "#ea580c", "#ca8a04", "#16a34a", "#0891b2",
+  "#4f46e5", "#be185d", "#0f766e", "#9333ea",
+] as const;
 
 /** Deterministic, so one patient keeps one face for the life of the demo. */
 function hash(seed: string): number {
@@ -47,35 +72,33 @@ function hash(seed: string): number {
     h ^= seed.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
+  // `>>> 0` matters: the shifts below must stay unsigned, or an index goes
+  // negative and the lookup silently yields `undefined`.
   return h >>> 0;
 }
 
 /**
- * One portrait.
+ * One portrait, drawn head-and-shoulders in a 64-unit square.
  *
- * Drawn in a 64-unit square and clipped to a circle, so the grid can size it
- * with CSS alone. Proportions are deliberately head-and-shoulders: at 32px a
- * full figure reads as a smudge.
+ * Deliberately not a full figure: at 40px a whole body reads as a smudge.
  */
-function portrait(seed: string): string {
-  const h = hash(seed);
-  // `>>>`, NOT `>>`. The hash fills 32 bits, and a SIGNED shift turns anything
-  // above 2^31 negative — so `arr[negative % len]` is `undefined` and the
-  // portrait renders `fill="undefined"`: no hair, no clothes, silently, for
-  // roughly half of all patients.
+function portrait(h: number): string {
   const skin = SKIN[h % SKIN.length] as (typeof SKIN)[number];
   const hair = HAIR[(h >>> 3) % HAIR.length] as string;
   const cloth = CLOTHES[(h >>> 6) % CLOTHES.length] as string;
   const style = (h >>> 9) % 6;
-  const glasses = ((h >>> 12) % 5) === 0;
-  const beard = ((h >>> 14) % 4) === 0 && style % 2 === 0;
+  const glasses = ((h >>> 12) % 6) === 0;
+  const beard = ((h >>> 14) % 5) === 0 && style % 2 === 0;
+  const bg = ["#eef1f5", "#e9eef3", "#f0eef4", "#eaf0ee", "#f2efe9"][(h >>> 17) % 5] as string;
+  // Gradient ids must be unique per document: two portraits sharing an id
+  // means the second one silently paints with the first one's skin tone.
+  const id = h % 9973;
 
-  // Hair shapes, in draw order behind and then in front of the face.
   const behind =
     style === 1
-      ? `<path d="M14 30c0-12 6-18 18-18s18 6 18 18v14c0 4-3 6-5 4V30H19v18c-2 2-5 0-5-4z" fill="${hair}"/>`
+      ? `<path d="M13 31c0-13 7-19 19-19s19 6 19 19v16c0 4-3 6-5 4V31H18v20c-2 2-5 0-5-4z" fill="${hair}"/>`
       : style === 4
-        ? `<ellipse cx="32" cy="30" rx="19" ry="18" fill="${hair}"/>`
+        ? `<ellipse cx="32" cy="31" rx="20" ry="19" fill="${hair}"/>`
         : "";
 
   const front =
@@ -92,51 +115,85 @@ function portrait(seed: string): string {
               : `<path d="M18 25c2-8 7-13 14-13s12 5 14 13c-3-5-8-6-14-6s-11 1-14 6z" fill="${hair}"/>`;
 
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">` +
-    `<defs><clipPath id="c"><circle cx="32" cy="32" r="32"/></clipPath></defs>` +
-    `<g clip-path="url(#c)">` +
-    // Ground, so the portrait reads on any surface colour.
-    `<rect width="64" height="64" fill="#e9edf1"/>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="7 5 50 50">` +
+    `<defs>` +
+    // A soft vertical gradient on the face does most of the work of reading as
+    // a photograph rather than a flat icon.
+    `<linearGradient id="f${id}" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="${skin.fill}"/><stop offset="1" stop-color="${skin.shade}"/>` +
+    `</linearGradient>` +
+    `<linearGradient id="b${id}" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="${bg}"/><stop offset="1" stop-color="#dfe4ea"/>` +
+    `</linearGradient>` +
+    `</defs>` +
+    `<rect x="0" y="0" width="64" height="64" fill="url(#b${id})"/>` +
     behind +
-    // Shoulders, then neck, then head — back to front.
-    `<path d="M8 64c0-11 10-17 24-17s24 6 24 17z" fill="${cloth}"/>` +
-    `<path d="M26 40h12v10c0 3-12 3-12 0z" fill="${skin.shade}"/>` +
-    `<ellipse cx="32" cy="29" rx="14" ry="16" fill="${skin.fill}"/>` +
-    // Ears sit behind the hairline.
-    `<ellipse cx="18" cy="30" rx="2.5" ry="3.5" fill="${skin.shade}"/>` +
-    `<ellipse cx="46" cy="30" rx="2.5" ry="3.5" fill="${skin.shade}"/>` +
+    // Shoulders, collar, neck, then head — back to front.
+    `<path d="M6 64c0-12 11-18 26-18s26 6 26 18z" fill="${cloth}"/>` +
+    `<path d="M25 47l7 7 7-7 3 1-10 10-10-10z" fill="#ffffff" opacity="0.16"/>` +
+    `<path d="M26 39h12v11c0 3-12 3-12 0z" fill="${skin.deep}"/>` +
+    `<ellipse cx="32" cy="29" rx="14" ry="16.5" fill="url(#f${id})"/>` +
+    `<ellipse cx="18" cy="30" rx="2.6" ry="3.6" fill="${skin.shade}"/>` +
+    `<ellipse cx="46" cy="30" rx="2.6" ry="3.6" fill="${skin.shade}"/>` +
     front +
-    // Features, understated: at 32px anything more becomes noise.
-    `<ellipse cx="26.5" cy="29" rx="1.5" ry="1.8" fill="#2c2419"/>` +
-    `<ellipse cx="37.5" cy="29" rx="1.5" ry="1.8" fill="#2c2419"/>` +
-    `<path d="M23.5 24.5c1.5-1 4-1 5.5 0M35 24.5c1.5-1 4-1 5.5 0" stroke="${hair}" stroke-width="1.2" fill="none" stroke-linecap="round"/>` +
-    `<path d="M29.5 36.5c1.5 1 3.5 1 5 0" stroke="${skin.shade}" stroke-width="1.4" fill="none" stroke-linecap="round"/>` +
+    // Features, understated: at 40px anything more becomes noise.
+    `<ellipse cx="26.5" cy="29.5" rx="1.6" ry="1.9" fill="#2b2318"/>` +
+    `<ellipse cx="37.5" cy="29.5" rx="1.6" ry="1.9" fill="#2b2318"/>` +
+    `<circle cx="27" cy="29" r="0.5" fill="#ffffff" opacity="0.8"/>` +
+    `<circle cx="38" cy="29" r="0.5" fill="#ffffff" opacity="0.8"/>` +
+    `<path d="M23.4 24.8c1.6-1.1 4.1-1.1 5.7 0M35 24.8c1.6-1.1 4.1-1.1 5.7 0" stroke="${hair}" stroke-width="1.3" fill="none" stroke-linecap="round"/>` +
+    `<path d="M31 31.5c-0.6 2 0 3 1 3.2" stroke="${skin.deep}" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.7"/>` +
+    `<path d="M29 37.2c1.8 1.3 4.2 1.3 6 0" stroke="${skin.deep}" stroke-width="1.5" fill="none" stroke-linecap="round"/>` +
     (beard
-      ? `<path d="M20 32c0 8 5 13 12 13s12-5 12-13c0 0-2 8-12 8s-12-8-12-8z" fill="${hair}" opacity="0.85"/>`
+      ? `<path d="M19.5 31c0 9 5.5 14 12.5 14s12.5-5 12.5-14c0 0-2.5 8.5-12.5 8.5S19.5 31 19.5 31z" fill="${hair}" opacity="0.9"/>`
       : "") +
     (glasses
-      ? `<g stroke="#3a4148" stroke-width="1.3" fill="none">` +
-        `<circle cx="26.5" cy="29" r="4.8"/><circle cx="37.5" cy="29" r="4.8"/>` +
-        `<path d="M31.3 29h1.4M18.5 28l3 0.6M45.5 28l-3 0.6"/></g>`
+      ? `<g stroke="#3a4148" stroke-width="1.4" fill="none" opacity="0.9">` +
+        `<circle cx="26.5" cy="29.5" r="5"/><circle cx="37.5" cy="29.5" r="5"/>` +
+        `<path d="M31.5 29.5h1M18.6 28.5l2.9 0.6M45.4 28.5l-2.9 0.6"/></g>`
       : "") +
-    `</g></svg>`;
+    `</svg>`;
 
-  // `encodeURIComponent`, not base64: it is smaller for markup and keeps the
-  // source legible in devtools, which matters for something generated.
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
-const cache = new Map<string, string>();
+export interface PhotoAvatar {
+  readonly kind: "photo";
+  /** A CSS `url(...)`, ready for `background-image`. */
+  readonly image: string;
+}
 
-/** A CSS `url(...)` for one row's portrait. Memoised — rows recycle per frame. */
-export function avatarFor(seed: string): string {
-  // Keyed by the VARIANT, not the seed: two patients hashing to the same face
-  // should share one string rather than two identical ones.
-  const key = String(hash(seed) % 100003);
-  let found = cache.get(key);
-  if (found === undefined) {
-    found = portrait(seed);
-    cache.set(key, found);
+export interface InitialsAvatar {
+  readonly kind: "initials";
+  readonly background: string;
+}
+
+export type Avatar = PhotoAvatar | InitialsAvatar;
+
+const cache = new Map<number, Avatar>();
+
+/**
+ * The avatar for one row.
+ *
+ * `photoUrl` wins when a row has one. Otherwise roughly three in five get a
+ * generated portrait and the rest get coloured initials — a mix, because that
+ * is what a real roster looks like and because both states have to be designed
+ * rather than one being a fallback nobody looked at.
+ */
+export function avatarFor(seed: string, photoUrl?: string): Avatar {
+  if (photoUrl !== undefined && photoUrl !== "") {
+    return { kind: "photo", image: `url("${photoUrl}")` };
   }
-  return found;
+
+  const h = hash(seed);
+  const cached = cache.get(h);
+  if (cached !== undefined) return cached;
+
+  const made: Avatar =
+    (h >>> 20) % 5 < 3
+      ? { kind: "photo", image: portrait(h) }
+      : { kind: "initials", background: INITIAL_COLOURS[h % INITIAL_COLOURS.length] as string };
+
+  cache.set(h, made);
+  return made;
 }

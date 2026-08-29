@@ -19,6 +19,7 @@ import {
   identityCell, problemsCell, resultCell, statusCell,
   type Patient, type Status,
 } from "./cells.js";
+import { avatarFor } from "./avatar.js";
 
 const patient = (over: Partial<Patient> = {}): Patient => ({
   id: "p1",
@@ -77,35 +78,80 @@ describe("the identity cell", () => {
     ["Ana María López", "AL"],
     ["  spaced   out  ", "SO"],
   ])("derives initials from %j as %j", (name, expected) => {
-    identityCell.mount(node, ctx(patient({ name })));
-    identityCell.update(node, ctx(patient({ name })));
+    // Pinned to a monogram seed: a portrait row shows no initials at all.
+    const mono = Array.from({ length: 200 }, (_, i) => `seed${i}`)
+      .find((s) => avatarFor(s).kind === "initials") as string;
+    identityCell.mount(node, ctx(patient({ id: mono, name })));
     expect(node.querySelector(".a-avatar")?.textContent).toBe(expected);
   });
 
   it("survives a name that is empty rather than throwing", () => {
     identityCell.mount(node, ctx(patient({ name: "" })));
     expect(() => identityCell.update(node, ctx(patient({ name: "" })))).not.toThrow();
-    expect(node.querySelector(".a-avatar")?.textContent).toBe("");
   });
 
-  it("gives one person the same portrait every time", () => {
+  it("gives one person the same avatar every time", () => {
     identityCell.mount(node, ctx(patient()));
-    const avatar = () => (node.querySelector(".a-avatar") as HTMLElement).style.backgroundImage;
-    const first = avatar();
-    expect(first).toContain("data:image/svg+xml");
+    const el = () => node.querySelector(".a-avatar") as HTMLElement;
+    const snapshot = () =>
+      `${el().dataset["avatar"]}|${el().style.backgroundImage}|${el().style.backgroundColor}`;
+    const first = snapshot();
 
     // Recycled onto someone else and back: a face that changes between scrolls
     // is worse than no face at all.
-    identityCell.update(node, ctx(patient({ id: "other" })));
-    expect(avatar()).not.toBe(first);
+    identityCell.update(node, ctx(patient({ id: "someone-else" })));
+    expect(snapshot()).not.toBe(first);
     identityCell.update(node, ctx(patient()));
-    expect(avatar()).toBe(first);
+    expect(snapshot()).toBe(first);
   });
 
-  it("keeps the initials underneath as the fallback", () => {
-    identityCell.mount(node, ctx(patient()));
-    // The image is a background, so if it fails to paint the cell is not blank.
-    expect(node.querySelector(".a-avatar")?.textContent).toBe("AO");
+  it.each([
+    ["a photograph", "photo"],
+    ["coloured initials", "initials"],
+  ])("renders %s when that is what the row has", (_what, kind) => {
+    // Find a seed that produces this state; both must be reachable.
+    const seed = Array.from({ length: 200 }, (_, i) => `seed${i}`)
+      .find((s) => avatarFor(s).kind === kind);
+    expect(seed, `no seed produced a ${kind} avatar`).toBeDefined();
+
+    identityCell.mount(node, ctx(patient({ id: seed as string })));
+    const el = node.querySelector(".a-avatar") as HTMLElement;
+    expect(el.dataset["avatar"]).toBe(kind);
+    if (kind === "photo") {
+      expect(el.style.backgroundImage).toContain("url(");
+      // No monogram behind a face, or it shows through a transparent PNG.
+      expect(el.textContent).toBe("");
+    } else {
+      expect(el.style.backgroundColor).not.toBe("");
+      expect(el.textContent?.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("clears the previous state when recycled between the two", () => {
+    // The hazard: a node that held a photo keeps its background-image under a
+    // monogram, so the initials sit on top of the last patient's face.
+    const seeds = Array.from({ length: 200 }, (_, i) => `seed${i}`);
+    const photo = seeds.find((s) => avatarFor(s).kind === "photo") as string;
+    const mono = seeds.find((s) => avatarFor(s).kind === "initials") as string;
+
+    identityCell.mount(node, ctx(patient({ id: photo })));
+    identityCell.update(node, ctx(patient({ id: mono })));
+    const el = node.querySelector(".a-avatar") as HTMLElement;
+    expect(el.style.backgroundImage).toBe("");
+
+    identityCell.update(node, ctx(patient({ id: photo })));
+    expect(el.style.backgroundColor).toBe("");
+    expect(el.textContent).toBe("");
+  });
+
+  it("uses a real photograph when the row supplies one", () => {
+    identityCell.mount(
+      node,
+      ctx(patient({ photoUrl: "https://example.test/a.jpg" })),
+    );
+    const el = node.querySelector(".a-avatar") as HTMLElement;
+    expect(el.dataset["avatar"]).toBe("photo");
+    expect(el.style.backgroundImage).toContain("example.test/a.jpg");
   });
 
   it("rewrites every field when the node is recycled onto another patient", () => {

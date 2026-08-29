@@ -58,8 +58,16 @@ const PROBLEMS = [
 const SURNAMES = [
   "Okafor", "Lindqvist", "Rahman", "Müller", "Nakamura", "Oyelaran", "Kowalski",
   "Ferreira", "Haddad", "Bianchi", "Novak", "Petrov", "Dlamini", "Marchetti",
+  "Whitfield", "Ashworth", "Delacroix", "Vasquez", "Sørensen", "Ibrahim",
+  "Castellano", "Moreau", "Anand", "Bergström", "Adeyemi", "Callaghan",
 ];
-const GIVEN = ["A.", "B.", "C.", "D.", "E.", "F.", "G.", "H.", "J.", "K."];
+/* Full given names, not initials: a roster shows people, and "A. Okafor" is
+   how a system refers to a record rather than how a ward refers to a person. */
+const GIVEN = [
+  "Amara", "Daniel", "Priya", "Marcus", "Elena", "Tobias", "Fatima", "Ruth",
+  "Jonas", "Yusuf", "Clara", "Hassan", "Ingrid", "Mateo", "Nadia", "Oliver",
+  "Rosa", "Samuel", "Leila", "Viktor", "Grace", "Anton", "Miriam", "Felix",
+];
 
 /** The eight reasons a cell can be empty, cycled so all of them are visible. */
 const ABSENCES: Absent[] = [
@@ -81,7 +89,9 @@ function makePatients(n: number): Patient[] {
     const absent = i % 7 === 3;
     rows[i] = {
       id: `p${i}`,
-      name: `${GIVEN[(i * 3) % GIVEN.length]} ${SURNAMES[(i * 5) % SURNAMES.length]}`,
+      // Co-prime strides, so given and family names do not march in lockstep
+      // and the list does not visibly repeat every fourteen rows.
+      name: `${GIVEN[(i * 7) % GIVEN.length]} ${SURNAMES[(i * 11) % SURNAMES.length]}`,
       mrn: `MRN-${String(100000 + ((i * 7919) % 899999))}`,
       ward: WARDS[i % WARDS.length] as string,
       potassium: absent
@@ -97,8 +107,16 @@ function makePatients(n: number): Patient[] {
   // free text a patient supplies and a registration clerk types. Nothing in the
   // grid treats these as special — they render as the literal text they are.
   // Export is where it matters, and the CSV panel shows what the writer emitted.
-  if (rows[1]) rows[1] = { ...(rows[1] as Patient), name: `=cmd|' /c calc'!A1` };
-  if (rows[2]) rows[2] = { ...(rows[2] as Patient), name: `@SUM(1+1)*cmd|' /c calc'!A1` };
+  // Placed DEEP in the set rather than at the top. The demonstration is what
+  // the CSV writer does with them, and the export panel finds them by pattern
+  // wherever they sit — putting them in rows 2 and 3 only meant the first thing
+  // anyone saw was two rows of garbage where the roster should be.
+  for (const [at, payload] of [
+    [Math.min(4_113, n - 1), `=cmd|' /c calc'!A1`],
+    [Math.min(12_487, n - 1), `@SUM(1+1)*cmd|' /c calc'!A1`],
+  ] as const) {
+    if (rows[at]) rows[at] = { ...(rows[at] as Patient), name: payload };
+  }
   return rows;
 }
 
@@ -245,9 +263,10 @@ function mount(): void {
   host.textContent = "";
   renderer = createGridRenderer<Patient>(host, {
     label: "Patient roster",
-    // The identity cell is two lines, which is what makes the roster legible
-    // and what sets the row height. 56px is the brief's own measurement.
-    rowHeight: 56,
+    // Roomier than a spreadsheet on purpose. A two-line identity block plus a
+    // 40px portrait needs 72px to breathe, and a worklist people read for a
+    // whole shift is not the place to save eight pixels a row.
+    rowHeight: 72,
     overscan: 6,
     onAction: onAction,
     onError: (e) => console.warn("grid error (coordinates only):", e),
@@ -617,6 +636,57 @@ function note(message: string): void {
     el.textContent = "";
   }, 3200);
 }
+
+// ── theme ───────────────────────────────────────────────────────────────────
+
+/**
+ * Light, dark, or whatever the machine says.
+ *
+ * Three states rather than two: a two-way switch has to pick a side on first
+ * load, and picking wrong means a clinician on a night shift gets a white
+ * screen. "System" is the default and stays the default until someone
+ * explicitly chooses otherwise.
+ *
+ * The choice is written to `data-theme` on the root, which is the hook the
+ * whole design system already keys off — `:root[data-theme="dark"] .antd`.
+ */
+type Theme = "system" | "light" | "dark";
+const THEMES: readonly Theme[] = ["system", "light", "dark"];
+const THEME_ICON: Record<Theme, string> = { system: "◐", light: "☀", dark: "☾" };
+const THEME_LABEL: Record<Theme, string> = { system: "System", light: "Light", dark: "Dark" };
+
+function applyTheme(next: Theme): void {
+  const root = document.documentElement;
+  if (next === "system") delete root.dataset["theme"];
+  else root.dataset["theme"] = next;
+
+  const button = document.getElementById("theme");
+  if (button) {
+    (button.querySelector(".ticon") as HTMLElement).textContent = THEME_ICON[next];
+    (button.querySelector(".tlabel") as HTMLElement).textContent = THEME_LABEL[next];
+    button.setAttribute("aria-label", `Theme: ${THEME_LABEL[next]}. Click to change.`);
+  }
+  // Wrapped: a private window throws on access rather than returning null.
+  try {
+    localStorage.setItem("oxg-theme", next);
+  } catch {
+    // A theme that cannot be remembered still has to be applied.
+  }
+}
+
+let theme: Theme = "system";
+try {
+  const saved = localStorage.getItem("oxg-theme");
+  if (saved === "light" || saved === "dark" || saved === "system") theme = saved;
+} catch {
+  // No storage: system it is.
+}
+applyTheme(theme);
+
+document.getElementById("theme")?.addEventListener("click", () => {
+  theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length] as Theme;
+  applyTheme(theme);
+});
 
 show("roster");
 load(50_000);

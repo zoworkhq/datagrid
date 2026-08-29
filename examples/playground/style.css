@@ -694,7 +694,7 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 var(--sp-4, 16px) var(--sp-4, 1
 /* Spare width is shared, and capped where more of it buys nothing: the problem
    list can use another 100px, not another 400. */
 .oxg-head [role="columnheader"][data-col-key="problems"],
-.oxg-body [role="gridcell"][data-col-key="problems"] { max-width: 340px; }
+.oxg-body [role="gridcell"][data-col-key="problems"] { max-width: 280px; }
 .oxg-head [role="columnheader"]:last-child,
 .oxg-body [role="row"] [role="gridcell"]:last-child { flex: 1 1 auto; }
 
@@ -710,3 +710,102 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 var(--sp-4, 16px) var(--sp-4, 1
 /* …except a stated absence, which is prose and belongs on the left where the
    eye expects a sentence. */
 [role="gridcell"][data-col-key="potassium"]:has(.cs-none) { justify-content: flex-start; }
+
+/* ── theme switch ─────────────────────────────────────────────────────────── */
+
+.themetoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--ctl-md, 28px);
+  padding: 0 10px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm, 4px);
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--fs-sm, 12.5px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 140ms, border-color 140ms, color 140ms;
+}
+.themetoggle:hover { background: var(--sunken); border-color: var(--line-3); color: var(--ink); }
+.themetoggle .ticon { font-size: 13px; line-height: 1; }
+
+/* ── roomier ──────────────────────────────────────────────────────────────────
+   The previous pass optimised for density and came out looking like a
+   spreadsheet: ruled cells, banded rows, 13px type. A modern roster reads the
+   other way — white space does the separating, and the horizontal rule is the
+   only line on screen. ------------------------------------------------------- */
+
+.oxg-root > [role="grid"] { border-radius: 10px; }
+
+/* Vertical rules removed. With generous cell padding the columns already read
+   as columns, and the grid loses its graph-paper look. */
+.oxg-body [role="gridcell"],
+.oxg-head [role="columnheader"] { border-inline-end: 0; }
+
+/* Banding removed for the same reason: at 72px a row is legible on its own,
+   and alternating grounds fight the portraits. */
+.oxg-body [role="row"]:nth-child(even) [role="gridcell"] { background: transparent; }
+
+.oxg-head {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-2);
+}
+.oxg-head [role="columnheader"] {
+  height: 48px;
+  padding: 0 18px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
+}
+
+[role="gridcell"] {
+  height: 72px;
+  padding: 0 18px;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ── the identity block ───────────────────────────────────────────────────── */
+
+.antd .idc { gap: 12px; }
+
+/* 40px, per the reference. Small enough to stay out of the way, big enough
+   that a face is a face rather than a thumbnail of one. */
+.antd .idc .a-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 8%, transparent);
+  /* The initials state: white monogram on its own colour. Reset for the photo
+     state below, since a recycled node arrives carrying the other one. */
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+}
+.antd .idc .a-avatar[data-avatar="photo"] { color: transparent; background-color: var(--sunken); }
+
+.antd .idc .pname { font-weight: 600; font-size: 14px; line-height: 1.35; }
+.antd .idc .sub2 { font-size: 12px; line-height: 1.4; }
+
+/* Chips get room to be read rather than being squeezed against the next one. */
+.antd .chips { gap: 6px; }
+.antd .a-tag { height: 24px; font-size: 11.5px; padding: 0 8px; border-radius: 4px; }
+.antd .cs { height: 24px; font-size: 12.5px; }
+.antd .cs .gl-dot { width: 8px; height: 8px; }
+
+/* Hover is the only banding, and it is a wash rather than a fill. */
+.oxg-body [role="row"]:hover [role="gridcell"] {
+  background: color-mix(in oklab, var(--accent) 5%, transparent);
+}
