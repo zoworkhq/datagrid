@@ -41,6 +41,12 @@ import { moveFocus, type GridShape } from "./focus.js";
 /** The header is row 1 of the grid, and is navigable — arrowing up from the first data row reaches it. */
 export const HEADER_ROW_ID = "__oxg_header__";
 
+/** What a column that declares no width is assumed to occupy. */
+const DEFAULT_COLUMN_WIDTH = 140;
+
+/** Columns kept either side of the visible band, so a fast drag has cover. */
+const COLUMN_OVERSCAN = 2;
+
 export interface RenderColumn {
   readonly key: string;
   readonly header: string;
@@ -161,7 +167,7 @@ export function createGridRenderer<TRow>(
   // that, the required-children rule fails — the same defect as the live region.
   const viewport = make("div", "oxg-viewport", within(grid, ":scope > .oxg-viewport"));
   viewport.setAttribute("role", "presentation");
-  viewport.style.cssText = "overflow-y:auto;overflow-x:hidden;position:relative";
+  viewport.style.cssText = "overflow:auto;position:relative";
 
   const canvas = make("div", "oxg-canvas", within(viewport, ":scope > .oxg-canvas"));
   canvas.setAttribute("role", "presentation");
@@ -186,6 +192,23 @@ export function createGridRenderer<TRow>(
   root.dataset["oxgLive"] = "1";
 
   const geometry: Geometry = createGeometry(0, estimate);
+
+  /**
+   * ── COLUMN VIRTUALISATION ────────────────────────────────────────────────
+   *
+   * The same Fenwick tree, over the other axis. Without it a row materialises
+   * every column it has, so cost per row grows linearly with column count: a
+   * 250-column encounter grid paid 250 cells x 30 rows = 7,500 elements every
+   * frame, measured at 33.3 ms p50 against AG Grid's 8.3 ms, because AG Grid
+   * renders a constant 13 cells per row at any width.
+   *
+   * `DEFAULT_COLUMN_WIDTH` is the estimate for a column that declares none.
+   * A column with no width still occupies space, and a geometry that assumes
+   * zero puts every cell at the same offset.
+   */
+  const colGeometry: Geometry = createGeometry(0, DEFAULT_COLUMN_WIDTH);
+  /** Column signature the geometry was measured against, so it re-measures on change. */
+  let colGeometrySignature = "";
 
   let current: GridViewModel<TRow> | null = null;
   let columnSignature = "";
@@ -241,6 +264,64 @@ export function createGridRenderer<TRow>(
       allIds,
     };
     return bandsCache;
+  }
+
+  /**
+   * Which columns to render.
+   *
+   * Spans opt OUT of virtualisation entirely: `planSpans` reasons over the
+   * whole column list, and a span beginning left of the window and reaching
+   * into it cannot be planned from a slice. Correctness first — a grid that
+   * uses spans renders every column and pays for it, which is what it did
+   * before this existed.
+   *
+   * The focused column is always inside the window. Recycling the focused cell
+   * away drops focus to the document body, and the body is one tab stop, so
+   * there would be nothing to tab back to.
+   */
+  function columnWindow(m: GridViewModel<TRow>, focus: FocusTarget | null): {
+    start: number; end: number; leading: number; trailing: number; total: number;
+  } {
+    const n = m.columns.length;
+    const signature = m.columns.map((c) => `${c.key}:${c.width ?? ""}`).join("|");
+    if (signature !== colGeometrySignature) {
+      colGeometry.reset();
+      colGeometry.setRowCount(n);
+      m.columns.forEach((c, i) => {
+        if (c.width !== undefined) colGeometry.measure(i, c.width);
+      });
+      colGeometrySignature = signature;
+    }
+    const total = colGeometry.totalHeight();
+
+    // Spans, or nothing to window: render everything.
+    if (options.span || n === 0) {
+      return { start: 0, end: n, leading: 0, trailing: 0, total };
+    }
+
+    const width = viewport.clientWidth || 0;
+    // A viewport that has not been laid out yet reports 0. Rendering one column
+    // then would paint an empty grid that never recovers, because nothing
+    // re-paints on layout.
+    if (width === 0) return { start: 0, end: n, leading: 0, trailing: 0, total };
+
+    const w = colGeometry.windowFor(viewport.scrollLeft, width, COLUMN_OVERSCAN);
+    let start = w.start;
+    let end = w.end;
+
+    const focusColumn = focus ? m.columns.findIndex((c) => c.key === focus.columnKey) : -1;
+    if (focusColumn >= 0) {
+      start = Math.min(start, focusColumn);
+      end = Math.max(end, focusColumn + 1);
+    }
+
+    return {
+      start,
+      end,
+      leading: colGeometry.offsetOf(start),
+      trailing: Math.max(0, total - colGeometry.offsetOf(end)),
+      total,
+    };
   }
 
   const shapeOf = (m: GridViewModel<TRow>): GridShape => ({
@@ -309,6 +390,8 @@ export function createGridRenderer<TRow>(
     focus: FocusTarget | null,
     /** Where to put it: a geometry offset, or a sticky band. */
     place: { readonly kind: "flow"; readonly top: number } | { readonly kind: "pinned"; readonly edge: "start" | "end" },
+    /** Which columns are rendered, and the width either side of them. */
+    cols: { start: number; end: number; leading: number; trailing: number; total: number },
   ): void {
     // Absolute, so a screen reader announces "row 19,998" and not the position
     // within a rendered window of fifteen. Pinning does not change which row
@@ -333,13 +416,20 @@ export function createGridRenderer<TRow>(
       row.style.zIndex = "";
     }
 
-    const columnKeys = m.columns.map((c) => c.key);
+    const allKeys = m.columns.map((c) => c.key);
+    const windowed = m.columns.slice(cols.start, cols.end);
+    const columnKeys = windowed.map((c) => c.key);
     const plan = planSpans(entry.row, columnKeys, options.span);
+
+    // Spacers stand in for the columns either side, so the row keeps its full
+    // width and horizontal scroll extent without materialising the cells.
+    const needsSpacers = cols.leading > 0 || cols.trailing > 0;
+    const wanted = plan.cells.length + (needsSpacers ? 2 : 0);
 
     // The cell set changes with the span, so reconcile length first and then
     // rebind. A recycled row that spanned three columns must not leave two
     // orphaned cells behind.
-    while (row.childElementCount > plan.cells.length) {
+    while (row.childElementCount > wanted) {
       const last = row.lastElementChild as HTMLElement | null;
       if (!last) break;
       const r = mounted.get(last);
@@ -349,19 +439,42 @@ export function createGridRenderer<TRow>(
       }
       last.remove();
     }
-    while (row.childElementCount < plan.cells.length) {
+    while (row.childElementCount < wanted) {
       const cell = doc.createElement("div");
       cell.setAttribute("role", "gridcell");
       row.append(cell);
     }
 
+    // A recycled row may arrive carrying a spacer where a cell now goes, or the
+    // reverse. Both slots are addressed by offset, so the leading spacer is
+    // always child 0 when spacers are in play.
+    const offset = needsSpacers ? 1 : 0;
+    if (needsSpacers) {
+      const lead = row.children[0] as HTMLElement;
+      const tail = row.children[row.childElementCount - 1] as HTMLElement;
+      for (const [el, w] of [[lead, cols.leading], [tail, cols.trailing]] as const) {
+        // `role="presentation"`: a spacer is not a cell, and announcing it as
+        // one would put empty gridcells either side of every row.
+        el.setAttribute("role", "presentation");
+        el.removeAttribute("aria-colindex");
+        el.removeAttribute("tabindex");
+        el.style.cssText = `flex:0 0 ${w}px;width:${w}px`;
+        const stale = mounted.get(el);
+        if (stale) { stale.unmount(el); mounted.delete(el); }
+        el.textContent = "";
+      }
+    }
+
     plan.cells.forEach((planned, i) => {
-      const cell = row.children[i] as HTMLElement | undefined;
+      const cell = row.children[i + offset] as HTMLElement | undefined;
       if (!cell) return;
       const column = m.columns.find((c) => c.key === planned.key);
       if (!column) return;
 
-      cell.setAttribute("aria-colindex", String(columnKeys.indexOf(planned.key) + 1));
+      cell.setAttribute("role", "gridcell");
+      // ABSOLUTE column index, resolved against the full column list. A screen
+      // reader must say "column 187", not its position in a rendered window.
+      cell.setAttribute("aria-colindex", String(allKeys.indexOf(planned.key) + 1));
       if (planned.span > 1) cell.setAttribute("aria-colspan", String(planned.span));
       else cell.removeAttribute("aria-colspan");
       cell.dataset["colKey"] = planned.key;
@@ -401,22 +514,41 @@ export function createGridRenderer<TRow>(
         ? wanted
         : firstCell;
 
+    const cols = columnWindow(m, focus);
+
     // ── header ──────────────────────────────────────────────────────────────
-    const signature = m.columns.map((c) => `${c.key}:${c.header}`).join("|");
+    // The window is part of the signature, because scrolling sideways changes
+    // which headers exist — but ONLY when it is a real window. An unwindowed
+    // header must produce the same signature the SSR adoption path derives
+    // from the server's markup, or every hydration rebuilds the header it was
+    // handed and the two-phase boundary buys nothing.
+    const windowed = cols.start !== 0 || cols.end !== m.columns.length;
+    const signature =
+      (windowed ? `${cols.start}:${cols.end}|` : "") +
+      m.columns.map((c) => `${c.key}:${c.header}`).join("|");
     if (signature !== columnSignature) {
       headGroup.textContent = "";
       const hRow = doc.createElement("div");
       hRow.setAttribute("role", "row");
       hRow.setAttribute("aria-rowindex", "1");
       hRow.dataset["rowId"] = HEADER_ROW_ID;
-      m.columns.forEach((column, i) => {
+      const spacer = (w: number): HTMLElement => {
+        const el = doc.createElement("div");
+        el.setAttribute("role", "presentation");
+        el.style.cssText = `flex:0 0 ${w}px;width:${w}px`;
+        return el;
+      };
+      if (cols.leading > 0 || cols.trailing > 0) hRow.append(spacer(cols.leading));
+      m.columns.slice(cols.start, cols.end).forEach((column, i) => {
         const th = doc.createElement("div");
         th.setAttribute("role", "columnheader");
-        th.setAttribute("aria-colindex", String(i + 1));
+        // Absolute, like the cells: the window is a rendering detail.
+        th.setAttribute("aria-colindex", String(cols.start + i + 1));
         th.dataset["colKey"] = column.key;
         th.textContent = column.header;
         hRow.append(th);
       });
+      if (cols.leading > 0 || cols.trailing > 0) hRow.append(spacer(cols.trailing));
       headGroup.append(hRow);
       // Column identity changed, so every pooled row's cells are stale. The
       // pool itself is kept; bindRow reconciles cell counts per row, which it
@@ -442,6 +574,9 @@ export function createGridRenderer<TRow>(
     const viewportHeight = viewport.clientHeight || 600;
     const w = geometry.windowFor(viewport.scrollTop, viewportHeight, overscan);
     canvas.style.height = `${w.totalHeight}px`;
+    // Width comes from the column geometry, not from the rendered cells: the
+    // scrollbar must span every column, including the ones not in the DOM.
+    if (cols.total > 0) canvas.style.width = `${cols.total}px`;
 
     const visible = bands.scrollable.slice(w.start, w.end);
     // Keep the focused row rendered even when it has scrolled out of the
@@ -496,7 +631,7 @@ export function createGridRenderer<TRow>(
     const selected = new Set(m.selection);
     render.forEach((item, i) => {
       const row = pool[i];
-      if (row) bindRow(row, item.entry, m, selected, focus, item.place);
+      if (row) bindRow(row, item.entry, m, selected, focus, item.place, cols);
     });
 
     current = { ...m, focus };
