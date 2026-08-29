@@ -1,0 +1,83 @@
+{
+  "node": "v22.17.0",
+  "platform": "darwin-arm64",
+  "rows": {
+    "1000": {
+      "sortMs": 0.237,
+      "sortTwoKeyMs": 0.406,
+      "filterMs": 0.254,
+      "modelFirstResultMs": 0.269,
+      "modelHeapMb": 0.1,
+      "groupMs": 0.067,
+      "windowMs": 0.001,
+      "geometryHeapMb": 0
+    },
+    "10000": {
+      "sortMs": 1.567,
+      "sortTwoKeyMs": 5.841,
+      "filterMs": 1.895,
+      "modelFirstResultMs": 1.684,
+      "modelHeapMb": 0.5,
+      "groupMs": 0.554,
+      "windowMs": 0.001,
+      "geometryHeapMb": 0
+    },
+    "100000": {
+      "sortMs": 21.609,
+      "sortTwoKeyMs": 238.733,
+      "filterMs": 21.792,
+      "modelFirstResultMs": 21.942,
+      "modelHeapMb": 5.3,
+      "groupMs": 2.79,
+      "windowMs": 0.001,
+      "geometryHeapMb": 0.2
+    },
+    "500000": {
+      "sortMs": 113.75,
+      "sortTwoKeyMs": 933.095,
+      "filterMs": 96.613,
+      "modelFirstResultMs": 146.926,
+      "modelHeapMb": 26.7,
+      "groupMs": 13.244,
+      "windowMs": 0,
+      "geometryHeapMb": 0.9
+    },
+    "1000000": {
+      "sortMs": 234.41,
+      "sortTwoKeyMs": 1949.215,
+      "filterMs": 192.584,
+      "modelFirstResultMs": 295.032,
+      "modelHeapMb": 53.4,
+      "groupMs": 30.71,
+      "windowMs": 0.001,
+      "geometryHeapMb": 1.8
+    }
+  },
+  "columns": {
+    "20": {
+      "sortMs": 22.839,
+      "filterMs": 20.214,
+      "rowsHeapMb": 31.6
+    },
+    "50": {
+      "sortMs": 53.464,
+      "filterMs": 44.071,
+      "rowsHeapMb": 313.8
+    },
+    "100": {
+      "sortMs": 58.105,
+      "filterMs": 47.326,
+      "rowsHeapMb": 606.8
+    },
+    "250": {
+      "sortMs": 65.227,
+      "filterMs": 48.923,
+      "rowsHeapMb": 1192.8
+    },
+    "500": {
+      "sortMs": 1168.967,
+      "filterMs": 61.613,
+      "rowsHeapMb": 2363.8
+    }
+  }
+}
