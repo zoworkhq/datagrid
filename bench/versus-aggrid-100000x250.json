@@ -1,0 +1,38 @@
+{
+  "rows": 100000,
+  "cols": 250,
+  "viewport": {
+    "width": 1600,
+    "height": 900
+  },
+  "ours": {
+    "firstPaintMs": 51.5,
+    "scriptParseMs": 1449.6,
+    "pageLoadMs": 1459,
+    "renderedRows": 30,
+    "sortMs": 211.7,
+    "filterMs": 44.6,
+    "heapMb": 620.1,
+    "scrollP50": 8.3,
+    "scrollP95": 9.3,
+    "scrollP99": 15.8,
+    "droppedFrames": 1,
+    "frames": 238,
+    "errors": []
+  },
+  "ag": {
+    "firstPaintMs": 163.1,
+    "scriptParseMs": 1535.2,
+    "pageLoadMs": 1620,
+    "renderedRows": 37,
+    "sortMs": 367.6,
+    "filterMs": 97.8,
+    "heapMb": 800,
+    "scrollP50": 8.3,
+    "scrollP95": 16.7,
+    "scrollP99": 16.8,
+    "droppedFrames": 9,
+    "frames": 223,
+    "errors": []
+  }
+}
