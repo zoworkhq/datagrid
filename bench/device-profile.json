@@ -1,43 +1,82 @@
 {
-  "measuredAt": "run `date` alongside this — the harness cannot read a clock",
-  "hardware": {
-    "cores": 8,
-    "deviceMemoryGb": null,
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36"
-  },
-  "cpuThrottle": 8,
   "budget": {
     "firstPaintMs": 200,
     "sortMs": 100,
     "filterMs": 100,
-    "scrollP95Ms": 133.6,
+    "scrollP95Ms": 16.7,
     "heapMb": 400
   },
-  "results": {
-    "1000": {
-      "firstPaintMs": 115,
-      "sortMs": 56.2,
-      "filterMs": 72.3,
-      "scrollP50Ms": 50,
-      "scrollP95Ms": 58.8,
-      "droppedFrames": 31,
-      "heapMb": 3,
-      "withinBudget": true
-    },
-    "10000": {
-      "firstPaintMs": 75.7,
-      "sortMs": 154.1,
-      "filterMs": 111.5,
-      "scrollP50Ms": 50,
-      "scrollP95Ms": 67.6,
-      "droppedFrames": 29,
-      "heapMb": 6.6,
-      "withinBudget": false
+  "platform": "darwin-arm64",
+  "runs": [
+    {
+      "engine": "chromium",
+      "engineVersion": "151.0.7922.34",
+      "idleFrameMs": 9.3,
+      "frameBudgetMs": 16.7,
+      "hardware": {
+        "cores": 8,
+        "deviceMemoryGb": null
+      },
+      "cpuThrottle": 1,
+      "throttleRequested": 1,
+      "throttleSupported": true,
+      "results": {
+        "1000": {
+          "firstPaintMs": 15.2,
+          "sortMs": 18.3,
+          "filterMs": 16.8,
+          "scrollP50Ms": 8.3,
+          "scrollP95Ms": 9.3,
+          "droppedFrames": 0,
+          "heapMb": 3.3,
+          "withinBudget": true
+        },
+        "10000": {
+          "firstPaintMs": 11.5,
+          "sortMs": 14.9,
+          "filterMs": 16.5,
+          "scrollP50Ms": 8.3,
+          "scrollP95Ms": 8.8,
+          "droppedFrames": 0,
+          "heapMb": 8.3,
+          "withinBudget": true
+        },
+        "50000": {
+          "firstPaintMs": 6.1,
+          "sortMs": 62.6,
+          "filterMs": 26.1,
+          "scrollP50Ms": 8.3,
+          "scrollP95Ms": 9.3,
+          "droppedFrames": 0,
+          "heapMb": 32.7,
+          "withinBudget": true
+        },
+        "100000": {
+          "firstPaintMs": 8.1,
+          "sortMs": 99.2,
+          "filterMs": 42.8,
+          "scrollP50Ms": 8.3,
+          "scrollP95Ms": 9.3,
+          "droppedFrames": 0,
+          "heapMb": 93.9,
+          "withinBudget": true
+        },
+        "250000": {
+          "firstPaintMs": 8.3,
+          "sortMs": 367.1,
+          "filterMs": 94,
+          "scrollP50Ms": 8.3,
+          "scrollP95Ms": 9.3,
+          "droppedFrames": 0,
+          "heapMb": 200.3,
+          "withinBudget": false
+        }
+      },
+      "ceiling": 100000,
+      "brokeOn": {
+        "rows": 250000,
+        "why": "sortMs"
+      }
     }
-  },
-  "ceiling": 1000,
-  "brokeOn": {
-    "rows": 10000,
-    "why": "sortMs, filterMs"
-  }
+  ]
 }

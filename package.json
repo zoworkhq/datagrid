@@ -26,7 +26,10 @@
     "playground:build": "pnpm build && node examples/playground/build.mjs",
     "typecheck:playground": "tsc -p tsconfig.playground.json",
     "smoke:playground": "pnpm build && node examples/playground/smoke.browser.mjs",
-    "size:composed": "size-limit"
+    "size:composed": "size-limit",
+    "profile": "pnpm build && node bench/device-profile.mjs",
+    "profile:all": "pnpm build && node bench/device-profile.mjs --browser all",
+    "profile:check": "pnpm build && node bench/device-profile.mjs --browser all --check"
   },
   "devDependencies": {
     "@angular/core": "22.1.4",

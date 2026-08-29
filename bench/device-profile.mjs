@@ -15,9 +15,12 @@
  * THE ACTUAL MACHINE, which prints a ceiling and a verdict rather than a
  * benchmark score.
  *
- *   node bench/device-profile.mjs              this machine, unthrottled
- *   node bench/device-profile.mjs --throttle 6 approximate a slower one
- *   node bench/device-profile.mjs --json       machine-readable, for CI
+ *   node bench/device-profile.mjs                 this machine, chromium
+ *   node bench/device-profile.mjs --throttle 6    approximate a slower CPU
+ *   node bench/device-profile.mjs --browser all   chromium, firefox and webkit
+ *   node bench/device-profile.mjs --record        append to bench/device-history.json
+ *   node bench/device-profile.mjs --check         fail if the ceiling dropped
+ *   node bench/device-profile.mjs --json          machine-readable, for CI
  *
  * ── WHAT IT ANSWERS ─────────────────────────────────────────────────────────
  *
@@ -29,9 +32,9 @@
  * The ceiling is found by measurement, not assumed: the harness walks upward
  * until an interaction crosses the budget, and reports the last size that held.
  */
-import { chromium } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 import { build as esbuild } from "esbuild";
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -40,6 +43,20 @@ const ROOT = join(HERE, "..");
 const args = process.argv.slice(2);
 const asJson = args.includes("--json");
 const throttle = Number(args[args.indexOf("--throttle") + 1]) || 1;
+const record = args.includes("--record");
+const check = args.includes("--check");
+
+const ENGINES = { chromium, firefox, webkit };
+const requested = args.includes("--browser") ? args[args.indexOf("--browser") + 1] : "chromium";
+const engines = requested === "all" ? Object.keys(ENGINES) : [requested];
+for (const name of engines) {
+  if (!(name in ENGINES)) {
+    console.error(`unknown browser "${name}" — one of ${Object.keys(ENGINES).join(", ")}, or all`);
+    process.exit(1);
+  }
+}
+
+const HISTORY = join(HERE, "device-history.json");
 
 /**
  * The budgets, and where they come from.
@@ -117,6 +134,21 @@ function frames(ms){return new Promise(r=>{const d=[];let l=performance.now();co
 function pct(a,p){const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(s.length*p))];}
 const paint=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 
+/**
+ * What this engine can do with NOTHING on the page.
+ *
+ * Headless Firefox and WebKit do not run a clean 60 Hz, and a CPU-throttled
+ * Chromium cannot either. Judging the grid against 16.7 ms in those conditions
+ * blames it for the engine's cadence — the first version of this harness did
+ * exactly that and reported "cannot handle 1,000 rows" for two engines that
+ * handle it fine. The budget is therefore the LARGER of the interaction budget
+ * and what the engine demonstrably manages when idle.
+ */
+window.__idleFrame = async () => {
+  const d = await frames(600);
+  return pct(d, 0.95);
+};
+
 window.__profile = async (n, cols) => {
   const rows = new Array(n);
   for (let i=0;i<n;i++){ const r={id:"p"+i,name:"Patient "+((i*7919)%n),ward:WARDS[i%8],
@@ -163,107 +195,197 @@ window.__profile = async (n, cols) => {
 };
 </script>`;
 
-const browser = await chromium.launch({
-  args: ["--enable-precise-memory-info", "--js-flags=--expose-gc"],
-});
-const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
-const cdp = await page.context().newCDPSession(page);
-if (throttle > 1) await cdp.send("Emulation.setCPUThrottlingRate", { rate: throttle });
-await page.setContent(PAGE, { waitUntil: "load" });
+/**
+ * One engine, walked up the ladder.
+ *
+ * Two things are Chromium-only and both degrade rather than fail: CPU
+ * throttling is a CDP command, and `performance.memory` does not exist in
+ * Firefox or WebKit. A heap figure of `null` from those engines is the honest
+ * answer — inventing one from `measureUserAgentSpecificMemory` where it exists
+ * and estimating where it does not would produce a column that looks
+ * comparable and is not.
+ */
+async function profile(engineName) {
+  const engine = ENGINES[engineName];
+  const launchArgs =
+    engineName === "chromium"
+      ? { args: ["--enable-precise-memory-info", "--js-flags=--expose-gc"] }
+      : {};
+  const browser = await engine.launch(launchArgs);
+  const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
 
-const hardware = await page.evaluate(() => ({
-  cores: navigator.hardwareConcurrency ?? null,
-  deviceMemoryGb: navigator.deviceMemory ?? null,
-  userAgent: navigator.userAgent,
-}));
-
-const rounded = (v) => (typeof v === "number" ? Number(v.toFixed(1)) : v);
-const results = {};
-let ceiling = null;
-let brokeOn = null;
-
-if (!asJson) {
-  console.log(`\n${hardware.cores ?? "?"} cores · ${hardware.deviceMemoryGb ?? "?"} GB reported` +
-    ` · CPU throttle ${throttle}x`);
-  console.log(
-    `budgets: paint ${BUDGET.firstPaintMs}ms · sort ${BUDGET.sortMs}ms · ` +
-    `filter ${BUDGET.filterMs}ms · frame ${BUDGET.scrollP95Ms.toFixed(1)}ms` +
-    (throttle > 1 ? ` (16.7 x ${throttle})` : "") + `\n`,
-  );
-  console.log(
-    `${"rows".padStart(9)}  ${"paint".padStart(8)}  ${"sort".padStart(8)}  ` +
-    `${"filter".padStart(8)}  ${"p95".padStart(7)}  ${"heap".padStart(8)}  verdict`,
-  );
-}
-
-for (const n of LADDER) {
-  let out;
-  try {
-    out = await page.evaluate(([rows, cols]) => window.__profile(rows, cols), [n, 20]);
-  } catch (error) {
-    brokeOn = { rows: n, why: `the page failed: ${String(error).slice(0, 60)}` };
-    break;
+  let throttled = false;
+  if (throttle > 1 && engineName === "chromium") {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: throttle });
+    throttled = true;
   }
 
-  const broken = Object.entries(BUDGET)
-    .filter(([k, limit]) => typeof out[k] === "number" && out[k] > limit)
-    .map(([k]) => k);
+  await page.setContent(PAGE, { waitUntil: "load" });
+  const hardware = await page.evaluate(() => ({
+    cores: navigator.hardwareConcurrency ?? null,
+    deviceMemoryGb: navigator.deviceMemory ?? null,
+  }));
 
-  results[n] = Object.fromEntries(Object.entries(out).map(([k, v]) => [k, rounded(v)]));
-  results[n].withinBudget = broken.length === 0;
+  // The floor this engine cannot go below, measured rather than assumed.
+  const idleFrameMs = await page.evaluate(() => window.__idleFrame());
+  const budget = {
+    ...BUDGET,
+    scrollP95Ms: Math.max(BUDGET.scrollP95Ms, idleFrameMs * 1.3),
+  };
+
+  const rounded = (v) => (typeof v === "number" ? Number(v.toFixed(1)) : v);
+  const results = {};
+  let ceiling = null;
+  let brokeOn = null;
 
   if (!asJson) {
     console.log(
-      `${String(n).padStart(9)}  ${String(rounded(out.firstPaintMs)).padStart(8)}  ` +
-      `${String(rounded(out.sortMs)).padStart(8)}  ${String(rounded(out.filterMs)).padStart(8)}  ` +
-      `${String(rounded(out.scrollP95Ms)).padStart(7)}  ` +
-      `${String(rounded(out.heapMb) ?? "-").padStart(8)}  ` +
-      (broken.length === 0 ? "ok" : `over budget: ${broken.join(", ")}`),
+      `\n${engineName} ${browser.version()} · ${hardware.cores ?? "?"} cores` +
+      (throttle > 1
+        ? throttled ? ` · CPU throttle ${throttle}x` : ` · throttle ${throttle}x REQUESTED BUT UNSUPPORTED`
+        : ""),
+    );
+    console.log(
+      `idle frame ${idleFrameMs.toFixed(1)}ms → frame budget ${budget.scrollP95Ms.toFixed(1)}ms` +
+      (budget.scrollP95Ms > BUDGET.scrollP95Ms ? " (raised: this engine cannot do 16.7ms idle)" : ""),
+    );
+    console.log(
+      `${"rows".padStart(9)}  ${"paint".padStart(8)}  ${"sort".padStart(8)}  ` +
+      `${"filter".padStart(8)}  ${"p95".padStart(7)}  ${"heap".padStart(8)}  verdict`,
     );
   }
 
-  if (broken.length > 0) {
-    brokeOn = { rows: n, why: broken.join(", ") };
-    break;
+  for (const n of LADDER) {
+    let out;
+    try {
+      out = await page.evaluate(([rows, cols]) => window.__profile(rows, cols), [n, 20]);
+    } catch (error) {
+      brokeOn = { rows: n, why: `the page failed: ${String(error).slice(0, 60)}` };
+      break;
+    }
+
+    // A budget cannot be judged on a measurement the engine did not make.
+    const broken = Object.entries(budget)
+      .filter(([k, limit]) => typeof out[k] === "number" && out[k] > limit)
+      .map(([k]) => k);
+
+    results[n] = Object.fromEntries(Object.entries(out).map(([k, v]) => [k, rounded(v)]));
+    results[n].withinBudget = broken.length === 0;
+
+    if (!asJson) {
+      console.log(
+        `${String(n).padStart(9)}  ${String(rounded(out.firstPaintMs)).padStart(8)}  ` +
+        `${String(rounded(out.sortMs)).padStart(8)}  ${String(rounded(out.filterMs)).padStart(8)}  ` +
+        `${String(rounded(out.scrollP95Ms)).padStart(7)}  ` +
+        `${String(out.heapMb === null ? "n/a" : rounded(out.heapMb)).padStart(8)}  ` +
+        (broken.length === 0 ? "ok" : `over budget: ${broken.join(", ")}`),
+      );
+    }
+
+    if (broken.length > 0) {
+      brokeOn = { rows: n, why: broken.join(", ") };
+      break;
+    }
+    ceiling = n;
   }
-  ceiling = n;
+
+  await browser.close();
+  return {
+    engine: engineName,
+    engineVersion: browser.version(),
+    idleFrameMs: Number(idleFrameMs.toFixed(1)),
+    frameBudgetMs: Number(budget.scrollP95Ms.toFixed(1)),
+    hardware,
+    cpuThrottle: throttled ? throttle : 1,
+    throttleRequested: throttle,
+    throttleSupported: throttle === 1 || throttled,
+    results,
+    ceiling,
+    brokeOn,
+  };
 }
 
-await browser.close();
+const runs = [];
+for (const name of engines) runs.push(await profile(name));
 
 const report = {
-  measuredAt: "run `date` alongside this — the harness cannot read a clock",
-  hardware,
-  cpuThrottle: throttle,
   budget: BUDGET,
-  results,
-  ceiling,
-  brokeOn,
+  platform: `${process.platform}-${process.arch}`,
+  runs,
 };
 
 if (asJson) {
   console.log(JSON.stringify(report, null, 2));
 } else {
   console.log("");
-  if (ceiling === null) {
-    console.log(`  This device did not hold the budget at even ${LADDER[0].toLocaleString()} rows.`);
-    console.log(`  Use a server row model here — see docs/api.md §5.`);
-  } else {
-    console.log(`  Largest size that held every budget: ${ceiling.toLocaleString()} rows.`);
-    if (brokeOn) {
-      console.log(`  Broke at ${brokeOn.rows.toLocaleString()} on: ${brokeOn.why}.`);
+  for (const run of runs) {
+    if (run.ceiling === null) {
+      console.log(`  ${run.engine}: did not hold the budget at even ${LADDER[0].toLocaleString()} rows.`);
     } else {
-      console.log(`  Nothing on the ladder broke it — the real ceiling is above ` +
-        `${LADDER[LADDER.length - 1].toLocaleString()}.`);
+      const broke = run.brokeOn ? ` (broke at ${run.brokeOn.rows.toLocaleString()} on ${run.brokeOn.why})` : "";
+      console.log(`  ${run.engine.padEnd(9)} ceiling ${run.ceiling.toLocaleString().padStart(9)} rows${broke}`);
     }
-    console.log(`\n  Pass this to the row model on THIS device class:`);
-    console.log(`      createClientRowModel({ …, maxRows: ${ceiling} })`);
+  }
+  const failed = runs.filter((r) => r.ceiling === null);
+  const found = runs.filter((r) => r.ceiling !== null);
+  if (failed.length > 0) {
+    // Reporting the minimum of the engines that SUCCEEDED would present a
+    // number as safe across engines when one of them managed nothing at all.
+    console.log(
+      `\n  No safe value across engines: ${failed.map((r) => r.engine).join(", ")} ` +
+      `held no size on the ladder. Investigate before choosing maxRows.`,
+    );
+  } else if (found.length > 0) {
+    // The LOWEST across engines, because a deployment does not get to pick
+    // which browser the trust installed.
+    console.log(`\n  Safe across all ${found.length} engines: maxRows: ${Math.min(...found.map((r) => r.ceiling))}`);
   }
   console.log(
     `\n  Measured on this machine only. A shared ward workstation with an EHR and two\n` +
     `  payer portals already open will be worse, and this harness cannot emulate that —\n` +
     `  it emulates a slower CPU, not a contended one. Run it there.\n`,
   );
+}
+
+// ── history, so a regression is visible over time ──────────────────────────
+const previous = existsSync(HISTORY)
+  ? JSON.parse(readFileSync(HISTORY, "utf8"))
+  : { note: "Ceilings measured over time. Append with --record, compare with --check.", entries: [] };
+
+if (record) {
+  previous.entries.push({
+    platform: report.platform,
+    cpuThrottle: throttle,
+    ceilings: Object.fromEntries(runs.map((r) => [r.engine, r.ceiling])),
+  });
+  writeFileSync(HISTORY, `${JSON.stringify(previous, null, 2)}\n`);
+  console.log(`  recorded to ${HISTORY}`);
+}
+
+if (check) {
+  // Compare against the most recent entry for the same platform and throttle.
+  const baseline = [...previous.entries]
+    .reverse()
+    .find((e) => e.platform === report.platform && e.cpuThrottle === throttle);
+
+  if (!baseline) {
+    console.log(`  no baseline for ${report.platform} at ${throttle}x — run with --record first`);
+  } else {
+    const dropped = runs.filter((r) => {
+      const was = baseline.ceilings[r.engine];
+      return typeof was === "number" && (r.ceiling ?? 0) < was;
+    });
+    if (dropped.length > 0) {
+      console.error(`\n  CEILING DROPPED:`);
+      for (const r of dropped) {
+        console.error(`    ${r.engine}: ${baseline.ceilings[r.engine]?.toLocaleString()} → ` +
+          `${(r.ceiling ?? 0).toLocaleString()}`);
+      }
+      process.exit(1);
+    }
+    console.log(`  no regression against the recorded baseline`);
+  }
 }
 
 writeFileSync(join(HERE, "device-profile.json"), `${JSON.stringify(report, null, 2)}\n`);

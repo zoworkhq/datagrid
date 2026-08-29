@@ -1,0 +1,12 @@
+{
+  "note": "Ceilings measured over time. Append with --record, compare with --check.",
+  "entries": [
+    {
+      "platform": "darwin-arm64",
+      "cpuThrottle": 1,
+      "ceilings": {
+        "chromium": 50000
+      }
+    }
+  ]
+}

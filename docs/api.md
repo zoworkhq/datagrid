@@ -356,10 +356,19 @@ the one that decides whether client mode is viable is a property of **your**
 device class:
 
 ```bash
-node bench/device-profile.mjs              # this machine
-node bench/device-profile.mjs --throttle 6 # approximate a slower one
-node bench/device-profile.mjs --json       # for CI
+pnpm profile                    # this machine, chromium
+pnpm profile:all                # chromium, firefox and webkit
+pnpm profile:check              # fail if the ceiling dropped since --record
+
+node bench/device-profile.mjs --throttle 6   # approximate a slower CPU
+node bench/device-profile.mjs --record       # append to bench/device-history.json
+node bench/device-profile.mjs --json         # machine-readable
 ```
+
+It measures each engine's **idle frame cadence first** and raises the frame
+budget to match. Headless Firefox and WebKit do not run a clean 60 Hz, and a
+throttled Chromium cannot either — judging the grid against 16.7 ms there
+blames it for the engine's cadence rather than its own work.
 
 It walks a size ladder until an interaction crosses a budget — 100 ms for a
 sort or filter, one frame for a scroll — and prints the last size that held,
@@ -369,9 +378,14 @@ Measured on the machine this library is developed on:
 
 | device | ceiling |
 |---|---|
-| 8 cores, unthrottled | **50,000 rows** |
-| the same, 4× throttled | **10,000 rows** |
-| the same, 8× throttled | **1,000 rows** |
+| chromium, 8 cores, unthrottled | **50,000 rows** |
+| firefox, same machine | **50,000 rows** |
+| webkit, same machine | **100,000 rows** |
+| chromium, 4× throttled | **10,000 rows** |
+| chromium, 8× throttled | **1,000 rows** |
+
+Take the **lowest** across the engines your deployment might see — a hospital
+does not let you pick which browser the trust installed. Here that is 50,000.
 
 `DEFAULT_CLIENT_ROW_CEILING` is 100,000. That is **roughly 2× optimistic on a
 developer laptop and an order of magnitude optimistic on anything slower** —
