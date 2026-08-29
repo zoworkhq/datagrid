@@ -72,6 +72,8 @@ audit storage, data residency and clinical validation remain the application's.
 
 It helps you build a compliant system. It is not one.
 
+**Full API guide: [docs/api.md](docs/api.md)** — choosing a row model, cell renderers, streaming, paging, PHI handling and the measured performance budgets.
+
 ## Quick start
 
 ```tsx
