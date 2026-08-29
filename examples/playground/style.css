@@ -25,7 +25,15 @@
 
 * { box-sizing: border-box; }
 
-body { margin: 0; height: 100%; }
+/* `html` MUST carry a height too. A percentage height resolves against the
+   parent, so `body { height: 100% }` alone computes to `auto`, `.antd` grows to
+   fit its content, and the grid's viewport becomes unbounded — at which point
+   the renderer reads a clientHeight large enough to window in EVERY row and
+   virtualisation silently stops existing. 50,000 rows then hangs the tab.
+   The artifact template emits this pair already, which is why the published
+   page was fine while the dev page was not. */
+html, body { height: 100%; }
+body { margin: 0; }
 
 /* Layout hangs off the NAMESPACE element, not off `body`.
    `.antd` is the body here, and a wrapper <div> in the published artifact —
