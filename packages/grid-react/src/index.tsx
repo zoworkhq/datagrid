@@ -21,7 +21,8 @@
  * @see ../../../docs/decisions/0006-the-grids-layers-are-named-not-numbered.md
  * ────────────────────────────────────────────────────────────────────────────
  */
-import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import type { Ref } from "react";
 import type { GridAction, GridError } from "@oxygenui-design/grid-core";
 import {
   createGridRenderer,
@@ -48,22 +49,66 @@ export interface DataGridProps<TRow> {
   readonly onError?: (error: GridError) => void;
   readonly cells?: RendererOptions<TRow>["cells"];
   readonly fallback?: RendererOptions<TRow>["fallback"];
+  /**
+   * Structural options, passed straight to the renderer.
+   *
+   * They were unreachable from React. `rowHeight`, `overscan`, `pageRows`,
+   * `keymap` and `span` are all real renderer capabilities and none of them had
+   * a prop, so a React consumer could not configure a grid an Angular or
+   * custom-element consumer could.
+   */
+  readonly rowHeight?: RendererOptions<TRow>["rowHeight"];
+  readonly overscan?: RendererOptions<TRow>["overscan"];
+  readonly pageRows?: RendererOptions<TRow>["pageRows"];
+  readonly keymap?: RendererOptions<TRow>["keymap"];
+  readonly span?: RendererOptions<TRow>["span"];
   readonly className?: string;
+  /** A ref through which to reach `applyTransaction` and friends. */
+  readonly handle?: Ref<DataGridHandle<TRow>>;
+}
+
+/**
+ * The renderer operations a consumer may need, through a ref.
+ *
+ * `applyTransaction` is the one that matters: a monitoring feed patches rows
+ * without a re-render, and there was no way to reach it from React at all.
+ */
+export interface DataGridHandle<TRow> {
+  applyTransaction(tx: Parameters<GridRenderer<TRow>["applyTransaction"]>[0]): void;
+  measureRow(index: number, height: number): void;
+  /** The renderer's root, for a consumer that needs to measure or scroll it. */
+  readonly element: HTMLElement | null;
 }
 
 /**
  * Job 1 and 2: own the mount point, and hand the renderer stable callbacks.
  *
- * The renderer is created once. `onAction` and `onError` are read through a ref
- * so that an inline arrow function in the consumer's render does not tear the
- * grid down and rebuild it on every keystroke — which would also destroy focus,
- * and focus is the thing this library is most careful about.
+ * ── CALLBACKS ARE STABLE; STRUCTURE IS NOT ──────────────────────────────────
+ *
+ * `onAction` and `onError` are read through a ref so an inline arrow function
+ * in the consumer's render does not tear the grid down on every keystroke —
+ * which would destroy focus, and focus is the thing this library is most
+ * careful about. That part was right.
+ *
+ * What was wrong: `label`, `cells`, `fallback` and everything else were
+ * captured ONCE, at mount, and the effect had an empty dependency list. Only
+ * `model` ever reached the grid again. So changing a cell renderer — the exact
+ * thing a role or permission change does — left the old one mounted, showing a
+ * value the new policy says to mask. Changing the accessible label did nothing.
+ *
+ * Structural options are `createGridRenderer` constructor arguments and cannot
+ * be updated in place, so a change to any of them REMOUNTS. That is deliberate
+ * and it is why they are separated from the callbacks: a remount is expensive
+ * and loses focus, so it must be driven by things that genuinely change rarely,
+ * never by an inline function identity.
  */
 export function DataGrid<TRow>(props: DataGridProps<TRow>) {
   const host = useRef<HTMLDivElement | null>(null);
   const renderer = useRef<GridRenderer<TRow> | null>(null);
   const latest = useRef(props);
   latest.current = props;
+
+  const { label, cells, fallback, rowHeight, overscan, pageRows, keymap, span, host: ownHost } = props;
 
   useLayoutEffect(() => {
     const el = latest.current.host ?? host.current;
@@ -74,16 +119,38 @@ export function DataGrid<TRow>(props: DataGridProps<TRow>) {
       onError: (e) => latest.current.onError?.(e),
       ...(latest.current.cells ? { cells: latest.current.cells } : {}),
       ...(latest.current.fallback ? { fallback: latest.current.fallback } : {}),
+      ...(latest.current.rowHeight !== undefined ? { rowHeight: latest.current.rowHeight } : {}),
+      ...(latest.current.overscan !== undefined ? { overscan: latest.current.overscan } : {}),
+      ...(latest.current.pageRows !== undefined ? { pageRows: latest.current.pageRows } : {}),
+      ...(latest.current.keymap ? { keymap: latest.current.keymap } : {}),
+      ...(latest.current.span ? { span: latest.current.span } : {}),
     });
+    // The model the grid was built for, immediately — otherwise a remount
+    // leaves an empty grid until the next model change, which may never come.
+    renderer.current.render(latest.current.model);
     return () => {
       renderer.current?.destroy();
       renderer.current = null;
     };
-  }, []);
+    // Every structural option, so a change to any of them remounts. `model` is
+    // deliberately absent: it is pushed by the effect below without a rebuild.
+  }, [label, cells, fallback, rowHeight, overscan, pageRows, keymap, span, ownHost]);
 
   useLayoutEffect(() => {
     renderer.current?.render(props.model);
   }, [props.model]);
+
+  useImperativeHandle(
+    props.handle,
+    (): DataGridHandle<TRow> => ({
+      applyTransaction: (tx) => renderer.current?.applyTransaction(tx),
+      measureRow: (index, height) => renderer.current?.measureRow(index, height),
+      get element() {
+        return renderer.current?.element ?? null;
+      },
+    }),
+    [],
+  );
 
   // When the caller supplied its own host, this component renders nothing —
   // the grid lives in an element React does not own, which is what lets a

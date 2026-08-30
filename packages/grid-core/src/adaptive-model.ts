@@ -38,7 +38,29 @@ import { createColumnStore, type ColumnStore } from "./column-store.js";
 import { createClientRowModel, DEFAULT_CLIENT_ROW_CEILING, type RowModel } from "./row-model.js";
 import { createBlockRowModel } from "./block-model.js";
 
-export type ModelStrategy = "client" | "columnar" | "block";
+/**
+ * What was chosen.
+ *
+ * ── WHY THERE IS NO "columnar" HERE ─────────────────────────────────────────
+ *
+ * There was, and it was a promise this function does not keep. The branch built
+ * a column store and then returned `createClientRowModel` over the ORIGINAL
+ * object rows — so a consumer reading `strategy === "columnar"` reasonably
+ * believed it had a multi-million-row memory model, while the model still
+ * depended on the full object array AND now held a second copy of the data
+ * beside it. Peak construction memory went UP.
+ *
+ * Worse, it raised `maxRows` to the row count, which silently switched off the
+ * client-mode refusal — the one thing standing between a large set and a frozen
+ * tab.
+ *
+ * So the name says what it is: an index built alongside the client model, which
+ * offers a fast ordering the caller can use directly. The ceiling is back.
+ * A real columnar row model — reading cells, filtering and sorting from the
+ * store, never materialising the objects — is a different piece of work, and it
+ * would be the honest owner of the word.
+ */
+export type ModelStrategy = "client" | "client-with-index" | "block";
 
 export interface AdaptiveChoice {
   readonly strategy: ModelStrategy;
@@ -117,26 +139,31 @@ export function createAdaptiveRowModel<TRow>(
     });
   }
 
-  // 2 · Columnar, when the set is big enough to pay for the build AND the
-  //     caller has declared what the columns hold.
+  // 2 · The client model with an index beside it, when the set is big enough to
+  //     pay for the build AND the caller has declared what the columns hold.
+  //
+  //     The MODEL still reads the object rows: cells render objects, and
+  //     swapping that is an API break rather than an optimisation. What the
+  //     store buys is a fast ordering the caller can use directly, and an
+  //     honest byte count. It does not change what the model retains, and the
+  //     name no longer says it does.
   const canStore = options.columns !== undefined && options.columns.length > 0;
-  if (canStore && rows.length > columnarAbove) {
+  if (canStore && rows.length > columnarAbove && rows.length <= ceiling) {
     const store = createColumnStore(options.columns as readonly StoredColumn[], rows, options.get);
-    // The store is built and handed back, but the MODEL still reads the object
-    // rows: cells render objects, and swapping that is an API break rather
-    // than an optimisation. What the store buys here is a fast ordering the
-    // caller can use directly, and an honest byte count.
     const model = createClientRowModel({
       rows, rowKey: options.rowKey, get: options.get,
       ...(options.comparators ? { comparators: options.comparators } : {}),
-      maxRows: Math.max(ceiling, rows.length),
+      // The CEILING, not the row count. Raising it here switched off the
+      // client-mode refusal for exactly the sets it exists to catch.
+      maxRows: ceiling,
     });
     return Object.assign(model, {
       choice: {
-        strategy: "columnar" as const,
+        strategy: "client-with-index" as const,
         because:
-          `${rows.length.toLocaleString()} rows is above the columnar threshold of ` +
-          `${columnarAbove.toLocaleString()} and column types were supplied`,
+          `${rows.length.toLocaleString()} rows is above the index threshold of ` +
+          `${columnarAbove.toLocaleString()} and column types were supplied, so a column store ` +
+          `is built alongside the client model — the rows are still object rows`,
         rowCount: rows.length,
         storeBytes: store.bytes,
       },

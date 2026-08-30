@@ -258,6 +258,10 @@ export function mountScale(refs: ScaleRefs): void {
     // 1 · The choice. This is the only one that is not a timing: it is the
     //     library saying which model it picked and why, in a sentence you can
     //     paste into a bug report.
+    //
+    //     It used to answer "columnar", which reads as a memory model and was
+    //     not one — the model held the object rows AND the store beside them.
+    //     The honest answer names the index for what it is.
     const adaptive = createAdaptiveRowModel<Wide>({
       rows, rowKey: (r) => r.id, get: getWide, columns: SPECS,
     });

@@ -453,7 +453,11 @@ try {
     return { rows, strategy: rows[0]?.[1] ?? "", store: rows.find((r) => r[0]?.includes("buildColumnStore"))?.[1] ?? "" };
   });
   check(scale.rows.length >= 8, "the scale panel measures every model", `${scale.rows.length} measurements`);
-  check(scale.strategy === "columnar", "100,000 rows chooses the columnar store", scale.strategy);
+  check(
+    scale.strategy === "client-with-index",
+    "100,000 rows builds an index beside the client model",
+    scale.strategy,
+  );
   check(/MB in/.test(scale.store), "the store reports real bytes", scale.store);
 
   // ── every advertised shortcut does something ──────────────────────────────

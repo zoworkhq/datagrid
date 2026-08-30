@@ -46,13 +46,24 @@ describe("choosing", () => {
     expect(m.store).toBeNull();
   });
 
-  it("escalates to columnar when the set is large AND types were supplied", () => {
+  it("builds an index alongside the client model when types were supplied", () => {
     const m = createAdaptiveRowModel({
       rows: rows(60_000), rowKey, get, columns: COLUMNS, columnarAbove: 50_000,
     });
-    expect(m.choice.strategy).toBe("columnar");
+    expect(m.choice.strategy).toBe("client-with-index");
     expect(m.choice.storeBytes).toBeGreaterThan(0);
     expect(m.store).not.toBeNull();
+  });
+
+  it("says plainly that the rows are still object rows", () => {
+    // The strategy was called "columnar", which reads as a memory model. It was
+    // not one: the model held the object array AND the store beside it, so peak
+    // construction memory went UP. The name and the sentence now say so.
+    const m = createAdaptiveRowModel({
+      rows: rows(60_000), rowKey, get, columns: COLUMNS, columnarAbove: 50_000,
+    });
+    expect(m.choice.strategy).not.toBe("columnar");
+    expect(m.choice.because).toContain("still object rows");
   });
 
   it("does NOT escalate to columnar without column types, and says why", () => {
@@ -88,14 +99,31 @@ describe("the refusal is not routed around", () => {
     expect(m.choice.because).toContain("will refuse");
   });
 
-  it("lifts the ceiling when it DID escalate, because the store carries the set", () => {
+  /**
+   * This test used to assert the opposite, with the justification "because the
+   * store carries the set". The store did not carry the set — the model read
+   * the object rows throughout — so raising the ceiling switched off the
+   * client-mode refusal for exactly the sets it exists to catch, and a test
+   * was holding that open as though it were intended.
+   */
+  it("keeps the ceiling even when it built an index, because the rows are still objects", () => {
     const m = createAdaptiveRowModel({
       rows: rows(60_000), rowKey, get, columns: COLUMNS,
       columnarAbove: 50_000, maxRows: 10_000,
     });
     m.setState(initialState());
-    expect(m.result().errors).toHaveLength(0);
-    expect(m.result().length).toBe(60_000);
+    expect(m.result().errors.map((e) => e.code)).toContain("client-mode-refused");
+  });
+
+  it("does not build an index for a set that is over the ceiling anyway", () => {
+    // Building a second copy of a set the model is about to refuse is pure
+    // cost: it is the peak-memory case, and the refusal is the answer.
+    const m = createAdaptiveRowModel({
+      rows: rows(60_000), rowKey, get, columns: COLUMNS,
+      columnarAbove: 50_000, maxRows: 10_000,
+    });
+    expect(m.choice.strategy).toBe("client");
+    expect(m.store).toBeNull();
   });
 });
 
