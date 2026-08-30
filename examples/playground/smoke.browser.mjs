@@ -634,6 +634,80 @@ try {
     `aria-sort ${sortAfterDrag}`,
   );
 
+  // ── the APIs that had no example ──────────────────────────────────────────
+  //
+  // Each of these was reachable from the package and unreachable from the demo,
+  // which is a different failure from a missing feature and worth its own check
+  // — an example that silently stops rendering is how they got that way.
+  await page.click('[role="tab"][data-tab="grouping"]');
+  await page.waitForTimeout(600);
+  const tree = await page.evaluate(async () => {
+    const p = document.querySelector('[data-panel="grouping"]');
+    const read = () =>
+      [...p.querySelectorAll("#tree-host .oxg-body [role=\"row\"]")].map((r) =>
+        (r.querySelector('[role="gridcell"]')?.textContent ?? "").trim(),
+      );
+    const rows = read();
+    // The unresolved branch is the last entry and the tree is virtualised, so
+    // it is genuinely not in the DOM until you scroll to it — which is the
+    // right behaviour and the reason this reads twice.
+    const vp = p.querySelector("#tree-host .oxg-viewport");
+    vp.scrollTop = vp.scrollHeight;
+    vp.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => setTimeout(r, 200));
+    return { rows: [...rows, ...read()], stat: p.querySelector("#tree-stat")?.textContent ?? "" };
+  });
+  check(tree.rows.length > 3, "flattenTree renders a hierarchy the data already has", tree.rows.slice(0, 4).join(" · "));
+  check(
+    tree.rows.some((r) => /not fetched/.test(r)),
+    "…and an unresolved branch is not an empty one",
+    tree.rows.find((r) => /not fetched/.test(r)) ?? "absent",
+  );
+  check(
+    /countLeaves \d+/.test(tree.stat) && /1 unresolved branch/.test(tree.stat),
+    "countLeaves and the unresolved count are both reported",
+    tree.stat,
+  );
+
+  await page.click('[role="tab"][data-tab="views"]');
+  await page.waitForTimeout(500);
+  const bulk = await page.textContent("#bulk-out");
+  check(/describeReview/.test(bulk ?? ""), "describeReview writes the sentence a dialog should show",
+    (bulk ?? "").split("\n")[0]?.slice(0, 80) ?? "");
+
+  await page.click('[role="tab"][data-tab="scale"]');
+  await page.waitForTimeout(3500);
+  const scaleRows = await page.$$eval('[data-panel="scale"] .oxg-body [role="row"]', (els) =>
+    els.map((r) => [...r.querySelectorAll('[role="gridcell"]')].map((c) => c.textContent.trim())),
+  );
+  const what = scaleRows.map((r) => r[0] ?? "");
+  check(
+    what.some((w) => /from the array/.test(w)) && what.some((w) => /from a stream/.test(w)),
+    "both column-store builders are measured, not just the flattering one",
+    `${scaleRows.length} measurements`,
+  );
+  check(
+    what.some((w) => /createGeometry/.test(w)),
+    "the Fenwick geometry is measured too",
+    scaleRows.find((r) => /createGeometry/.test(r[0] ?? ""))?.[1] ?? "absent",
+  );
+
+  await page.click('[role="tab"][data-tab="working"]');
+  await page.waitForTimeout(500);
+  const firstRowBefore = await page.textContent('[data-panel="working"] .oxg-body [role="row"] [data-col-key="name"]');
+  await page.click('[data-panel="working"] .oxg-body [role="row"]:nth-child(2) [data-col-key="name"]');
+  await page.click("#row-up");
+  await page.waitForTimeout(250);
+  const firstRowAfter = await page.textContent('[data-panel="working"] .oxg-body [role="row"] [data-col-key="name"]');
+  check(
+    firstRowBefore !== firstRowAfter,
+    "moveRow reorders by row id, not by index",
+    `${firstRowBefore?.trim()} → ${firstRowAfter?.trim()}`,
+  );
+
+  await page.click('[role="tab"][data-tab="roster"]');
+  await page.waitForTimeout(300);
+
   // ── every grid in the demo answers a keyboard ─────────────────────────────
   //
   // Eleven of the fourteen were built with `onAction: () => {}`. A renderer
@@ -656,7 +730,11 @@ try {
         `[data-panel="${name}"] [role="grid"] >> nth=${g} >> .oxg-body [role="gridcell"] >> nth=0`,
       );
       if (!cell) continue;
-      await cell.click();
+      // `focus()` rather than `click()`: the panels that scroll put one grid's
+      // sticky header over the next grid's first cell, and Playwright rightly
+      // refuses to click through it. Focus is what this check needs — the key
+      // press below is still a real one, dispatched by the browser.
+      await cell.evaluate((el) => el.focus());
       await page.keyboard.press("ArrowDown");
       await page.waitForTimeout(120);
       const where = await grids[g].evaluate((grid) => {

@@ -7,7 +7,8 @@
  * coverage claim on your behalf.
  */
 import {
-  and, beginEdit, cancelEdit, commitEdit, fromSearchParams, inspect, inspectionEvent,
+  and, beginEdit, cancelEdit, commitEdit, defineColumns, describeMove, fromSearchParams, inspect,
+  inspectionEvent, moveRow,
   toSearchParams, updateDraft, type FilterNode, type ModelProvenance,
 } from "@oxygenui-design/grid-core";
 import { createGridRenderer } from "@oxygenui-design/grid-dom";
@@ -33,6 +34,8 @@ let rows: Row[] = [
 ];
 
 export interface WorkingRefs {
+  readonly rowUp: HTMLButtonElement;
+  readonly rowDown: HTMLButtonElement;
   readonly host: HTMLElement;
   readonly panel: HTMLElement;
   readonly urlBar: HTMLElement;
@@ -135,6 +138,31 @@ export function mountWorking(refs: WorkingRefs): void {
     if (back.inspector.rowId !== inspector.rowId) refs.urlBar.textContent += "  ← ROUND-TRIP FAILED";
   };
 
+  /**
+   * Row order, moved by the application.
+   *
+   * `moveRow` is the row-shaped twin of `moveTo`: pure, addressed by ROW ID
+   * rather than by index, and it returns a new array. Addressing by id matters
+   * here — the index of a row is a fact about the current sort, and a reorder
+   * that took an index would move the wrong row the moment anything above it
+   * changed.
+   */
+  const shift = (delta: number): void => {
+    const id = focus.rowId;
+    const at = rows.findIndex((r) => r.id === id);
+    if (at < 0) return;
+    const to = Math.max(0, Math.min(rows.length - 1, at + delta));
+    if (to === at) return;
+    rows = moveRow(rows, (r) => r.id, id, to) as Row[];
+    refs.note.dataset["state"] = "";
+    refs.note.textContent = describeMove(
+      rows.find((r) => r.id === id)?.name ?? id, at, to, rows.length,
+    );
+    render();
+  };
+  refs.rowUp.addEventListener("click", () => shift(-1));
+  refs.rowDown.addEventListener("click", () => shift(1));
+
   refs.commit.addEventListener("click", () => {
     const target = rows.find((r) => r.id === editTarget) ?? rows[0];
     if (!target) return;
@@ -210,6 +238,34 @@ export interface AiRefs {
   readonly accept: HTMLButtonElement;
 }
 
+/**
+ * `defineColumns` is where a derived column is made to say so.
+ *
+ * The type refuses `derived: true` without `provenance`, and refuses two
+ * columns with the same key. Neither is a runtime nicety: an AI-derived value
+ * that renders like a measured one is the failure this whole panel is about,
+ * and the type system is a cheaper place to catch it than a review.
+ *
+ * Deleting the `provenance` block below is a compile error, not a bug report.
+ */
+const AI_COLUMNS = defineColumns<Scored>([
+  { key: "name", header: "Patient", width: 170 },
+  {
+    key: "risk",
+    header: "Risk",
+    width: 90,
+    derived: true,
+    provenance: {
+      model: MODEL.model,
+      version: MODEL.version,
+      validatedOn: MODEL.validatedOn,
+      validatedAt: MODEL.validatedOn,
+      note: "Validated on a different population from the one it is applied to.",
+    },
+  },
+  { key: "provenance", header: "Where this came from", width: 460 },
+]);
+
 export function mountAi(refs: AiRefs): void {
   const live = liveState({ repaint: () => render(), rowIds: () => SCORED.map((x) => x.id) });
   const r = createGridRenderer<Scored>(refs.host, {
@@ -227,11 +283,14 @@ export function mountAi(refs: AiRefs): void {
 
   const render = (): void => {
     r.render({
-      columns: [
-        { key: "name", header: "Patient", width: 170 },
-        { key: "risk", header: "Risk", width: 90 },
-        { key: "provenance", header: "Where this came from", width: 460 },
-      ],
+      // The renderer takes key/header/width; `derived` and `provenance` are the
+      // ENGINE's business and never reach the DOM, which is the separation the
+      // provenance sentence in the third column exists to make visible.
+      columns: AI_COLUMNS.map((c) => ({
+        key: c.key,
+        header: c.header,
+        ...(c.width === undefined ? {} : { width: c.width }),
+      })),
       // Sorting is deliberately NOT offered on risk: an AI-derived value and a
       // verified one are incomparable, and sorting a worklist is triage.
       rows: SCORED.map((row, index) => ({ id: row.id, row, index })),

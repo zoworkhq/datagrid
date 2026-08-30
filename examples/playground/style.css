@@ -869,7 +869,8 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 var(--sp-4, 16px) var(--sp-4, 1
 .panel[data-panel="fhir"],
 .panel[data-panel="frameworks"],
 .panel[data-panel="clinical"],
-.panel[data-panel="columns"] { overflow: auto; }
+.panel[data-panel="columns"],
+.panel[data-panel="grouping"] { overflow: auto; }
 
 .grid-slot.short { flex: 0 0 auto; height: 268px; }
 .grid-slot.tall  { flex: 0 0 auto; height: 520px; }

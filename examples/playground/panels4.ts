@@ -12,7 +12,7 @@
  * surviving something — a reload, a rebind, a filter change, a clipboard.
  */
 import {
-  DEFAULT_KEYMAP, applyKeymapOverride, confirmReview, describeDrift, describeMove,
+  DEFAULT_KEYMAP, applyKeymapOverride, confirmReview, describeDrift, describeMove, describeReview,
   driftBetween, emptySelection, hasDrifted, initialState, layoutColumns, moveTo, openReview,
   parseKeymapOverride, parseView, applyView, resolveSelection, resolveViews, selectIds,
   selectMatching, selectionCount, totalWidth, viewFromState,
@@ -411,6 +411,11 @@ export function mountViews(refs: ViewRefs): void {
     allowUnnamed: true,
   });
   refs.bulkOut.textContent = [
+    // The sentence the library writes, which is the one a confirmation dialog
+    // should show. Counting the rows yourself is how "3 selected" ends up over
+    // an action that touches nine thousand.
+    `describeReview   ${describeReview(review)}`,
+    "",
     `named            ${review.named.length} rows the user can actually see, e.g. ${review.named.slice(0, 3).map((r) => r.row.name).join(", ")}`,
     `unnamed          ${review.unnamed}`,
     `total            ${review.total}`,

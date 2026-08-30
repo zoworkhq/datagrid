@@ -35,10 +35,10 @@ import {
   type Absent,
   type Coverage,
 } from "@oxygenui-design/grid-healthcare";
-import { printSheetHtml, toCsv, toXlsx, type ExportColumn } from "@oxygenui-design/grid-export";
+import { toCsv, toPrintSheet, toXlsx, type ExportColumn } from "@oxygenui-design/grid-export";
 import { copyRange, emptyUndo, invert, record, redo as redoStep, undo as undoStep } from "@oxygenui-design/grid-clipboard";
 import { createDevtools, explain } from "@oxygenui-design/grid-devtools";
-import { mountClinical, mountDisclosure, mountGrouping } from "./panels.js";
+import { mountClinical, mountDisclosure, mountGrouping, mountTree } from "./panels.js";
 import { mountAi, mountMigration, mountWorking } from "./panels2.js";
 import { mountCatalogue, mountScale } from "./panels3.js";
 import { mountColumns, mountViews } from "./panels4.js";
@@ -533,7 +533,16 @@ document.getElementById("xlsx")?.addEventListener("click", () => {
 });
 
 document.getElementById("print")?.addEventListener("click", () => {
-  const sheet = printSheetHtml(request(), { title: "Patient roster" });
+  // `toPrintSheet` rather than `printSheetHtml`: it returns the same
+  // `ExportResult` envelope as CSV and XLSX, so a policy that refuses an export
+  // refuses the PRINT SHEET too. The string-returning function cannot express a
+  // refusal, and paper is the one output that leaves the building.
+  const out = toPrintSheet(request(), { title: "Patient roster", filename: "roster.html" });
+  if (!out.ok) {
+    showOutput("The print sheet", `Refused. ${out.reason}`, "Same envelope as every other export.");
+    return;
+  }
+  const sheet = new TextDecoder().decode(out.bytes);
   showOutput(
     "The print sheet",
     sheet,
@@ -542,7 +551,7 @@ document.getElementById("print")?.addEventListener("click", () => {
       "top AND in a running footer, because paper is where “See all” stops existing.",
     [/&#39;[=@+]|&amp;#39;/, /withheld/, /table-header-group/],
   );
-  void offerSave("roster.html", sheet).then((note) => {
+  void offerSave(out.filename, sheet).then((note) => {
     if (note) exportOut().append(document.createTextNode(note));
   });
 });
@@ -619,9 +628,13 @@ function show(name: string): void {
   }
   if (name === "grouping") {
     mountGrouping({
-      host: document.getElementById("group-host") as HTMLElement,
-      groupBy: document.getElementById("groupby") as HTMLSelectElement,
-      mixUnits: document.getElementById("mixed-units") as HTMLInputElement,
+      host: el("group-host"),
+      groupBy: el("groupby"),
+      mixUnits: el("mixed-units"),
+    });
+    mountTree({
+      host: el("tree-host"), note: el("tree-note"),
+      stat: el("tree-stat"), toggle: el("tree-toggle"),
     });
   }
   if (name === "working") {
@@ -629,9 +642,11 @@ function show(name: string): void {
       host: document.getElementById("working-host") as HTMLElement,
       panel: document.getElementById("inspector-panel") as HTMLElement,
       urlBar: document.getElementById("url-bar") as HTMLElement,
-      value: document.getElementById("edit-value") as HTMLSelectElement,
-      commit: document.getElementById("edit-commit") as HTMLButtonElement,
-      note: document.getElementById("edit-note") as HTMLElement,
+      value: el("edit-value"),
+      commit: el("edit-commit"),
+      note: el("edit-note"),
+      rowUp: el("row-up"),
+      rowDown: el("row-down"),
     });
   }
   if (name === "ai") {

@@ -5,8 +5,8 @@
  * shows it. All data is synthetic.
  */
 import {
-  aggregate, createBranchStore, childrenOf, describeAggregate, groupRows,
-  type GroupEntry, type Measured,
+  aggregate, countLeaves, createBranchStore, childrenOf, describeAggregate, flattenTree,
+  groupRows, toggleExpanded, type GroupEntry, type Measured,
 } from "@oxygenui-design/grid-core";
 import { createGridRenderer, type GridViewModel } from "@oxygenui-design/grid-dom";
 import { liveState } from "./live.js";
@@ -352,3 +352,169 @@ export function mountGrouping(refs: GroupRefs): void {
 }
 
 export { aggregate };
+
+// ── a tree, which is not a grouping ─────────────────────────────────────────
+
+/**
+ * `groupRows` and `flattenTree` answer different questions.
+ *
+ * GROUPING derives the hierarchy from the DATA: "put these flat rows into
+ * buckets by ward, then by team". Every level is a column value, and the same
+ * rows regroup differently the moment you pick a different column.
+ *
+ * A TREE is a hierarchy the data already HAS: a ward contains bays, a bay
+ * contains beds. There is no column to group by — the shape is the shape, and
+ * asking to "group beds by bay" would be asking for something already true.
+ *
+ * The demo showed grouping only, so the distinction was invisible and the tree
+ * API unreachable. Both render through the same `GroupEntry` list, which is the
+ * point: one renderer, two ways of arriving at a hierarchy.
+ */
+interface Bed {
+  readonly id: string;
+  readonly label: string;
+  readonly occupant?: string;
+  readonly children?: readonly Bed[];
+}
+
+const WARD_TREE: readonly Bed[] = [
+  {
+    id: "w-ash", label: "Ashgrove",
+    children: [
+      {
+        id: "w-ash-a", label: "Bay A",
+        children: [
+          { id: "b-a1", label: "Bed A1", occupant: "Amara Okafor" },
+          { id: "b-a2", label: "Bed A2", occupant: "Ruth Petrov" },
+          { id: "b-a3", label: "Bed A3" },
+        ],
+      },
+      {
+        id: "w-ash-b", label: "Bay B",
+        children: [
+          { id: "b-b1", label: "Bed B1", occupant: "Nadia Anand" },
+          { id: "b-b2", label: "Bed B2" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "w-bee", label: "Beeches",
+    children: [
+      {
+        id: "w-bee-a", label: "Bay A",
+        children: [
+          { id: "b-c1", label: "Bed A1", occupant: "Anton Ferreira" },
+          { id: "b-c2", label: "Bed A2", occupant: "Elena Sørensen" },
+        ],
+      },
+    ],
+  },
+  // A ward whose children are not loaded. "Unresolved" is not "empty", and a
+  // tree that renders them the same way tells a clinician a ward is clear when
+  // nobody has looked. It starts EXPANDED, because `flattenTree` only asks for
+  // the children of a node that is open — a collapsed unresolved branch is
+  // indistinguishable from any other collapsed one, and correctly so.
+  { id: "w-ced", label: "Cedar" },
+];
+
+export interface TreeRefs {
+  readonly host: HTMLElement;
+  readonly note: HTMLElement;
+  readonly stat: HTMLElement;
+  readonly toggle: HTMLButtonElement;
+}
+
+export function mountTree(refs: TreeRefs): void {
+  let expanded: ReadonlySet<string> = new Set(["w-ash", "w-ash-a", "w-ced"]);
+  const live = liveState({ repaint: () => paint(), rowIds: () => lastIds });
+  let lastIds: readonly string[] = [];
+
+  const grid = createGridRenderer<GroupEntry<Bed>>(refs.host, {
+    label: "Ward, bay, bed",
+    rowHeight: 34,
+    onAction: live.onAction,
+    // Every node of a tree is a ROW — a ward is a row, a bed is a row. That is
+    // the difference from `groupRows`, which emits `kind: "group"` headers that
+    // are not rows at all because no row corresponds to "ward = Ashgrove".
+    fallback: (entry, key) => {
+      const indent = "   ".repeat(entry.depth);
+      if (entry.kind === "unresolved") {
+        return key === "label" ? text(`${indent}— not fetched —`) : text("");
+      }
+      if (entry.kind !== "row") return text("");
+
+      const node = entry.row;
+      const kids = node.children;
+      const open = expanded.has(node.id);
+      const marker = kids && kids.length > 0 ? (open ? "▾ " : "▸ ") : "  ";
+      return text(
+        key === "label" ? `${indent}${marker}${node.label}`
+        : key === "occupant" ? (kids ? "" : (node.occupant ?? "empty"))
+        : kids ? `${kids.length}` : "",
+      );
+    },
+  });
+
+  function paint(): void {
+    const entries = flattenTree(WARD_TREE, {
+      rowKey: (b) => b.id,
+      // "unresolved" rather than an empty array: a ward nobody has fetched is
+      // not a ward with no beds, and the two must not render alike.
+      childrenOf: (b) => b.children ?? (b.id === "w-ced" ? "unresolved" : []),
+      expanded,
+    });
+    lastIds = entries.map((e, i) => (e.kind === "row" ? e.id : `${e.path}#${i}`));
+
+    grid.render({
+      columns: [
+        { key: "label", header: "Ward · bay · bed", width: 300 },
+        { key: "occupant", header: "Occupant", width: 220 },
+        { key: "count", header: "Below", width: 90 },
+      ],
+      rows: entries.map((row, index) => ({ id: lastIds[index] as string, row, index })),
+      total: entries.length,
+      sort: live.sort,
+      selection: live.selection,
+      focus: live.focus,
+    });
+
+    // `countLeaves` counts entries of kind "row". In a TREE that is every node,
+    // because every node is a row; in a GROUPING it excludes the headers,
+    // because "ward = Ashgrove" is not a row anybody can point at. Same
+    // function, two answers, and the difference is the thing worth seeing.
+    const unresolved = entries.filter((e) => e.kind === "unresolved").length;
+    refs.stat.textContent =
+      `${entries.length} entries · countLeaves ${countLeaves(entries)} · ` +
+      `${unresolved} unresolved branch${unresolved === 1 ? "" : "es"}`;
+  }
+
+  const toggleFocused = (): void => {
+    const id = live.focus?.rowId;
+    if (!id) return;
+    // `toggleExpanded` is a pure Set operation over paths, which is why the
+    // expanded set is something the application owns and can serialise into a
+    // saved view — the tree holds no open/closed state of its own.
+    expanded = toggleExpanded(expanded, id);
+    paint();
+  };
+
+  refs.toggle.addEventListener("click", toggleFocused);
+  refs.host.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      // Enter and the arrows are the tree conventions. ArrowRight/Left still
+      // move focus in the grid, so this only fires on a group row.
+      if (e.key === "Enter") {
+        e.preventDefault();
+        toggleFocused();
+      }
+    }
+  });
+
+  refs.note.textContent =
+    "groupRows derives a hierarchy from a COLUMN; flattenTree renders one the data already HAS. " +
+    "Same GroupEntry list, same renderer, different question — and in a tree every node is a row, " +
+    "where a grouping's headers are not. Focus a ward or bay and press Enter. Cedar's children are " +
+    "unresolved: not fetched is not empty, and only an open branch is asked for.";
+  paint();
+}

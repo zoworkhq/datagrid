@@ -102,6 +102,14 @@
     <label><input type="checkbox" id="mixed-units" /> Mix mg and mL in ward Cedar</label>
   </div>
   <div class="grid-slot tree" id="group-host"></div>
+
+  <h3 class="p-h3">A tree, which is not a grouping</h3>
+  <div class="p-hint" id="tree-note"></div>
+  <div class="controls inline">
+    <button id="tree-toggle" type="button">Expand or collapse the focused node</button>
+    <span class="p-stat" id="tree-stat"></span>
+  </div>
+  <div class="grid-slot short" id="tree-host"></div>
 </section>
 
 <section class="panel" data-panel="working" hidden>
@@ -116,6 +124,8 @@
       </select>
     </label>
     <button id="edit-commit" type="button">Commit</button>
+    <button id="row-up" type="button">Move row up</button>
+    <button id="row-down" type="button">Move row down</button>
     <span class="muted-note">Writes to <b>Cedar</b> always fail, to show the rollback.</span>
   </div>
   <div class="editnote" id="edit-note"></div>

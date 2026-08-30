@@ -13,8 +13,8 @@
  */
 import {
   arraySource, buildColumnStore, createAdaptiveRowModel, createBlockRowModel,
-  createGridWorker, createServerRowModel, createSortIndex, buildSortKeys, initialState,
-  isLoadingRow, type StoredColumn,
+  createColumnStore, createGeometry, createGridWorker, createServerRowModel, createSortIndex,
+  buildSortKeys, initialState, isLoadingRow, type StoredColumn,
 } from "@oxygenui-design/grid-core";
 import { createGridRenderer } from "@oxygenui-design/grid-dom";
 import {
@@ -312,7 +312,38 @@ export function mountScale(refs: ScaleRefs): void {
       why: `object rows for the same cells estimate at ~${mb(estimate)} (~50 B/cell) — ${(estimate / store.bytes).toFixed(1)}x`,
     });
 
-    // 5 · Off-thread. `available: false` is a real answer and is printed as
+    // 4b · The OTHER builder, over the array that is already in memory. Its
+    //      own header says this is the worse one, and a claim in a comment is
+    //      not a measurement — so both run, and the panel prints both.
+    t = performance.now();
+    const resident = createColumnStore(SPECS, rows, getWide);
+    const residentMs = performance.now() - t;
+    lines.push({
+      what: "createColumnStore — from the array",
+      measured: `${mb(resident.bytes)} in ${ms(residentMs)}`,
+      why:
+        `identical store, ${(residentMs / Math.max(built, 0.001)).toFixed(1)}x the build time — and ` +
+        `the object rows are still resident beside it, which is the cost the streaming builder avoids`,
+    });
+
+    // 5 · The geometry, which is the reason a window is cheap. A Fenwick tree
+    //     over row heights: the offset of row 900,000 without touching 899,999.
+    const geo = createGeometry(n, 40);
+    geo.measure(Math.floor(n / 2), 96); // one row wraps to three lines
+    t = performance.now();
+    let probe = 0;
+    for (let i = 0; i < 10_000; i++) probe += geo.offsetOf((i * 7919) % n);
+    const geoMs = performance.now() - t;
+    lines.push({
+      what: "createGeometry — 10,000 random offsets",
+      measured: ms(geoMs),
+      why:
+        `after one row was re-measured; total height ${Math.round(geo.totalHeight()).toLocaleString()}px. ` +
+        `A prefix sum would be O(n) per change and this is O(log n)`,
+    });
+    void probe;
+
+    // 6 · Off-thread. `available: false` is a real answer and is printed as
     //     one rather than being hidden behind a fallback.
     const keys = buildSortKeys(rows, getWide, "hr");
     if (worker.available && keys) {
@@ -334,7 +365,7 @@ export function mountScale(refs: ScaleRefs): void {
       });
     }
 
-    // 6 · The block model. Memory here is bounded by blocks, not by n, which
+    // 7 · The block model. Memory here is bounded by blocks, not by n, which
     //     is the only reason a set larger than the ceiling is reachable.
     const block = createBlockRowModel<Wide>({
       dataSource: arraySource(rows), rowKey: (r) => r.id, blockSize: 100, maxBlocks: 20,
@@ -349,7 +380,7 @@ export function mountScale(refs: ScaleRefs): void {
       why: `capped at 20 x 100 rows, whether the set is ${n.toLocaleString()} or twenty million`,
     });
 
-    // 7 · One page at a time. The block model keeps a window of blocks; this
+    // 8 · One page at a time. The block model keeps a window of blocks; this
     //     keeps exactly the page the server last sent, which is what a grid
     //     backed by a paginated endpoint actually holds.
     const server = createServerRowModel<Wide>({
