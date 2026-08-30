@@ -1,3 +1,4 @@
+import type { GridErrorCode } from "./errors.js";
 /**
  * The data contract.
  *
@@ -71,6 +72,33 @@ export interface UpdateParams<TRow> {
   readonly columnKey: string;
   readonly next: unknown;
 }
+
+/**
+ * A refusal a source can name without the model having to guess.
+ *
+ * ── WHY A SOURCE NEEDS THIS ─────────────────────────────────────────────────
+ *
+ * `fhirSource` throws `FilterNotCompilable` when a query cannot be expressed as
+ * FHIR search, and it emits `filter-not-compilable` on its own error channel.
+ * The row model caught the throw and reported `source-threw` — so a developer
+ * wiring only the model could not tell "this query is unsupported" from "the
+ * network failed" or "the token expired". That difference decides between
+ * narrowing the query and retrying, and generic retry logic against an
+ * unsupported query is exactly the approximation the FHIR adapter exists to
+ * prevent.
+ *
+ * So a thrown error may CARRY a code. Only the code crosses the boundary:
+ * message, stack and cause are still discarded by `sanitiseError`.
+ */
+export interface CodedSourceError {
+  readonly gridErrorCode: GridErrorCode;
+}
+
+/** Whether a thrown value named its own refusal. */
+export const isCodedSourceError = (thrown: unknown): thrown is CodedSourceError =>
+  typeof thrown === "object" &&
+  thrown !== null &&
+  typeof (thrown as CodedSourceError).gridErrorCode === "string";
 
 export interface GridDataSource<TRow> {
   /** The `AbortSignal` is the grid's — cancellation is a row-model correctness property. */

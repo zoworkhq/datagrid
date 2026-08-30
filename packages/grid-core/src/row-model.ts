@@ -20,6 +20,7 @@ import { duplicateIdError, findDuplicateIds, type DuplicateReport } from "./iden
 /** Shared, so a clean result allocates no array at all. */
 const EMPTY_ERRORS: readonly GridError[] = [];
 import { evaluateFilter, type Accessor } from "./filter-eval.js";
+import { isCodedSourceError } from "./query.js";
 import type { GridDataSource, GridQuery, SortSpec, SourceCapabilities } from "./query.js";
 import { sortRows, type Comparator } from "./sort.js";
 import { createSortIndex, type SortIndex } from "./sort-index.js";
@@ -443,10 +444,19 @@ export function createServerRowModel<TRow>(options: ServerRowModelOptions<TRow>)
     } catch (thrown) {
       if (destroyed || mine !== generation) return;
       if (controller.signal.aborted) return; // superseded, not failed
+      // A source that named its own refusal keeps that name. Everything else
+      // is `source-threw`, which is honest: the model does not know whether a
+      // bare throw was a network failure, an expired token or a server defect,
+      // and inventing a distinction it cannot make would be worse than the
+      // generic code.
+      //
+      // Only the CODE crosses. `sanitiseError` still discards the message, the
+      // stack and the cause, so a refusal cannot smuggle a value out.
+      const code = isCodedSourceError(thrown) ? thrown.gridErrorCode : "source-threw";
       result.set(resultOf<TRow>([], {
         total: "unknown",
         loading: false,
-        errors: [...errors, sanitiseError(thrown, { code: "source-threw", phase: "query" })],
+        errors: [...errors, sanitiseError(thrown, { code, phase: "query" })],
       }));
     }
   }

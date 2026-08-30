@@ -115,13 +115,46 @@ export function totalFrom(bundle: Bundle, capability?: ServerCapability): number
   return typeof bundle.total === "number" ? bundle.total : "unknown";
 }
 
-export function capabilitiesOf(capability?: ServerCapability): SourceCapabilities {
+/**
+ * Translates a server's capability statement into the core's vocabulary.
+ *
+ * ── TWO LISTS THAT LOOKED LIKE ONE ──────────────────────────────────────────
+ *
+ * `ServerCapability.sortableKeys` holds FHIR SORT PARAMETERS — `family`,
+ * `birthdate` — because that is what a CapabilityStatement says.
+ * `SourceCapabilities.sortableKeys` holds COLUMN KEYS, because that is what the
+ * row model compares against `state.sort`. Both are `readonly string[]` and one
+ * was passed straight through as the other.
+ *
+ * The result: with `sortParams: { name: "family" }` and a server correctly
+ * declaring it can sort on `family`, sorting the `name` column was PRE-REFUSED
+ * by the row model. No `_sort` went out and a `sort-not-honoured` came back —
+ * the library's own sort-provenance safety mechanism firing as a false alarm on
+ * a correct configuration.
+ *
+ * `sortParams` is the dictionary between them, so the translation belongs here,
+ * in the adapter that owns both halves.
+ */
+export function capabilitiesOf(
+  capability?: ServerCapability,
+  sortParams?: SearchParamMap,
+): SourceCapabilities {
+  // Server token -> column key. A server may declare a parameter no column maps
+  // to; that is not an error, it is simply a sort nobody can ask for.
+  const columnFor = new Map(Object.entries(sortParams ?? {}).map(([column, token]) => [token, column]));
+  const sortableKeys = capability?.sortableKeys
+    ? capability.sortableKeys.flatMap((token) => {
+        const column = columnFor.get(token);
+        return column === undefined ? [] : [column];
+      })
+    : undefined;
+
   return {
     total: capability?.totalIs ?? "none",
     // Azure Health Data Services returns only `next` — no first, last or
     // previous — so forward-only is the safe default, not a degraded case.
     paging: "forward-only",
-    ...(capability?.sortableKeys ? { sortableKeys: capability.sortableKeys } : {}),
+    ...(sortableKeys ? { sortableKeys } : {}),
     ...(capability?.maxPageSize !== undefined ? { maxPageSize: capability.maxPageSize } : {}),
   };
 }
@@ -132,7 +165,7 @@ export const unreachable = (source: string): Absent => ({ reason: "source-unreac
 export function fhirSource<TRow>(options: FhirSourceOptions<TRow>): GridDataSource<TRow> & {
   lastMeta(): FhirPageMeta | null;
 } {
-  const capabilities = capabilitiesOf(options.capability);
+  const capabilities = capabilitiesOf(options.capability, options.sortParams);
   let meta: FhirPageMeta | null = null;
 
   const sortToken = (sort: readonly SortSpec[]): string | null => {
@@ -216,7 +249,18 @@ export function fhirSource<TRow>(options: FhirSourceOptions<TRow>): GridDataSour
 }
 
 /** Thrown when a filter cannot be compiled. Carries a reason, never a value. */
+/**
+ * Thrown when a query cannot be expressed as FHIR search.
+ *
+ * `gridErrorCode` is what carries the meaning across the row-model boundary.
+ * Without it the model reported `source-threw` and a developer could not tell
+ * an unsupported query from a network failure — which encourages generic retry
+ * logic against a query that will never work, or a silent fallback to client
+ * filtering, the approximation this adapter exists to prevent.
+ */
 export class FilterNotCompilable extends Error {
+  readonly gridErrorCode = "filter-not-compilable" as const;
+
   readonly code = "filter-not-compilable" as const;
   constructor(reason: string) {
     super(reason);
