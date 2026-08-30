@@ -14,7 +14,7 @@
  * silently ignores a `_sort` it does not support.
  */
 import {
-  createBlockRowModel, isLoadingRow, type GridDataSource,
+  createBlockRowModel, createRunway, isLoadingRow, type GridDataSource,
 } from "@oxygenui-design/grid-core";
 import { createGridRenderer, renderToString, hydrationNotes, type GridViewModel } from "@oxygenui-design/grid-dom";
 import { defineDataGrid, type OxDataGridElement } from "@oxygenui-design/grid-element";
@@ -280,54 +280,31 @@ export function mountFhir(refs: FhirRefs): void {
   });
 
   /**
-   * How far down the grid can be scrolled, in rows.
+   * The runway that makes a windowed model renderable.
    *
-   * A block model publishes only the window the viewport declared, while the
-   * DOM renderer takes its geometry from the length of the row list it is
-   * handed — so handing it the window makes a grid exactly one window tall,
-   * which cannot be scrolled and therefore never asks for the next page.
+   * The block model publishes only the window the viewport declared, and the
+   * renderer takes its geometry from the length of the row list it is handed —
+   * so handing it the window makes a grid one window tall, which cannot scroll
+   * and therefore never asks for the next page.
    *
-   * The application closes that gap, and this is what closing it looks like:
-   * a list as long as what has arrived plus one page of runway, with a typed
-   * LOADING row wherever nothing has arrived yet. Memory does not grow — the
-   * loading rows are two fields each and the real ones are still bounded by
-   * `maxBlocks`.
+   * This was thirty lines of hand-written clamping here, and it was wrong
+   * twice. It is `createRunway` now, with the two failure modes it exists to
+   * prevent written down beside it.
    */
-  let runway = PAGE_SIZE * 2;
-  /** The highest row index that has actually arrived. Only ever grows. */
-  let highWater = 0;
+  const runway = createRunway<FhirRow>({ pageSize: PAGE_SIZE });
 
   function paint(): void {
     const result = model.result();
-
-    // Resident rows land at their ABSOLUTE index; everything else is loading.
-    const byIndex = new Map(result.rows.map((row) => [row.index, row]));
-    // Monotonic. The model publishes only the declared window, so scrolling
-    // into rows that have not arrived would otherwise shrink the runway back
-    // under the viewport and strand the grid where it stands.
-    for (const row of result.rows) if (!isLoadingRow(row.row)) highWater = Math.max(highWater, row.index + 1);
-    // Grow the runway as real rows arrive, and stop at the total the moment a
-    // server condescends to give one.
-    runway = Math.max(runway, highWater + PAGE_SIZE);
-    if (result.total !== "unknown") runway = result.total;
-
-    const rows = Array.from({ length: runway }, (_, index) =>
-      byIndex.get(index) ?? {
-        id: `loading-${index}`,
-        row: { loading: true, index } as unknown as FhirRow,
-        index,
-      });
+    const rows = runway.absorb(result);
 
     r.render({
       columns: COLUMNS,
-      rows,
+      rows: rows as never,
       // "unknown", not a guess. The server did not say, so neither do we.
       total: result.total,
       sort: [], selection: [], focus: null,
     });
-    // Errors are part of the result, and this panel exists to show the awkward
-    // cases — so a refusal is rendered rather than left as rows that say
-    // "Loading…" forever, which is what a hang looks like.
+
     refs.calls.textContent = [
       ...client.calls.map((c) => `→ ${c}`),
       ...(result.errors.length > 0
@@ -363,23 +340,12 @@ export function mountFhir(refs: FhirRefs): void {
     const vp = refs.host.querySelector<HTMLElement>(".oxg-viewport");
     if (!vp) return;
     const first = Math.max(0, Math.floor(vp.scrollTop / ROW_H));
-    const last = first + Math.ceil((vp.clientHeight || 340) / ROW_H);
-    // CLAMPED TO THE RUNWAY, and this is the whole trick.
-    //
-    // The runway is one page past the last row that has arrived, so a range
-    // inside it can only ever need the NEXT block — which is exactly the one a
-    // cursor source can reach. Asking past it asks for a block whose cursor
-    // has not arrived, the source refuses, and the grid stalls one page short
-    // of where it was going with no way to recover. Measured before this
-    // clamp: paging stopped dead after a single page, on a viewport 289px tall
-    // and not on one 340px tall, which is as arbitrary as it sounds.
-    //
-    // The range is HALF-OPEN. Clamping both ends to the same index makes
-    // `end <= start`, and the model treats that as "nothing wanted" and loads
-    // nothing at all — which looks identical to a source that refused.
-    const start = Math.max(0, Math.min(first, runway - 1));
-    const end = Math.max(start + 1, Math.min(last, runway));
-    model.setRange(start, end);
+    const visible = Math.ceil((vp.clientHeight || 340) / ROW_H);
+    // The clamp lives in `createRunway` now — a range that reaches past the
+    // runway asks for a block whose cursor has not arrived, and the grid
+    // stalls one page short of where it was going.
+    const range = runway.rangeFor(first, visible);
+    model.setRange(range.start, range.end);
   }
   refs.host.addEventListener("scroll", declareRange, { capture: true, passive: true });
   // One block to start with, so the first paint is rows that exist rather than
@@ -399,7 +365,7 @@ export function mountFhir(refs: FhirRefs): void {
     // An offset server would serve this. This one pages by cursor, so the
     // model emits `cursor-jump-unsupported` instead of silently walking every
     // page in between — or, worse, leaving the rows saying "Loading…" forever.
-    const target = highWater + PAGE_SIZE * 6;
+    const target = runway.arrived + PAGE_SIZE * 6;
     model.setRange(target, target + 20);
     setTimeout(paint, 120);
   });
