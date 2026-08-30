@@ -93,6 +93,31 @@ accessibility-tree comparison runs against React and the custom element only.
 **That is a gap, stated so nobody mistakes the parity test's green tick for
 covering three adapters.**
 
+### Update, 30 August 2026 — the gap is closed
+
+`packages/grid-angular/src/parity.test.ts` mounts the directive and compares its
+tree with the framework-free renderer's, over seven models. The three obstacles
+above were real and each had an answer that did not need Angular's build in the
+test path:
+
+- **oxc cannot parse decorators.** It never sees one. The test imports the
+  BUILT package — which is what a consumer imports — and its own host component
+  applies `Component({...})` *by call* rather than by `@` syntax. A decorator is
+  a function; the call is identical and the file contains no decorator syntax.
+- **The output is partial-compiled.** `import "@angular/compiler"` links those
+  declarations at runtime, which is what a JIT consumer does anyway.
+- **`input()` and `effect()` need an injection context.** `TestBed` supplies one.
+  The directive is never instantiated directly.
+
+Cost: three devDependencies on `grid-angular` (`@angular/common`,
+`@angular/platform-browser`, `@angular/compiler`), all already in the store as
+transitive deps of `@angular/core`, and none shipped.
+
+What this does NOT change: the reasoning above about a documentation site
+building a real Angular app still stands, and this comparison runs in jsdom, so
+it covers structure and not layout. **The estimate that it needed Angular's own
+build was wrong, and it was wrong in the direction of not trying hard enough.**
+
 ## Consequences
 
 **Good.** The claim can be made in public. Three adapters exist, the largest is

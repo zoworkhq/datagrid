@@ -297,16 +297,30 @@ four-second sort is worse than a clear error.
 
 ## 10. Still open
 
+Two of the five listed here were settled by ADRs and one by a measurement; they
+are kept below, struck through, because a list that only ever grows teaches
+people to stop reading it.
+
 - **The clinician reviewer.** Blocking wave 3 and the clinical safety copy.
+  `GridDoseCell` is not implemented and throws, and five shipped cells make no
+  clinical claim *by construction* — which is an argument, not a review.
 - **The behavioural-health weighting.** Four of fourteen recipes assume a
   behavioural-health buyer. Flagged in three documents without an answer. If the
   buyer is general digital health, the right shape is two BH recipes and two more
   in revenue-cycle — and that changes what wave 3 builds.
-- **Licence and support posture.** Needed before the repo goes public.
-- **The client-mode refusal constant.** Blocked on the wave 2 benchmark.
-- **Transposed layout** (flowsheet, MAR) as a `layout` prop versus a second
-  component. Recorded as *provisional*; decide at the end of wave 3 on evidence,
-  because getting it wrong is a public API break.
+- ~~**Licence and support posture.**~~ Settled: MIT throughout, no commercial
+  split until there is something built to split
+  ([0009](docs/decisions/0009-the-licence-is-mit-and-the-support-posture-is-stated.md)).
+- ~~**The client-mode refusal constant.**~~ Measured.
+  `DEFAULT_CLIENT_ROW_CEILING` is 100,000, and the device profiler records what
+  each engine actually reaches — chromium 50,000 · firefox 50,000 · webkit
+  100,000 · 10,000 at 4x throttle · 1,000 at 8x. Those numbers are from a
+  developer machine, not a ward workstation; that part is still open, and is
+  hardware rather than a decision.
+- ~~**Transposed layout**~~ Settled: a second component, `GridFlowsheet`,
+  sharing `grid-core` and the cell contract with its own column-major geometry
+  ([0010](docs/decisions/0010-what-wave-six-is-not.md)). Adding a component
+  later is additive; removing a `layout` prop is not.
 
 ---
 

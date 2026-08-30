@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json && node scripts/flatten.mjs",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "size": "size-limit"
   },
   "oxygen": {
@@ -46,6 +46,9 @@
   "devDependencies": {
     "@angular/core": "22.1.4",
     "ng-packagr": "22.0.1",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "@angular/common": "22.1.4",
+    "@angular/platform-browser": "22.1.4",
+    "@angular/compiler": "22.1.4"
   }
 }

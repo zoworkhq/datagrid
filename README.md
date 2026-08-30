@@ -192,20 +192,27 @@ need a decision.
 
 **Built.** Signals engine · framework-free renderer with node recycling and
 scroll anchoring · virtualisation geometry with Fenwick-tree offsets,
-property-tested at 40,000 rows · row models with cancellation and an explained
-refusal · grouping, trees, and aggregation that refuses incompatible units ·
+property-tested at 40,000 rows · column virtualisation, frozen columns, and
+drag-to-resize and drag-to-reorder · five row models with cancellation and an
+explained refusal, and `createRunway` so a windowed one is renderable ·
+grouping, trees, and aggregation that refuses incompatible units ·
 position-stable live updates with an arrivals queue · coverage, the absence
-taxonomy and disclosure types · serialisable views with a precedence chain ·
-selection algebra with drift detection · bulk review · CSV, XLSX and the print
-sheet · the FHIR source · SSR with adoption.
+taxonomy and disclosure types · eighteen clinical cell hosts · serialisable
+views with a precedence chain · selection algebra with drift detection · bulk
+review · CSV, XLSX and the print sheet · the FHIR source · SSR with adoption ·
+four adapters, all three mountable ones compared against the renderer's own
+accessibility tree · a thirteen-panel playground and the codemods it runs.
 
-**Gated in CI.** Types · 430 tests · 15 layer rules · per-package size budgets ·
-structural axe · a memory-leak gate over 200 mount/unmount cycles · engine and
-browser performance harnesses.
+**Gated in CI.** Types · 956 tests · 15 layer rules · per-package size budgets ·
+a composed-bundle budget · structural axe · a memory-leak gate over 200
+mount/unmount cycles · engine and browser performance harnesses · the
+playground's typecheck and its real-browser smoke test, which is the only place
+several classes of defect are visible at all.
 
-**Not built.** The clinical cell catalogue, sort-provenance copy and the
-disclosure policy — all held on a clinician reviewer. The Angular and Vue
-adapters. Docs site, playground, codemods. Everything in wave 6.
+**Not built.** `GridDoseCell`, the sort-provenance copy and the disclosure
+policy — all held on a clinician reviewer. A documentation site. Everything in
+wave 6. A Vue package is declined rather than pending
+([0010](docs/decisions/0010-what-wave-six-is-not.md)).
 
 **Decided, and recorded.** MIT throughout, with no commercial split until
 there is something built to split ([0009](docs/decisions/0009-the-licence-is-mit-and-the-support-posture-is-stated.md)).
@@ -216,10 +223,10 @@ provenance and refusal and not the model ([0010](docs/decisions/0010-what-wave-s
 **Still open, and named rather than glossed.** The clinical reviewer, which is
 the one thing here nobody can decide their way out of — `GridDoseCell` is not
 built, and five shipped cells make no clinical claim *by construction*, which is
-an argument rather than a review. `grid-angular` is not in the parity harness
-([why](docs/decisions/0011-framework-agnosticism-holds.md)). And both
-performance ratchets self-skip until a linux baseline is recorded on a runner,
-so those two CI steps measure and print rather than gate.
+an argument rather than a review. Both performance ratchets self-skip until a linux baseline is recorded on a
+runner, so those two CI steps measure and print rather than gate — a test
+asserts that the workflow keeps saying so, and fails when a linux baseline
+appears.
 
 Read [`HANDOVER.md`](HANDOVER.md) for the full context, and
 [`docs/decisions/`](docs/decisions/) for the eleven records that gate the code.

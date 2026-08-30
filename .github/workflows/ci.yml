@@ -79,6 +79,28 @@ jobs:
       - name: performance (browser)
         run: pnpm exec playwright install --with-deps chromium && pnpm bench:browser:check
 
+      # 7. The playground, which is the only place several defects are visible
+      #    at all. `pnpm gate` has run these locally since they were written and
+      #    CI never did — so every defect this harness exists to catch could
+      #    merge. Among them, all found by this file: virtualisation silently
+      #    dead from a CSS rule in the host page; a hidden grid growing to
+      #    27,628 nodes because ResizeObserver reports 0 for every row; an
+      #    adapter whose wrapper made the grid unbounded; a shortcut advertised
+      #    in the keymap and wired to nothing.
+      #
+      #    jsdom cannot see any of them. It has no layout, so the measurements
+      #    that produce these bugs are all zero there.
+      - name: playground types
+        run: pnpm typecheck:playground
+
+      - name: playground (real browser)
+        run: pnpm smoke:playground
+
+      # 8. The composed bundle. Per-package budgets pass while the thing an
+      #    application actually ships — every package together — is unmeasured.
+      - name: composed size
+        run: pnpm size:composed
+
   # ── Declared, not yet wired ────────────────────────────────────────────────
   #
   # accessibility  PARTIAL. Structural axe runs in jsdom on every commit. What
