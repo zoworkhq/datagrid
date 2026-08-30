@@ -197,4 +197,34 @@ describe("confirmation", () => {
       expect(JSON.stringify(r.error)).not.toContain("Lindqvist");
     }
   });
+
+  /**
+   * A refusal has to say what KIND of refusal it is.
+   *
+   * Both of these carried `disclosure-refused` and neither is one: nothing was
+   * withheld from anybody. The set drifted, or the action reaches rows nobody
+   * has seen. In a setting where disclosure refusals get reviewed, a log where
+   * every stale bulk confirm looks like a withheld record is a log nobody can
+   * audit — and it was never asserted either way, which is why it survived.
+   */
+  it("codes a bulk refusal as a bulk refusal, not as a disclosure", () => {
+    const drifted = confirmReview(review(), { context: ctx({ loadedIds: ["a", "c", "d"] }) });
+    expect(drifted.ok).toBe(false);
+    if (!drifted.ok) {
+      expect(drifted.error.code).toBe("bulk-refused");
+      expect(drifted.reason).toMatch(/changed since it was reviewed/);
+    }
+
+    const unnamed = confirmReview(openReview({
+      selection: selectMatching(null),
+      context: ctx({ loadedIds: ["a", "b"], matchingTotal: "unknown" }),
+      rowsById: (id) => ({ id: String(id), name: String(id) }),
+      takenAt: "2026-08-30T09:00:00Z",
+    }), { context: ctx({ loadedIds: ["a", "b"], matchingTotal: "unknown" }) });
+    expect(unnamed.ok).toBe(false);
+    if (!unnamed.ok) {
+      expect(unnamed.error.code).toBe("bulk-refused");
+      expect(unnamed.reason).toMatch(/never shown/);
+    }
+  });
 });

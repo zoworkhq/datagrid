@@ -31,6 +31,15 @@ export type GridErrorCode =
    * withheld one is a log nobody can audit.
    */
   | "not-editable"
+  /**
+   * A bulk action that could not be confirmed as reviewed.
+   *
+   * The set drifted since it was shown, or it reaches rows nobody has seen.
+   * Neither is a disclosure refusal — nothing was withheld from anyone — and
+   * they shared that code until `not-editable` was split out and the same
+   * argument obviously applied here. The `reason` on the result says which.
+   */
+  | "bulk-refused"
   | "client-mode-refused"
   /**
    * A block was asked for that a cursor-paged source cannot reach.

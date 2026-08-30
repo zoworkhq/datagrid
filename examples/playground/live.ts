@@ -39,13 +39,6 @@ export interface LiveOptions {
   readonly repaint: () => void;
   /** Row ids in view order, for `select/range` and `select/all`. */
   readonly rowIds: () => readonly RowId[];
-  /**
-   * Actions the panel handles itself.
-   *
-   * Return `true` to say "handled, and I have repainted" — sorting is the usual
-   * one, because the reducer records the sort and does not reorder the rows.
-   */
-  readonly handle?: (action: GridAction, state: GridState) => boolean;
 }
 
 export function liveState(options: LiveOptions): Live {
@@ -55,7 +48,6 @@ export function liveState(options: LiveOptions): Live {
     onAction(action) {
       const before = state;
       state = reduce(state, action, { rowIds: options.rowIds() });
-      if (options.handle?.(action, state) === true) return;
       if (state !== before) options.repaint();
     },
     get focus() {

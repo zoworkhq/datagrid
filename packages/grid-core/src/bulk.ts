@@ -110,7 +110,7 @@ export function confirmReview<TRow>(
       ok: false,
       reason: `The set changed since it was reviewed at ${review.takenAt}: ${describeDrift(drift)}.`,
       drift,
-      error: gridError({ code: "disclosure-refused", phase: "reduce" }),
+      error: gridError({ code: "bulk-refused", phase: "reduce" }),
     };
   }
 
@@ -121,7 +121,7 @@ export function confirmReview<TRow>(
     return {
       ok: false,
       reason: `This would act on ${many} rows that were never shown. Load them, narrow the selection, or confirm explicitly.`,
-      error: gridError({ code: "disclosure-refused", phase: "reduce" }),
+      error: gridError({ code: "bulk-refused", phase: "reduce" }),
     };
   }
 

@@ -43,25 +43,57 @@ export interface WorkingRefs {
 
 export function mountWorking(refs: WorkingRefs): void {
   let inspector = inspect(rows[0]?.id ?? "w1");
-  // Focus and selection are held here so the demo can PROVE inspecting does not
-  // move them — the library cannot touch them, by signature.
+  /**
+   * Which row the editor is aimed at.
+   *
+   * F2 emits `edit/begin` naming the cell, and the HOST decides what an editor
+   * is — here, the select beside the grid. The button used to be hard-wired to
+   * row 0, which meant the binding had nowhere meaningful to land.
+   */
+  let editTarget = rows[0]?.id ?? "w1";
+  // Focus and selection are held HERE, by the application, which is the claim:
+  // `inspect()` takes no focus and returns none, so opening the inspector
+  // cannot move either of them. Focus still follows the user — it was pinned
+  // to one cell before, which made the claim by making the panel unusable.
   const selection = ["w2"];
-  const focus = { rowId: "w3", columnKey: "name" };
+  let focus = { rowId: "w3", columnKey: "name" };
 
-  const render = (): void => {
-    refs.host.textContent = "";
-    const r = createGridRenderer<Row>(refs.host, {
+  // Built ONCE. Rebuilding on every render took the focused node with it, so a
+  // click landed focus and the render it caused immediately dropped it — which
+  // is why F2 always reported the same cell however you clicked.
+  const grid = createGridRenderer<Row>(refs.host, {
       label: "Working set",
       rowHeight: 40,
       onAction: (a) => {
         if (a.type === "focus/cell") {
+          focus = { rowId: a.rowId, columnKey: a.columnKey };
           inspector = inspect(a.rowId);
-          renderPanel();
+          render();
+        }
+        if (a.type === "edit/begin") {
+          // The grid says WHICH cell and stops there. Opening an editor, and
+          // deciding what one is, belongs to the application — this one moves
+          // focus into its own control and says so.
+          if (a.columnKey !== "ward") {
+            refs.note.dataset["state"] = "fail";
+            refs.note.textContent =
+              `${a.columnKey} is not editable here — only Ward is. The grid emitted ` +
+              `edit/begin naming the column, and this panel refused it.`;
+            return;
+          }
+          editTarget = a.rowId;
+          const row = rows.find((r) => r.id === a.rowId);
+          if (row) refs.value.value = row.ward;
+          refs.value.focus();
+          refs.note.dataset["state"] = "";
+          refs.note.textContent = `Editing Ward for ${row?.name ?? a.rowId}. Commit, or press Escape.`;
         }
       },
       fallback: (row, key) => text(String((row as unknown as Record<string, string>)[key] ?? "")),
-    });
-    r.render({
+  });
+
+  const render = (): void => {
+    grid.render({
       columns: [
         { key: "name", header: "Patient", width: 190 },
         { key: "mrn", header: "MRN", width: 150 },
@@ -104,7 +136,7 @@ export function mountWorking(refs: WorkingRefs): void {
   };
 
   refs.commit.addEventListener("click", () => {
-    const target = rows[0];
+    const target = rows.find((r) => r.id === editTarget) ?? rows[0];
     if (!target) return;
 
     const session = updateDraft(
@@ -117,7 +149,7 @@ export function mountWorking(refs: WorkingRefs): void {
       // Writes to Cedar always fail, so the rollback is demonstrable rather
       // than described.
       write: async ({ value }) => {
-        if (value === "Cedar") throw new Error("409 conflict for A. Okafor");
+        if (value === "Cedar") throw new Error(`409 conflict for ${target.name}`);
         return { ...target, ward: String(value) };
       },
     }).then((out) => {

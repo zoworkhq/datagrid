@@ -559,6 +559,24 @@ try {
 
   await page.keyboard.press("Escape");
 
+  // F2 in the panel that actually edits. The roster refuses because it is
+  // read-only; this one opens the host's own editor, which is the half that
+  // proves `edit/begin` is useful rather than merely emitted.
+  await page.click('[role="tab"][data-tab="working"]');
+  await page.waitForTimeout(500);
+  await page.click('[data-panel="working"] .oxg-body [data-col-key="ward"]');
+  await page.keyboard.press("F2");
+  await page.waitForTimeout(250);
+  const editing = await page.evaluate(() => ({
+    note: document.getElementById("edit-note")?.textContent ?? "",
+    focused: document.activeElement?.id ?? "",
+  }));
+  check(/Editing Ward for/.test(editing.note), "F2 opens the host's editor", editing.note.slice(0, 60));
+  check(editing.focused === "edit-value", "…and moves focus into it", `focus on #${editing.focused}`);
+
+  await page.click('[role="tab"][data-tab="roster"]');
+  await page.waitForTimeout(300);
+
   // ── dragging a column, with a real pointer ────────────────────────────────
   //
   // `column/resize` and `column/reorder` were typed actions with a reducer case
