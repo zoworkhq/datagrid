@@ -169,6 +169,19 @@ window.harness = {
   },
 
   heapMb() {
+    // ── COLLECT FIRST ────────────────────────────────────────────────────
+    //
+    // `usedJSHeapSize` counts what has not been collected YET, not what is
+    // retained. Read without a collection it measures how much garbage the
+    // preceding steps happened to leave, which moves with every change to the
+    // steps rather than with what the grid holds.
+    //
+    // The browser is already launched with `--js-flags=--expose-gc` for this,
+    // and the flag was going unused. Two collections because the first can
+    // leave objects that only become unreachable once finalisers have run.
+    const collect = (globalThis as { gc?: () => void }).gc;
+    collect?.();
+    collect?.();
     const memory = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
     return memory ? memory.usedJSHeapSize / 1024 / 1024 : null;
   },

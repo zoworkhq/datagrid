@@ -112,7 +112,11 @@ for (const n of SIZES) {
 await browser.close();
 
 const report = {
-  note: "Chromium, CPU-throttled. NOT a ward workstation — see the header of this file.",
+  note:
+    "Chromium, CPU-throttled. NOT a ward workstation — see the header of this file. " +
+    "heapMb is read AFTER a forced collection: `usedJSHeapSize` alone counts what has not " +
+    "been collected yet, not what is retained, so it moved with every change to the steps " +
+    "before it rather than with what the grid holds.",
   cpuThrottle: CPU_THROTTLE,
   platform: `${process.platform}-${process.arch}`,
   results,
