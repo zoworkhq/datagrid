@@ -14,6 +14,7 @@
  */
 import type { FilterNode } from "./filter.js";
 import type { SortSpec } from "./query.js";
+import { COLUMN_WIDTH, PAGE_SIZE, integerIn } from "./limits.js";
 import type { GridState } from "./state.js";
 
 export const VIEW_VERSION = 1 as const;
@@ -102,7 +103,89 @@ export function parseView(input: string | unknown): ViewParse {
   if (typeof v["label"] !== "string") return { ok: false, reason: "missing label" };
   if (!isScope(v["scope"])) return { ok: false, reason: `unknown scope ${String(v["scope"])}` };
 
+  // ── AND THE DOCUMENT, NOT JUST THE ENVELOPE ─────────────────────────────
+  //
+  // This used to validate the four fields above and then cast the rest. A view
+  // arriving from storage, a URL, or another product could therefore carry
+  // `pageSize: 0`, `width: -2`, a duplicate column or a sort direction of
+  // "sideways", and every one of them passed the boundary that says it refuses
+  // rather than guesses. They then reached offset arithmetic, geometry and CSS.
+  const body = validateBody(v);
+  if (body) return { ok: false, reason: body };
+
   return { ok: true, view: raw as GridView };
+}
+
+/** The first problem in a view's body, or `null`. */
+function validateBody(v: Record<string, unknown>): string | null {
+  if (v["pageSize"] !== undefined && integerIn(v["pageSize"], PAGE_SIZE) === null) {
+    return `page size ${String(v["pageSize"])} is not between ${PAGE_SIZE.min} and ${PAGE_SIZE.max}`;
+  }
+
+  if (v["columns"] !== undefined) {
+    if (!Array.isArray(v["columns"])) return "columns is not an array";
+    const seen = new Set<string>();
+    for (const [i, raw] of (v["columns"] as unknown[]).entries()) {
+      if (raw === null || typeof raw !== "object") return `column ${i} is not an object`;
+      const c = raw as Record<string, unknown>;
+      if (typeof c["key"] !== "string" || c["key"] === "") return `column ${i} has no key`;
+      if (seen.has(c["key"])) return `column "${c["key"]}" appears twice`;
+      seen.add(c["key"]);
+      if (c["hidden"] !== undefined && typeof c["hidden"] !== "boolean") {
+        return `column "${c["key"]}" has a non-boolean hidden`;
+      }
+      if (c["pinned"] !== undefined && c["pinned"] !== "start" && c["pinned"] !== "end") {
+        return `column "${c["key"]}" is pinned to ${String(c["pinned"])}`;
+      }
+      if (c["width"] !== undefined && integerIn(c["width"], COLUMN_WIDTH) === null) {
+        return `column "${c["key"]}" has width ${String(c["width"])}, outside ${COLUMN_WIDTH.min}–${COLUMN_WIDTH.max}`;
+      }
+    }
+  }
+
+  if (v["sort"] !== undefined) {
+    if (!Array.isArray(v["sort"])) return "sort is not an array";
+    for (const [i, raw] of (v["sort"] as unknown[]).entries()) {
+      if (raw === null || typeof raw !== "object") return `sort ${i} is not an object`;
+      const spec = raw as Record<string, unknown>;
+      if (typeof spec["key"] !== "string" || spec["key"] === "") return `sort ${i} has no key`;
+      if (spec["direction"] !== "asc" && spec["direction"] !== "desc") {
+        return `sort on "${String(spec["key"])}" has direction ${String(spec["direction"])}`;
+      }
+    }
+  }
+
+  if (v["filter"] !== undefined && v["filter"] !== null) {
+    const problem = validateFilter(v["filter"], "filter");
+    if (problem) return problem;
+  }
+
+  return null;
+}
+
+/** Filters nest, so this does too. Depth-limited: a cycle in JSON is a hostile input. */
+function validateFilter(node: unknown, path: string, depth = 0): string | null {
+  if (depth > 32) return `${path} nests deeper than 32 levels`;
+  if (node === null || typeof node !== "object") return `${path} is not a filter`;
+  const n = node as Record<string, unknown>;
+  const kind = n["kind"];
+
+  if (kind === "and" || kind === "or") {
+    if (!Array.isArray(n["children"])) return `${path} has no children`;
+    for (const [i, child] of (n["children"] as unknown[]).entries()) {
+      const problem = validateFilter(child, `${path}.children[${i}]`, depth + 1);
+      if (problem) return problem;
+    }
+    return null;
+  }
+  if (kind === "not") return validateFilter(n["child"], `${path}.child`, depth + 1);
+
+  if (kind !== "text" && kind !== "number" && kind !== "date" && kind !== "enum") {
+    return `${path} has unknown kind ${String(kind)}`;
+  }
+  if (typeof n["key"] !== "string" || n["key"] === "") return `${path} has no key`;
+  if (typeof n["op"] !== "string") return `${path} has no operator`;
+  return null;
 }
 
 /**

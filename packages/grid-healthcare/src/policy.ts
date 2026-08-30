@@ -24,7 +24,9 @@
  * @see ../../../docs/decisions/0008-what-a-cell-may-decide.md
  */
 import { gridError, type GridError, type RowId } from "@oxygenui-design/grid-core";
-import type { DisclosureEvent, DisclosureKind, DisclosurePolicy, MaskReason, RestrictReason } from "./disclosure.js";
+import type {
+  DisclosureEvent, DisclosureKind, DisclosureOutcome, DisclosurePolicy, MaskReason, RestrictReason,
+} from "./disclosure.js";
 
 export interface PolicyColumn {
   readonly key: string;
@@ -156,16 +158,40 @@ export async function requestBreakGlass(
     return { granted: false, reason: `"${req.reason}" is not a recognised reason` };
   }
 
-  const outcome = await options.request(req);
-  // Emitted whether or not it was granted: a refused attempt is exactly the
-  // event a reviewer wants to see.
-  options.onDisclosure?.({
-    kind: "inspect",
-    columnKeys: req.columnKey ? [req.columnKey] : [],
-    rowCount: 1,
-    at: req.requestedAt,
-  });
-  return outcome;
+  // ── FOUR OUTCOMES, NOT TWO ────────────────────────────────────────────────
+  //
+  // The event was emitted after the promise RESOLVED, so a request that failed
+  // in transit produced no event at all — even though an attempt was made, and
+  // an attempted break-glass is precisely the thing an audit pipeline exists to
+  // see. A reviewer could not distinguish "nobody asked" from "somebody asked
+  // and the network ate it".
+  //
+  // The attempt is now recorded whatever happens, and the outcome says which of
+  // the four it was. No free text and no PHI: `outcome` is a closed set, which
+  // is what makes an audit log groupable.
+  const emit = (outcome: DisclosureOutcome): void => {
+    options.onDisclosure?.({
+      kind: "inspect",
+      columnKeys: req.columnKey ? [req.columnKey] : [],
+      rowCount: 1,
+      at: req.requestedAt,
+      outcome,
+    });
+  };
+
+  let result: BreakGlassOutcome;
+  try {
+    result = await options.request(req);
+  } catch {
+    // The reason is deliberately dropped: a transport error's message can carry
+    // a URL, a token or a patient identifier, and none of those belong in an
+    // audit event. That it FAILED is the fact worth recording.
+    emit("failed");
+    return { granted: false, reason: "The break-glass request could not be delivered." };
+  }
+
+  emit(result.granted ? "granted" : "refused");
+  return result;
 }
 
 // ── disclosure events ───────────────────────────────────────────────────────

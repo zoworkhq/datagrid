@@ -136,13 +136,48 @@ export function assertPure<TValue>(
   samples: readonly TValue[],
 ): { readonly pure: boolean; readonly impure: readonly string[] } {
   const impure: string[] = [];
-  const probes: (keyof CellHost<TValue>)[] = ["read", "toExport", "toPrint", "maskState", "focusable"];
+
+  // ── ALL EIGHT, NOT FIVE ───────────────────────────────────────────────────
+  //
+  // The contract names eight obligations and this probed five, so `measure`,
+  // `truncate` and `compare` could read a clock, a random number or a mutable
+  // module-level cache and pass. `measure` decides a column's intrinsic width
+  // and `compare` decides row order — an impure one there is a grid that lays
+  // out or sorts differently on two renders of the same data, which is the
+  // hardest kind of bug to believe.
+  //
+  // `truncate` takes a second argument and `compare` takes two values, so they
+  // cannot share the one-argument probe; each gets a call shape that matches
+  // its signature.
+  const single: (keyof CellHost<TValue>)[] = ["read", "toExport", "toPrint", "maskState", "focusable", "measure"];
+
+  const twice = (probe: string, call: () => unknown): void => {
+    let a: string;
+    let b: string;
+    try {
+      a = JSON.stringify(call());
+      b = JSON.stringify(call());
+    } catch {
+      // A throwing obligation is not a purity finding — it is a different
+      // defect, and reporting it here would hide the one this looks for.
+      return;
+    }
+    if (a !== b && !impure.includes(probe)) impure.push(probe);
+  };
 
   for (const value of samples) {
-    for (const probe of probes) {
-      const a = JSON.stringify((host[probe] as (v: TValue) => unknown)(value));
-      const b = JSON.stringify((host[probe] as (v: TValue) => unknown)(value));
-      if (a !== b && !impure.includes(probe)) impure.push(probe);
+    for (const probe of single) {
+      twice(probe, () => (host[probe] as (v: TValue) => unknown)(value));
+    }
+    // A width the caller might plausibly have, and a very narrow one, because
+    // a truncation that is stable at 200px can still be unstable at 20.
+    for (const available of [200, 20]) {
+      twice("truncate", () => host.truncate(value, available));
+    }
+    // Against itself, and against every other sample: a comparator that is
+    // unstable only across DIFFERENT values passes a self-comparison.
+    for (const other of samples) {
+      twice("compare", () => host.compare(value, other));
     }
   }
   return { pure: impure.length === 0, impure };

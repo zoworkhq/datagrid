@@ -149,12 +149,87 @@ export interface PastePlan {
  * overwrote forty cells is the failure the spreadsheet metaphor invites, and
  * the point of gating it is that somebody sees the number first.
  */
+/**
+ * Parses TSV, including the quoting this file's own writer emits.
+ *
+ * ── WHY A STATE MACHINE AND NOT `split` ─────────────────────────────────────
+ *
+ * `field()` above quotes any value containing a tab, a carriage return, a
+ * newline or a quote, doubling embedded quotes — the spreadsheet convention.
+ * The parser then did `split("\n")` and `split("\t")`, which is the same code
+ * a naive CSV parser gets wrong, and it got it wrong in the same way: one
+ * clinical note containing a tab became two columns, and one containing a
+ * newline became two rows.
+ *
+ * So copy-then-paste did not round-trip through this package's OWN format. The
+ * plan then reported an overflow, and the overflow was the parser's fault.
+ *
+ * Nine lines of state machine, and the round trip is a property test.
+ */
+function parseTsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+
+  const endCell = (): void => {
+    row.push(cell);
+    cell = "";
+  };
+  const endRow = (): void => {
+    endCell();
+    rows.push(row);
+    row = [];
+  };
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i] as string;
+
+    if (quoted) {
+      if (c !== '"') {
+        cell += c;
+        continue;
+      }
+      // A doubled quote is a literal one; a lone quote closes the value.
+      if (text[i + 1] === '"') {
+        cell += '"';
+        i++;
+      } else {
+        quoted = false;
+      }
+      continue;
+    }
+
+    // A quote only OPENS a value at the start of one. A quote in the middle of
+    // an unquoted value is an ordinary character — 5" of tubing, say.
+    if (c === '"' && cell === "") {
+      quoted = true;
+      continue;
+    }
+    if (c === "\t") {
+      endCell();
+      continue;
+    }
+    if (c === "\n") {
+      endRow();
+      continue;
+    }
+    if (c === "\r") {
+      // CRLF is one break; a lone CR is too, which is what old Mac Excel emits.
+      if (text[i + 1] === "\n") i++;
+      endRow();
+      continue;
+    }
+    cell += c;
+  }
+
+  // A trailing newline ends the last row rather than starting an empty one.
+  if (cell !== "" || row.length > 0) endRow();
+  return rows;
+}
+
 export function planPaste(text: string, target: RangeShape): PastePlan {
-  const rows = text
-    .replace(/\r\n/g, "\n")
-    .split("\n")
-    .filter((l, i, all) => l !== "" || i < all.length - 1)
-    .map((line) => line.split("\t"));
+  const rows = parseTsv(text);
 
   const capacity = rangeSize(target);
   const incoming = rows.reduce((n, r) => n + r.length, 0);

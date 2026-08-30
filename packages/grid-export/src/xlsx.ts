@@ -20,7 +20,7 @@ import {
   type ExportRequest,
   type ExportResult,
 } from "./model.js";
-import { zip } from "./zip.js";
+import { zip , ZipTooLarge } from "./zip.js";
 
 /** Control characters XML 1.0 cannot represent at any escaping level. */
 const ILLEGAL_XML = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g;
@@ -54,6 +54,39 @@ function cell(ref: string, value: string | number): string {
   }
   // t="inlineStr" — a string cell. Never <f>, so this can never be a formula.
   return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEscape(String(value))}</t></is></c>`;
+}
+
+/**
+ * A worksheet name Excel will actually open.
+ *
+ * ── WHAT WAS WRONG WITH `slice(0, 31)` ──────────────────────────────────────
+ *
+ * The length cap was right and the rest was missing. Excel rejects a workbook
+ * whose sheet name contains any of `: \\ / ? * [ ]`, is blank, or is wrapped in
+ * apostrophes — so a perfectly legal application label like "Q1/Q2 [draft]"
+ * produced a file that would not open, with no error from this library at any
+ * point. XML-escaping does not help: the characters are legal XML and illegal
+ * to Excel.
+ *
+ * Substituted rather than refused, because a sheet name is a label and losing a
+ * slash is not a data loss worth failing an export over. The length cap is
+ * applied AFTER substitution, so replacing a character cannot push the name
+ * over 31 and back into invalidity.
+ */
+export function worksheetName(requested: string | undefined): string {
+  const cleaned = (requested ?? "")
+    // Excel's own forbidden set, and control characters with it.
+    .replace(/[:\\/?*[\]]/g, "-")
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .trim()
+    // A leading or trailing apostrophe makes Excel read the name as quoted.
+    .replace(/^'+|'+$/g, "")
+    .trim();
+
+  const capped = cleaned.slice(0, 31).trim();
+  // "History" is reserved by Excel, and a blank name is rejected outright.
+  return capped === "" || capped.toLowerCase() === "history" ? "Export" : capped;
 }
 
 export interface XlsxOptions {
@@ -100,9 +133,15 @@ export function toXlsx<TRow>(request: ExportRequest<TRow>, options: XlsxOptions 
     `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
     `<sheetData>${rows.join("")}</sheetData></worksheet>`;
 
-  const name = xmlEscape((options.sheetName ?? "Export").slice(0, 31));
+  const name = xmlEscape(worksheetName(options.sheetName));
 
-  const bytes = zip([
+  // A workbook past the classic archive limits is refused rather than written
+  // as a file no reader can open. `zip` throws with the reason; this turns it
+  // into the same `ExportResult` refusal every other limit produces, so a
+  // caller has one shape to handle.
+  let bytes: Uint8Array;
+  try {
+    bytes = zip([
     {
       name: "[Content_Types].xml",
       bytes: utf8(
@@ -144,6 +183,16 @@ export function toXlsx<TRow>(request: ExportRequest<TRow>, options: XlsxOptions 
     },
     { name: "xl/worksheets/sheet1.xml", bytes: utf8(sheet) },
   ]);
+  } catch (thrown) {
+    return {
+      ok: false,
+      refused: true,
+      reason:
+        thrown instanceof ZipTooLarge
+          ? `The workbook is too large to write. ${thrown.detail}`
+          : "The workbook could not be written.",
+    };
+  }
 
   return {
     ok: true,

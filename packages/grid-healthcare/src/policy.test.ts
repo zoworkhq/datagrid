@@ -80,14 +80,71 @@ describe("break-glass", () => {
     expect(out).toEqual({ granted: false, reason: "not on the care team" });
   });
 
-  it("emits the attempt even when it was refused", async () => {
+  it("emits the attempt even when it was refused, and says it was refused", async () => {
     // A refused attempt is exactly the event a reviewer wants to see.
     const events: DisclosureEvent[] = [];
     await requestBreakGlass(req, {
       request: async () => ({ granted: false, reason: "no" }),
       onDisclosure: (e) => events.push(e),
     });
-    expect(events).toEqual([{ kind: "inspect", columnKeys: ["notes"], rowCount: 1, at: "09:12" }]);
+    expect(events).toEqual([
+      { kind: "inspect", columnKeys: ["notes"], rowCount: 1, at: "09:12", outcome: "refused" },
+    ]);
+  });
+
+  it("says granted when it was granted", async () => {
+    const events: DisclosureEvent[] = [];
+    await requestBreakGlass(req, {
+      request: async () => ({ granted: true }),
+      onDisclosure: (e) => events.push(e),
+    });
+    expect(events[0]?.outcome).toBe("granted");
+  });
+
+  /**
+   * The event was emitted after the promise RESOLVED, so a request that failed
+   * in transit produced no event at all — even though an attempt was made. A
+   * reviewer could not tell "nobody asked" from "somebody asked and the network
+   * ate it", which is the difference between a quiet day and an incident.
+   */
+  it("emits an attempt that failed in transit, which produced nothing at all before", async () => {
+    const events: DisclosureEvent[] = [];
+    const out = await requestBreakGlass(req, {
+      request: async () => {
+        throw new Error("ECONNREFUSED https://audit.internal/break-glass?mrn=100042");
+      },
+      onDisclosure: (e) => events.push(e),
+    });
+
+    expect(events).toHaveLength(1);
+    expect(events[0]?.outcome).toBe("failed");
+    expect(out.granted).toBe(false);
+  });
+
+  it("keeps the transport's own message out of the event and the result", async () => {
+    // A transport error can carry a URL, a token or a patient identifier, and
+    // none of those belong in an audit event. That it FAILED is the fact.
+    const events: DisclosureEvent[] = [];
+    const out = await requestBreakGlass(req, {
+      request: async () => {
+        throw new Error("ECONNREFUSED https://audit.internal/break-glass?mrn=100042");
+      },
+      onDisclosure: (e) => events.push(e),
+    });
+
+    const everything = JSON.stringify({ events, out });
+    expect(everything).not.toContain("100042");
+    expect(everything).not.toContain("audit.internal");
+    expect(everything).not.toContain("ECONNREFUSED");
+  });
+
+  it("does not emit at all when the reason was never valid, because nothing was asked", () => {
+    const events: DisclosureEvent[] = [];
+    void requestBreakGlass(
+      { ...req, reason: "curiosity" as never },
+      { request: async () => ({ granted: true }), onDisclosure: (e) => events.push(e) },
+    );
+    expect(events).toEqual([]);
   });
 });
 

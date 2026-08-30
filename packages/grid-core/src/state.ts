@@ -8,6 +8,7 @@
  */
 import type { GridAction, RowId } from "./actions.js";
 import type { FilterNode } from "./filter.js";
+import { COLUMN_WIDTH, PAGE_SIZE, clampInteger, integerIn } from "./limits.js";
 import type { SortSpec } from "./query.js";
 import { toggleSort } from "./sort.js";
 
@@ -45,18 +46,46 @@ export interface ReduceContext {
   readonly requiredColumns?: readonly string[];
 }
 
+/**
+ * A starting state, with its numbers normalised.
+ *
+ * ── WHY THE OVERRIDES ARE NOT TAKEN ON TRUST ────────────────────────────────
+ *
+ * This used to spread them without looking. A state restored from storage, a
+ * URL or another product could carry `pageSize: 0` — which makes a paging loop
+ * that never terminates — or `page: NaN`, which becomes a NaN offset and either
+ * a 400 from the server or a parameter it quietly ignores.
+ *
+ * CLAMPED here rather than refused, deliberately, and it is the one place in
+ * the library that clamps. `initialState` has no way to report a problem: it
+ * returns a state, not a result. `parseView` is the boundary that refuses,
+ * because it CAN — it hands back `{ ok: false, reason }`. Two different jobs,
+ * and conflating them is how a corrupt file becomes a silently moved layout.
+ */
 export function initialState(overrides: Partial<GridState> = {}): GridState {
-  return {
+  const merged = {
     sort: [],
     filter: null,
     selection: [],
     focus: null,
-    pageSize: 50,
+    pageSize: PAGE_SIZE.fallback,
     cursor: null,
     page: 0,
     hidden: [],
     widths: {},
     ...overrides,
+  };
+
+  return {
+    ...merged,
+    pageSize: clampInteger(merged.pageSize, PAGE_SIZE, PAGE_SIZE.fallback),
+    page: clampInteger(merged.page, { min: 0, max: Number.MAX_SAFE_INTEGER }, 0),
+    // A width outside the range is dropped rather than clamped: an unusable
+    // number is not evidence of an intent worth approximating, and the column
+    // falls back to its declared width, which is a defined answer.
+    widths: Object.fromEntries(
+      Object.entries(merged.widths).filter(([, w]) => integerIn(w, COLUMN_WIDTH) !== null),
+    ),
   };
 }
 

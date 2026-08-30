@@ -30,16 +30,68 @@ export interface ZipEntry {
   readonly bytes: Uint8Array;
 }
 
+/**
+ * The limits of a classic (non-ZIP64) archive.
+ *
+ * ── WHY THESE ARE CHECKED RATHER THAN ASSUMED ───────────────────────────────
+ *
+ * The central directory stores the entry count in 16 bits and every size and
+ * offset in 32. Past either, the fields silently WRAP: `setUint16(8, 70000)`
+ * writes 4464 and the writer carries on producing a file that no reader can
+ * open, with nothing anywhere saying so.
+ *
+ * A wide free-text export over a large set reaches 4 GB more easily than it
+ * sounds — this writer stores entries uncompressed, so the archive is the sum
+ * of the sheet XML, and XLSX inline strings are verbose.
+ *
+ * ZIP64 would raise the ceiling and is a different piece of work. Refusing at
+ * the boundary is the honest interim: a caller gets a reason it can act on
+ * (narrow the columns, page the export) instead of a corrupt download.
+ */
+export const ZIP_LIMITS = {
+  /** 16-bit entry count in the end-of-central-directory record. */
+  entries: 0xffff,
+  /** 32-bit sizes and offsets throughout the central directory. */
+  bytes: 0xffffffff,
+} as const;
+
+export class ZipTooLarge extends Error {
+  readonly gridErrorCode = "export-refused" as const;
+  constructor(readonly detail: string) {
+    super(detail);
+    this.name = "ZipTooLarge";
+  }
+}
+
 export function zip(entries: readonly ZipEntry[]): Uint8Array {
+  if (entries.length > ZIP_LIMITS.entries) {
+    throw new ZipTooLarge(
+      `${entries.length.toLocaleString()} entries exceeds the ${ZIP_LIMITS.entries.toLocaleString()} a ` +
+        `classic archive can record; the count is a 16-bit field and would wrap silently.`,
+    );
+  }
   const encoder = new TextEncoder();
   const locals: Uint8Array[] = [];
   const centrals: Uint8Array[] = [];
   let offset = 0;
 
   for (const entry of entries) {
+    const size = entry.bytes.length;
+
+    // BEFORE the checksum, which walks every byte. Refusing after hashing four
+    // gigabytes is the same answer arrived at expensively — and the test that
+    // covers this timed out until the order was right.
+    //
+    // Checked per entry AND against the running offset below: either can pass
+    // on its own while the archive as a whole does not fit.
+    if (size > ZIP_LIMITS.bytes) {
+      throw new ZipTooLarge(
+        `"${entry.name}" is ${size.toLocaleString()} bytes, past the 4 GB a classic archive can record.`,
+      );
+    }
+
     const name = encoder.encode(entry.name);
     const crc = crc32(entry.bytes);
-    const size = entry.bytes.length;
 
     const local = new Uint8Array(30 + name.length);
     const lv = new DataView(local.buffer);
@@ -73,6 +125,13 @@ export function zip(entries: readonly ZipEntry[]): Uint8Array {
   }
 
   const centralSize = centrals.reduce((n, c) => n + c.length, 0);
+  if (offset > ZIP_LIMITS.bytes || centralSize > ZIP_LIMITS.bytes) {
+    throw new ZipTooLarge(
+      `the archive is ${(offset + centralSize).toLocaleString()} bytes, past the 4 GB a classic ` +
+        `archive can address; its offsets are 32-bit fields and would wrap silently.`,
+    );
+  }
+
   const end = new Uint8Array(22);
   const ev = new DataView(end.buffer);
   ev.setUint32(0, 0x06054b50, true); // end of central directory
