@@ -24,8 +24,10 @@
     ]
   },
   "include": [
-    "examples/playground/*.ts",
+    "examples/playground/*.mjs",
     "examples/playground/*.mts",
-    "examples/playground/*.mjs"
+    "examples/playground/*.ts",
+    "examples/site/*.mjs",
+    "examples/site/*.ts"
   ]
 }

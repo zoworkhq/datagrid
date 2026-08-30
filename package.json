@@ -31,7 +31,9 @@
     "profile:all": "pnpm build && node bench/device-profile.mjs --browser all",
     "profile:check": "pnpm build && node bench/device-profile.mjs --browser all --check",
     "badges": "node scripts/badges.mjs",
-    "badges:check": "node scripts/badges.mjs --check"
+    "badges:check": "node scripts/badges.mjs --check",
+    "site": "pnpm build && node examples/site/build.mjs --watch",
+    "site:build": "pnpm build && node examples/site/build.mjs"
   },
   "devDependencies": {
     "@angular/core": "22.1.4",
