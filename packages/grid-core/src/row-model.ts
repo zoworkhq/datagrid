@@ -15,6 +15,10 @@
  */
 import { computed, signal, type ReadSignal } from "@oxygenui-design/grid-signals";
 import { gridError, sanitiseError, type GridError } from "./errors.js";
+import { duplicateIdError, findDuplicateIds, type DuplicateReport } from "./identity.js";
+
+/** Shared, so a clean result allocates no array at all. */
+const EMPTY_ERRORS: readonly GridError[] = [];
 import { evaluateFilter, type Accessor } from "./filter-eval.js";
 import type { GridDataSource, GridQuery, SortSpec, SourceCapabilities } from "./query.js";
 import { sortRows, type Comparator } from "./sort.js";
@@ -272,12 +276,33 @@ export function createClientRowModel<TRow>(options: ClientRowModelOptions<TRow>)
       id: options.rowKey(row), row, index,
     });
 
+    // Identity is the axis transactions, selection, disclosure and the
+    // renderer's node map are all addressed on. A duplicate redirects every one
+    // of them at whichever row registered last, silently.
+    //
+    // LAZY, and memoised, exactly like `rows` below. The check is O(n) in
+    // `rowKey` calls, and this model exists to let a caller read a window of
+    // thirty rows out of five thousand without paying for the other 4,970 —
+    // an eager check would have quietly taken that guarantee away. A caller
+    // that reads `errors` pays once; one that never does never pays.
+    let duplicates: DuplicateReport | null | undefined;
+    const duplicateErrors = (): readonly GridError[] => {
+      if (duplicates === undefined) duplicates = findDuplicateIds(view, options.rowKey);
+      return duplicates ? [duplicateIdError(duplicates)] : EMPTY_ERRORS;
+    };
+
     let materialised: readonly ModelRow<TRow>[] | null = null;
     return {
       length: view.length,
       total: view.length,
       loading: false,
-      errors: [],
+      // Reported, and the rows are still served: a grid that renders nothing
+      // because two ids collided is a worse failure than one that renders and
+      // says so. Refusing is the application's call, and it now has the fact
+      // it needs to make it.
+      get errors() {
+        return duplicateErrors();
+      },
 
       rowsIn(start, end) {
         const from = Math.max(0, Math.min(start, view.length));
@@ -406,7 +431,13 @@ export function createServerRowModel<TRow>(options: ServerRowModelOptions<TRow>)
         row,
         index: previous.length + i,
       }));
-      result.set(resultOf([...previous, ...appended], {
+      const merged = [...previous, ...appended];
+      // Across the WHOLE accumulated set, not just the page: paging is exactly
+      // where two sources' locally-unique ids meet, and a duplicate that spans
+      // two pages is the one a per-page check would miss.
+      const dupes = findDuplicateIds(merged, (r) => r.id);
+      if (dupes) errors.push(duplicateIdError(dupes));
+      result.set(resultOf(merged, {
         total: page.total, loading: false, errors,
       }));
     } catch (thrown) {

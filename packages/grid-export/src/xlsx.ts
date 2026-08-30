@@ -62,7 +62,7 @@ export interface XlsxOptions {
 }
 
 export function toXlsx<TRow>(request: ExportRequest<TRow>, options: XlsxOptions = {}): ExportResult {
-  const refusal = refuseIfPolicyForbids(request as ExportRequest<unknown>);
+  const refusal = refuseIfPolicyForbids(request as ExportRequest<unknown>, "export");
   if (refusal) return refusal;
 
   const rows: string[] = [];

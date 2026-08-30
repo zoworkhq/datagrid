@@ -32,6 +32,7 @@
  */
 import { signal, type ReadSignal } from "@oxygenui-design/grid-signals";
 import { gridError, sanitiseError, type GridError } from "./errors.js";
+import { duplicateIdError, findDuplicateIds } from "./identity.js";
 import type { GridDataSource, GridQuery, SortSpec } from "./query.js";
 import type { GridState } from "./state.js";
 import { resultOf, type ModelRow, type RowModel, type RowModelResult } from "./row-model.js";
@@ -161,7 +162,14 @@ export function createBlockRowModel<TRow>(
           : { id: rowKey(row), row, index },
       );
     }
-    result.set(resultOf(rows, { total, loading: inflight.size > 0, errors }));
+    // The loading placeholders are namespaced by index and cannot collide, so
+    // this only ever fires for real rows the source handed over.
+    const dupes = findDuplicateIds(rows, (r) => r.id);
+    result.set(resultOf(rows, {
+      total,
+      loading: inflight.size > 0,
+      errors: dupes ? [...errors, duplicateIdError(dupes)] : errors,
+    }));
   }
 
   function queryFor(index: number): GridQuery | null {

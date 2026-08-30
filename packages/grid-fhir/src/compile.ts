@@ -120,18 +120,49 @@ export function compileFilter(node: FilterNode | null, map: SearchParamMap): Com
         // Nested ANDs flatten; that is still just a conjunction.
         const inner = compileFilter(child, map);
         if (!inner.ok) return inner;
-        Object.assign(params, inner.params);
+        mergeParams(params, inner.params);
         continue;
       }
       if (child.kind === "or" || child.kind === "not") return compileFilter(child, map);
       const compiled = compileComparison(child, map);
       if (!compiled.ok) return compiled;
-      Object.assign(params, compiled.params);
+      mergeParams(params, compiled.params);
     }
     return { ok: true, params };
   }
 
   return compileComparison(node, map);
+}
+
+/**
+ * Merges one child's parameters into the conjunction, keeping repeats.
+ *
+ * ── WHY THIS IS NOT `Object.assign` ─────────────────────────────────────────
+ *
+ * It was. Two children of an AND that compile to the SAME search parameter —
+ * `risk ge 5` and `risk le 10`, the ordinary way to express a bounded cohort —
+ * collided, and the second silently replaced the first. The request went out as
+ * `risk=le10`: a one-sided range, no error, no warning, and a registry or risk
+ * worklist quietly showing the wrong patients.
+ *
+ * FHIR expresses a repeat as the same parameter twice, and this file already
+ * had the convention for it — `param#2` — introduced for `between` and used
+ * nowhere else. `expandParams` strips the suffix at the transport boundary, so
+ * allocating one per repeat is all that is needed.
+ *
+ * The suffix is allocated against the BASE key, so a `between` (which arrives
+ * already carrying `#2`) merged beside a third condition on the same parameter
+ * lands at `#3` rather than overwriting.
+ */
+function mergeParams(into: Record<string, string>, from: Readonly<Record<string, string>>): void {
+  for (const [key, value] of Object.entries(from)) {
+    const base = key.replace(/#\d+$/, "");
+    let slot = base;
+    // `#1` is never written: the first occurrence is the bare parameter, which
+    // is what a server expects and what every existing caller already reads.
+    for (let n = 2; slot in into; n++) slot = `${base}#${n}`;
+    into[slot] = value;
+  }
 }
 
 /**

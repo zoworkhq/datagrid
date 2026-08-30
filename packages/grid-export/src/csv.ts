@@ -27,7 +27,7 @@ export interface CsvOptions {
 }
 
 export function toCsv<TRow>(request: ExportRequest<TRow>, options: CsvOptions = {}): ExportResult {
-  const refusal = refuseIfPolicyForbids(request as ExportRequest<unknown>);
+  const refusal = refuseIfPolicyForbids(request as ExportRequest<unknown>, "export");
   if (refusal) return refusal;
 
   const lines: string[] = [];

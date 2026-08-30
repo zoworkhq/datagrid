@@ -18,6 +18,7 @@ export * from "./column.js";
 export * from "./columns.js";
 export * from "./editing.js";
 export * from "./errors.js";
+export * from "./identity.js";
 export * from "./export-value.js";
 export * from "./filter.js";
 export * from "./geometry.js";

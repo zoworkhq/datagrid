@@ -146,7 +146,7 @@ export function toPrintSheet<TRow>(
   request: ExportRequest<TRow>,
   options: PrintOptions = {},
 ): ExportResult {
-  const refusal = refuseIfPolicyForbids(request as ExportRequest<unknown>);
+  const refusal = refuseIfPolicyForbids(request as ExportRequest<unknown>, "print");
   if (refusal) return refusal;
   // Print is a disclosure like any other. A policy that permits export but not
   // print is a real configuration, and `mayPrint` is checked by the caller

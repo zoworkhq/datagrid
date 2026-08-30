@@ -40,6 +40,19 @@ export type GridErrorCode =
    * argument obviously applied here. The `reason` on the result says which.
    */
   | "bulk-refused"
+  /**
+   * Two rows claimed the same identity.
+   *
+   * Row identity is the axis everything else is addressed on: transactions
+   * patch by id, selection holds ids, the renderer maps id to node, and
+   * row-level disclosure resolves by id. A duplicate silently redirects all of
+   * them at whichever row registered last — so this is not a tidiness
+   * complaint, it is "an action aimed at one patient reached another".
+   *
+   * It carries `rowIndex`, which is a POSITION. It deliberately does not carry
+   * the id: a row key is commonly an MRN.
+   */
+  | "duplicate-row-id"
   | "client-mode-refused"
   /**
    * A block was asked for that a cursor-paged source cannot reach.
