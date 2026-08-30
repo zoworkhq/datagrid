@@ -1003,6 +1003,45 @@ export function createGridRenderer<TRow>(
     }
   }
 
+  /**
+   * Scrolls a column fully into view, horizontally.
+   *
+   * The vertical equivalent has always existed; this did not, and the browser's
+   * own focus-scroll was doing the job — badly. It fires before the repaint, so
+   * the cell it scrolled to moves underneath it, and the result is a focused
+   * cell with its right edge clipped. Measured at 250 columns: arrowing to
+   * column 44 left it at x=1212 in a viewport ending at 1279, with 37px of a
+   * 104px cell outside.
+   *
+   * The frozen bands are subtracted at both ends, because a column scrolled
+   * flush to the viewport edge sits UNDER a pinned one — visible to the code
+   * and covered on the screen.
+   */
+  function scrollColumnIntoView(columnKey: string): void {
+    if (!current || options.span) return;
+    const columns = current.columns;
+    const index = columns.findIndex((c) => c.key === columnKey);
+    if (index < 0 || columns[index]?.pinned) return; // a pinned column is always in view
+
+    const bands = pinnedBands(columns);
+    const width = viewport.clientWidth || 0;
+    if (width === 0) return;
+
+    const left = colGeometry.offsetOf(index) - bands.startWidth;
+    const right = left + (columns[index]?.width ?? DEFAULT_COLUMN_WIDTH);
+    const band = Math.max(1, width - bands.startWidth - bands.endWidth);
+
+    const start = viewport.scrollLeft;
+    let next = start;
+    if (left < start) next = left;
+    else if (right > start + band) next = right - band;
+    if (next === start) return;
+
+    suppressScroll = true;
+    viewport.scrollLeft = Math.max(0, next);
+    suppressScroll = false;
+  }
+
   function focusCell(target: FocusTarget): void {
     const rowSel = `[data-row-id="${CSS.escape(target.rowId)}"]`;
     const colSel = `[data-col-key="${CSS.escape(target.columnKey)}"]`;
@@ -1022,6 +1061,11 @@ export function createGridRenderer<TRow>(
     } else {
       scrollIntoView(0);
     }
+    // Horizontally too. Both happen BEFORE the repaint, so the window is
+    // computed against where the viewport has ended up rather than where it
+    // was — otherwise the cell renders, the browser scrolls to it, and the
+    // next paint moves it again.
+    scrollColumnIntoView(next.columnKey);
     paint(current);
     focusCell(next);
     announce(current, next);

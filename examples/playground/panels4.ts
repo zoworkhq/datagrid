@@ -20,6 +20,7 @@ import {
 } from "@oxygenui-design/grid-core";
 import { planPaste, shapeOfRange } from "@oxygenui-design/grid-clipboard";
 import { createGridRenderer, type GridViewModel } from "@oxygenui-design/grid-dom";
+import { liveState } from "./live.js";
 import { nameFor, WARDS } from "./people.js";
 
 const text = (t: string) => ({ kind: "text" as const, text: t });
@@ -89,10 +90,12 @@ export function mountColumns(refs: ColumnRefs): void {
   const span = (row: WideRow, key: string): number =>
     row.id === "w3" && key === "name" ? 4 : 1;
 
+  const live = liveState({ repaint: () => paint(), rowIds: () => rows.map((x) => x.id) });
+
   const r = createGridRenderer<WideRow>(refs.host, {
     label: "Wide observation grid",
     rowHeight: 40,
-    onAction: () => {},
+    onAction: live.onAction,
     fallback: (row, key) =>
       text(
         key === "name" ? row.name
@@ -114,7 +117,10 @@ export function mountColumns(refs: ColumnRefs): void {
       // Two pinned rows: the ward's sickest, kept in view. `partitionPinned`
       // runs inside the renderer; this is the request.
       ...(refs.pinFirst.checked ? { pinned: { top: new Set(["w0", "w1"]) } } : {}),
-      total: rows.length, sort: [], selection: [], focus: null,
+      total: rows.length,
+      sort: live.sort,
+      selection: live.selection,
+      focus: live.focus,
     };
   }
 
@@ -128,7 +134,7 @@ export function mountColumns(refs: ColumnRefs): void {
         spanning = createGridRenderer<WideRow>(holder, {
           label: "Wide observation grid, with a spanned row",
           rowHeight: 40, span,
-          onAction: () => {},
+          onAction: live.onAction,
           fallback: (row, key) =>
             text(
               key === "name" ? `${row.name} — admitted overnight, no observations recorded`

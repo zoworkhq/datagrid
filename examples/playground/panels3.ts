@@ -16,13 +16,14 @@ import {
   createGridWorker, createServerRowModel, createSortIndex, buildSortKeys, initialState,
   isLoadingRow, type StoredColumn,
 } from "@oxygenui-design/grid-core";
-import { createGridRenderer, type GridViewModel } from "@oxygenui-design/grid-dom";
+import { createGridRenderer } from "@oxygenui-design/grid-dom";
 import {
   aiSummaryCell, allergyCell, appointmentCell, assessmentCell, carePlanCell, careTeamCell,
   chipOverflowCell, clinicalAlertCell, codedTermCell, documentationCell, eligibilityCell,
   labResultCell, ledgerCell, maskedCell, medicationCell, resolutionCell, riskScoreCell,
   vitalsTrendCell, type Absent,
 } from "@oxygenui-design/grid-healthcare";
+import { liveState } from "./live.js";
 import { nameFor } from "./people.js";
 
 const text = (t: string) => ({ kind: "text" as const, text: t });
@@ -172,10 +173,11 @@ function exportShape(entry: Entry): string {
 }
 
 export function mountCatalogue(host: HTMLElement, note: HTMLElement): void {
+  const live = liveState({ repaint: () => paint(), rowIds: () => ENTRIES.map((e) => e.cell) });
   const r = createGridRenderer<Entry>(host, {
     label: "Cell host catalogue",
     rowHeight: 46,
-    onAction: () => {},
+    onAction: live.onAction,
     fallback: (row, key) =>
       text(
         key === "cell" ? row.cell
@@ -185,11 +187,16 @@ export function mountCatalogue(host: HTMLElement, note: HTMLElement): void {
         : exportShape(row),
       ),
   });
-  r.render({
-    columns: CATALOGUE_COLUMNS,
-    rows: ENTRIES.map((row, index) => ({ id: row.cell, row, index })),
-    total: ENTRIES.length, sort: [], selection: [], focus: null,
-  });
+  const paint = (): void =>
+    r.render({
+      columns: CATALOGUE_COLUMNS,
+      rows: ENTRIES.map((row, index) => ({ id: row.cell, row, index })),
+      total: ENTRIES.length,
+      sort: live.sort,
+      selection: live.selection,
+      focus: live.focus,
+    });
+  paint();
 
   // The claim this panel exists to make, stated as a count rather than as an
   // adjective. Eighteen hosts, and every one of them answers `read` for an
@@ -368,20 +375,25 @@ export function mountScale(refs: ScaleRefs): void {
     { key: "why", header: "What that means", width: 560 },
   ];
 
+  let lines: readonly Line[] = [];
+  const live = liveState({ repaint: () => paint(lines), rowIds: () => lines.map((l) => l.what) });
   const r = createGridRenderer<Line>(refs.host, {
     label: "Row model measurements",
     rowHeight: 44,
-    onAction: () => {},
+    onAction: live.onAction,
     fallback: (row, key) => text((row as unknown as Record<string, string>)[key] ?? ""),
   });
 
-  const paint = (lines: readonly Line[]): void => {
-    const model: GridViewModel<Line> = {
+  const paint = (next: readonly Line[]): void => {
+    lines = next;
+    r.render({
       columns: COLUMNS,
       rows: lines.map((row, index) => ({ id: row.what, row, index })),
-      total: lines.length, sort: [], selection: [], focus: null,
-    };
-    r.render(model);
+      total: lines.length,
+      sort: live.sort,
+      selection: live.selection,
+      focus: live.focus,
+    });
   };
 
   async function run(): Promise<void> {

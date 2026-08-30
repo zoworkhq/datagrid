@@ -9,6 +9,7 @@ import {
   type GroupEntry, type Measured,
 } from "@oxygenui-design/grid-core";
 import { createGridRenderer, type GridViewModel } from "@oxygenui-design/grid-dom";
+import { liveState } from "./live.js";
 import {
   AWAITING_CLINICAL_REVIEW, chipOverflowCell, describeWithheld, eligibilityCell, ledgerCell,
   maskedCell, requestBreakGlass, resolveColumns, resolveRows, resolutionCell,
@@ -63,10 +64,11 @@ const CLINICAL_COLUMNS = [
 ];
 
 export function mountClinical(host: HTMLElement, heldNote: HTMLElement): void {
+  const live = liveState({ repaint: () => paint(), rowIds: () => CASES.map((c) => c.id) });
   const r = createGridRenderer<Case>(host, {
     label: "Clinical cell catalogue",
     rowHeight: 44,
-    onAction: () => {},
+    onAction: live.onAction,
     // Every cell's text comes from its host's read() — the same string the
     // live region announces, so what is seen and what is heard cannot drift.
     fallback: (row, key) =>
@@ -78,11 +80,16 @@ export function mountClinical(host: HTMLElement, heldNote: HTMLElement): void {
         : ledgerCell.read(row.ledger),
       ),
   });
-  r.render({
-    columns: CLINICAL_COLUMNS,
-    rows: CASES.map((row, index) => ({ id: row.id, row, index })),
-    total: CASES.length, sort: [], selection: [], focus: null,
-  });
+  const paint = (): void =>
+    r.render({
+      columns: CLINICAL_COLUMNS,
+      rows: CASES.map((row, index) => ({ id: row.id, row, index })),
+      total: CASES.length,
+      sort: live.sort,
+      selection: live.selection,
+      focus: live.focus,
+    });
+  paint();
   heldNote.textContent = AWAITING_CLINICAL_REVIEW.doseCell;
 }
 
@@ -113,6 +120,10 @@ export interface DisclosureRefs {
 }
 
 export function mountDisclosure(refs: DisclosureRefs): void {
+  // Hoisted above the rebuild: this panel recreates its renderer whenever the
+  // policy changes, and focus that lives inside the renderer would be lost
+  // every time a checkbox moved.
+  const live = liveState({ repaint: () => render(), rowIds: () => PATIENTS.map((p) => p.id) });
   let granted = false;
 
   const render = (): void => {
@@ -144,7 +155,7 @@ export function mountDisclosure(refs: DisclosureRefs): void {
     const r = createGridRenderer<Patient>(refs.host, {
       label: "Patient notes",
       rowHeight: 40,
-      onAction: () => {},
+      onAction: live.onAction,
       // A masked region spans the columns it covers, so one notice replaces
       // three repetitions of the same notice.
       span: (row, key) => (key === "notes" && policy.cell(row, "notes") !== "visible" ? 1 : 1),
@@ -159,7 +170,10 @@ export function mountDisclosure(refs: DisclosureRefs): void {
     r.render({
       columns: cols.visible.map((c) => ({ key: c.key, header: c.header, width: c.key === "notes" ? 420 : 170 })),
       rows: rows.rows.map((row, index) => ({ id: row.id, row, index })),
-      total: rows.rows.length, sort: [], selection: [], focus: null,
+      total: rows.rows.length,
+      sort: live.sort,
+      selection: live.selection,
+      focus: live.focus,
     });
 
     // Restricted rows keep their slot and are marked, never filtered out.
@@ -216,6 +230,10 @@ export interface GroupRefs {
 }
 
 export function mountGrouping(refs: GroupRefs): void {
+  // Group entries are addressed by position, so the ids the selection algebra
+  // works over are the row indices this panel renders.
+  const live = liveState({ repaint: () => render(), rowIds: () => lastIds });
+  let lastIds: readonly string[] = [];
   const expanded = new Set<string>(["ward=Ashgrove"]);
   // A branch the demo never resolves, to show that unfetched is not empty.
   const branches = createBranchStore<Dose>({
@@ -250,14 +268,19 @@ export function mountGrouping(refs: GroupRefs): void {
         { key: "dose", header: "Total dose", width: 320 },
       ],
       rows: withPending.map((entry, index) => ({ id: `${index}`, row: entry, index })),
-      total: withPending.length, sort: [], selection: [], focus: null,
+      total: withPending.length,
+      sort: live.sort,
+      selection: live.selection,
+      focus: live.focus,
     };
+
+    lastIds = withPending.map((_entry, index) => `${index}`);
 
     refs.host.textContent = "";
     const r = createGridRenderer<GroupEntry<Dose>>(refs.host, {
       label: "Doses by ward",
       rowHeight: 36,
-      onAction: () => {},
+      onAction: live.onAction,
       fallback: (entry, key) => {
         const indent = "   ".repeat(entry.depth);
         if (entry.kind === "unresolved") {

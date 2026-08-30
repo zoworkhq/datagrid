@@ -310,6 +310,61 @@ try {
   );
   check(pinned.endPinnedPresent, "a column pinned to the end is rendered from the start");
 
+  // Keyboard focus must never land off-screen. Column virtualisation forces the
+  // focused column into the window so it EXISTS — that is not the same as being
+  // visible, and jsdom can tell neither apart: it has no layout and no native
+  // focus-scroll. Only a real browser settles this.
+  //
+  // The cell is CLICKED rather than `.focus()`-ed, because a programmatic focus
+  // in this harness quietly left the tab stop on the header and the whole check
+  // then measured header navigation instead.
+  await page.evaluate(() => {
+    const vp = document.querySelector('[data-panel="columns"] .oxg-viewport');
+    if (vp) {
+      vp.scrollLeft = 0;
+      vp.dispatchEvent(new Event("scroll"));
+    }
+  });
+  await page.waitForTimeout(250);
+  await page.click('[data-panel="columns"] .oxg-body [data-col-key="ward"]');
+  await page.waitForTimeout(150);
+  for (let i = 0; i < 45; i++) await page.keyboard.press("ArrowRight");
+  await page.waitForTimeout(300);
+
+  const focusTravel = await page.evaluate(() => {
+    const p = document.querySelector('[data-panel="columns"]');
+    const vp = p.querySelector(".oxg-viewport");
+    const el = document.activeElement;
+    const row = el?.closest('[role="row"]');
+    const cell = el?.getBoundingClientRect();
+    const box = vp.getBoundingClientRect();
+    return {
+      column: el?.dataset?.colKey ?? null,
+      role: el?.getAttribute?.("role") ?? null,
+      scrollLeft: Math.round(vp.scrollLeft),
+      inside: cell ? cell.left >= box.left - 1 && cell.right <= box.right + 1 : false,
+      cellLeft: cell ? Math.round(cell.left) : null,
+      viewport: [Math.round(box.left), Math.round(box.right)],
+      cellsInRow: row ? row.querySelectorAll('[role="gridcell"]').length : -1,
+    };
+  });
+
+  check(
+    focusTravel.role === "gridcell" && focusTravel.column !== "ward",
+    "arrowing right moves focus across body cells",
+    `focus on ${focusTravel.column} (${focusTravel.role})`,
+  );
+  check(
+    focusTravel.inside,
+    "the focused cell stays inside the viewport when focus travels right",
+    `${focusTravel.column} at x=${focusTravel.cellLeft}, viewport ${focusTravel.viewport.join("–")}, scrollLeft ${focusTravel.scrollLeft}`,
+  );
+  check(
+    focusTravel.cellsInRow > 0 && focusTravel.cellsInRow < 40,
+    "…and the row is still a window, not every column up to the focus",
+    `${focusTravel.cellsInRow} cells in the focused row`,
+  );
+
   await page.click('[role="tab"][data-tab="fhir"]');
   await page.waitForTimeout(900);
   const fhir = await page.evaluate(async () => {

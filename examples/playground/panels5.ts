@@ -26,6 +26,7 @@ import {
   capabilitiesOf, compileFilter, expandParams, fhirSource, partitionBundle, totalFrom,
   type Bundle, type FhirClient,
 } from "@oxygenui-design/grid-fhir";
+import { liveState } from "./live.js";
 import { nameFor, WARDS } from "./people.js";
 
 const text = (t: string) => ({ kind: "text" as const, text: t });
@@ -49,10 +50,14 @@ const BED_COLUMNS = [
   { key: "status", header: "Status", width: 150 },
 ];
 
-const bedModel = (rows: readonly Bed[]): GridViewModel<Bed> => ({
+const bedModel = (
+  rows: readonly Bed[],
+  over: Partial<GridViewModel<Bed>> = {},
+): GridViewModel<Bed> => ({
   columns: BED_COLUMNS,
   rows: rows.map((row, index) => ({ id: row.id, row, index })),
   total: rows.length, sort: [], selection: [], focus: null,
+  ...over,
 });
 
 const bedFallback = (row: Bed, key: string) =>
@@ -72,10 +77,14 @@ export interface FrameworkRefs {
 
 export function mountFrameworks(refs: FrameworkRefs): void {
   let rows = BEDS.slice(0, 8);
+  // ONE live state behind all four adapters. Focus in any of them moves the
+  // model, and every grid repaints from it — which is the claim this panel
+  // makes, extended from "the same rows" to "the same interaction".
+  const live = liveState({ repaint: () => paint(), rowIds: () => rows.map((b) => b.id) });
 
   // 1 · Vanilla. The renderer, with nothing in front of it.
   const plain = createGridRenderer<Bed>(refs.vanilla, {
-    label: "Beds — no framework", rowHeight: 40, onAction: () => {}, fallback: bedFallback,
+    label: "Beds — no framework", rowHeight: 40, onAction: live.onAction, fallback: bedFallback,
   });
 
   // 2 · The custom element. Registered once; `model` is a property, not an
@@ -96,19 +105,23 @@ export function mountFrameworks(refs: FrameworkRefs): void {
   const source = signal(rows);
   const derived = computed(() => bedModel(source()));
   const signalGrid = createGridRenderer<Bed>(refs.signals, {
-    label: "Beds — signals", rowHeight: 40, onAction: () => {}, fallback: bedFallback,
+    label: "Beds — signals", rowHeight: 40, onAction: live.onAction, fallback: bedFallback,
   });
   effect(() => {
     signalGrid.render(derived());
   });
 
   function paint(): void {
-    const model = bedModel(rows);
+    const model = bedModel(rows, {
+      sort: live.sort,
+      selection: live.selection,
+      focus: live.focus,
+    });
     plain.render(model);
     el.model = model;
     reactRoot.render(
       createElement(DataGrid<Bed>, {
-        model, label: "Beds — React", onAction: () => {}, fallback: bedFallback,
+        model, label: "Beds — React", onAction: live.onAction, fallback: bedFallback,
       }),
     );
     source.set(rows); // signals path repaints itself
@@ -267,10 +280,12 @@ export function mountFhir(refs: FhirRefs): void {
     { key: "ward", header: "Organisation", width: 220 },
   ];
 
+  const live = liveState({ repaint: () => paint(), rowIds: () => lastIds });
+  let lastIds: readonly string[] = [];
   const r = createGridRenderer<FhirRow>(refs.host, {
     label: "FHIR Patient search",
     rowHeight: 40,
-    onAction: () => {},
+    onAction: live.onAction,
     fallback: (row, key) =>
       // A block that has not arrived is a LOADING row, not a blank one. The
       // difference is whether an empty grid means "no patients" or "wait".
@@ -297,12 +312,15 @@ export function mountFhir(refs: FhirRefs): void {
     const result = model.result();
     const rows = runway.absorb(result);
 
+    lastIds = rows.map((row) => row.id);
     r.render({
       columns: COLUMNS,
       rows: rows as never,
       // "unknown", not a guess. The server did not say, so neither do we.
       total: result.total,
-      sort: [], selection: [], focus: null,
+      sort: live.sort,
+      selection: live.selection,
+      focus: live.focus,
     });
 
     refs.calls.textContent = [
