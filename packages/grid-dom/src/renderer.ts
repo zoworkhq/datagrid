@@ -54,6 +54,16 @@ export interface RenderColumn {
   readonly header: string;
   readonly width?: number;
   readonly sortable?: boolean;
+  /**
+   * Draggable right edge. Opt-in, like `sortable`.
+   *
+   * A column whose width the application computed — a fit-to-content pass, a
+   * saved view, a `grow` share — is not one a drag should overwrite without
+   * the application saying so.
+   */
+  readonly resizable?: boolean;
+  /** Draggable header. Opt-in for the same reason: order can be meaningful. */
+  readonly movable?: boolean;
 }
 
 export interface RenderRow<TRow> {
@@ -638,6 +648,26 @@ export function createGridRenderer<TRow>(
         th.setAttribute("aria-colindex", String(cols.start + i + 1));
         th.dataset["colKey"] = column.key;
         th.textContent = column.header;
+
+        // Structural styles only, set inline the way the viewport's overflow
+        // and the canvas's position are. Appearance is the host's.
+        if (column.resizable) {
+          const handle = doc.createElement("div");
+          handle.className = "oxg-resize";
+          // Not a cell and not a tab stop: the grid body is ONE tab stop, and
+          // a handle per column would be a tab stop per column. The keyboard
+          // route is Control+Shift+Arrow on the header itself.
+          handle.setAttribute("role", "presentation");
+          handle.dataset["resizeFor"] = column.key;
+          handle.style.cssText =
+            "position:absolute;top:0;right:0;width:9px;height:100%;" +
+            // `touch-action:none` or the browser scrolls instead of dragging.
+            "cursor:col-resize;touch-action:none;user-select:none";
+          th.style.position = "relative";
+          th.append(handle);
+        }
+        if (column.movable) th.dataset["movable"] = "1";
+
         hRow.append(th);
       });
       if (cols.leading > 0 || cols.trailing > 0) hRow.append(spacer(cols.trailing));
@@ -951,6 +981,13 @@ export function createGridRenderer<TRow>(
    */
   function onHeaderClick(e: MouseEvent): void {
     if (!current) return;
+    // The click that ends a drag is still a click. Sorting on it would mean a
+    // column you dragged also changed the row order under you.
+    if (suppressClick) {
+      suppressClick = false;
+      e.preventDefault();
+      return;
+    }
     const th = (e.target as HTMLElement | null)?.closest<HTMLElement>('[role="columnheader"]');
     if (!th) return;
     const key = th.dataset["colKey"];
@@ -1023,9 +1060,173 @@ export function createGridRenderer<TRow>(
 
   if (observer) for (const row of pool) observer.observe(row);
 
+  /**
+   * Dragging a column: its width by the right edge, its position by the header.
+   *
+   * ── WHY BOTH LIVE HERE, AND WHY THEY ARE ONE HANDLER ────────────────────
+   *
+   * Both start with `pointerdown` on the header row, and which one you get
+   * depends on where in the header the pointer went down. Splitting them into
+   * two listeners means two pieces of code deciding whether a gesture is
+   * theirs, and the failure mode is a drag that does both.
+   *
+   * Pointer CAPTURE, not document listeners: a drag that leaves the window and
+   * comes back is one gesture, and a mouseup outside a document listener's
+   * root leaves the grid stuck mid-drag with no way to release it.
+   */
+  interface Drag {
+    readonly kind: "resize" | "move";
+    readonly key: string;
+    readonly pointerId: number;
+    readonly startX: number;
+    readonly startWidth: number;
+    /** Set once the pointer has travelled far enough to mean it. */
+    started: boolean;
+    /** Latest width, coalesced to one action per frame. */
+    pending: number | null;
+    frame: number;
+  }
+  let drag: Drag | null = null;
+
+  const headerAt = (clientX: number): HTMLElement | null => {
+    const headers = Array.from(headGroup.querySelectorAll<HTMLElement>('[role="columnheader"]'));
+    return headers.find((h) => {
+      const box = h.getBoundingClientRect();
+      return clientX >= box.left && clientX < box.right;
+    }) ?? null;
+  };
+
+  /** A drag is a click's sibling, so it must not also sort the column. */
+  let suppressClick = false;
+
+  function onPointerDown(e: PointerEvent): void {
+    if (e.button !== 0 || drag) return;
+    const target = e.target as HTMLElement | null;
+    const handle = target?.closest<HTMLElement>(".oxg-resize");
+    const th = target?.closest<HTMLElement>('[role="columnheader"]');
+    if (!th) return;
+
+    const key = handle?.dataset["resizeFor"] ?? th.dataset["colKey"];
+    if (!key) return;
+    if (!handle && th.dataset["movable"] !== "1") return;
+
+    drag = {
+      kind: handle ? "resize" : "move",
+      key,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startWidth: Math.round(th.getBoundingClientRect().width),
+      started: false,
+      pending: null,
+      frame: 0,
+    };
+    (handle ?? th).setPointerCapture(e.pointerId);
+    // Only a resize is unambiguous at pointerdown. A move has to wait for
+    // travel, or every click on a movable header becomes a drag.
+    if (handle) {
+      drag.started = true;
+      e.preventDefault();
+      root.dataset["dragging"] = "resize";
+    }
+  }
+
+  function flushResize(): void {
+    if (!drag) return;
+    drag.frame = 0;
+    const width = drag.pending;
+    drag.pending = null;
+    if (width !== null) options.onAction({ type: "column/resize", key: drag.key, width });
+  }
+
+  function onPointerMove(e: PointerEvent): void {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    const dx = e.clientX - drag.startX;
+
+    if (!drag.started) {
+      // Four pixels: below that it is a click with a shaky hand, and a header
+      // that reorders when you meant to sort it is worse than one that does
+      // not reorder at all.
+      if (Math.abs(dx) < 4) return;
+      drag.started = true;
+      suppressClick = true;
+      root.dataset["dragging"] = "move";
+    }
+
+    if (drag.kind === "resize") {
+      // Coalesced to one action per frame: a pointermove stream is 60+ events
+      // a second and each one would be an entry in the caller's undo stack.
+      drag.pending = Math.max(MIN_COLUMN_WIDTH, drag.startWidth + dx);
+      if (!drag.frame) drag.frame = win.requestAnimationFrame(flushResize);
+      return;
+    }
+
+    const over = headerAt(e.clientX);
+    const key = over?.dataset["colKey"];
+    // The indicator is a data attribute rather than a node: the host styles it,
+    // and a node would be one more thing to clean up on an aborted drag.
+    for (const h of headGroup.querySelectorAll<HTMLElement>("[data-drop]")) delete h.dataset["drop"];
+    if (over && key && key !== drag.key) {
+      const box = over.getBoundingClientRect();
+      over.dataset["drop"] = e.clientX < box.left + box.width / 2 ? "before" : "after";
+    }
+  }
+
+  /**
+   * `commit` is false for `pointercancel`, and the difference is the point.
+   *
+   * A cancelled gesture is one the system took away — a touch that became a
+   * scroll, a window that lost focus mid-drag. Treating it as a drop moves a
+   * column the user never released, and they have no way to know why.
+   */
+  function endDrag(e: PointerEvent, commit: boolean): void {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    const finished = drag;
+    drag = null;
+    delete root.dataset["dragging"];
+
+    if (finished.frame) {
+      win.cancelAnimationFrame(finished.frame);
+      // A resize IS committed on cancel: the widths already emitted during the
+      // drag are on screen, and dropping the last frame would leave the column
+      // a few pixels from where it visibly ended.
+      flushResizeFor(finished);
+    }
+
+    if (commit && finished.kind === "move" && finished.started && current) {
+      const over = headerAt(e.clientX);
+      const overKey = over?.dataset["colKey"];
+      const drop = over?.dataset["drop"];
+      if (over && overKey && overKey !== finished.key) {
+        const keys = current.columns.map((c) => c.key);
+        const from = keys.indexOf(finished.key);
+        let to = keys.indexOf(overKey);
+        // Dropping on the right half of a header means "after it", and moving
+        // rightwards the target index has already shifted by the one removed.
+        if (drop === "after" && to < from) to += 1;
+        if (drop === "before" && to > from) to -= 1;
+        if (from >= 0 && to >= 0 && to !== from) {
+          options.onAction({ type: "column/reorder", key: finished.key, toIndex: to });
+        }
+      }
+    }
+    for (const h of headGroup.querySelectorAll<HTMLElement>("[data-drop]")) delete h.dataset["drop"];
+  }
+
+  /** The last frame of a resize, run synchronously so the drag ends where it looks. */
+  function flushResizeFor(d: Drag): void {
+    if (d.pending === null) return;
+    options.onAction({ type: "column/resize", key: d.key, width: d.pending });
+  }
+
   grid.addEventListener("keydown", onKeyDown);
   grid.addEventListener("focusin", onFocusIn);
   headGroup.addEventListener("click", onHeaderClick);
+  headGroup.addEventListener("pointerdown", onPointerDown);
+  headGroup.addEventListener("pointermove", onPointerMove);
+  const onPointerUp = (e: PointerEvent): void => endDrag(e, true);
+  const onPointerCancel = (e: PointerEvent): void => endDrag(e, false);
+  headGroup.addEventListener("pointerup", onPointerUp);
+  headGroup.addEventListener("pointercancel", onPointerCancel);
   viewport.addEventListener("scroll", onScroll);
 
   /**
@@ -1084,6 +1285,10 @@ export function createGridRenderer<TRow>(
       grid.removeEventListener("keydown", onKeyDown);
       grid.removeEventListener("focusin", onFocusIn);
       headGroup.removeEventListener("click", onHeaderClick);
+      headGroup.removeEventListener("pointerdown", onPointerDown);
+      headGroup.removeEventListener("pointermove", onPointerMove);
+      headGroup.removeEventListener("pointerup", onPointerUp);
+      headGroup.removeEventListener("pointercancel", onPointerCancel);
       viewport.removeEventListener("scroll", onScroll);
       observer?.disconnect();
       for (const [el, r] of mounted) r.unmount(el);

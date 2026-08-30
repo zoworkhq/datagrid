@@ -458,6 +458,63 @@ try {
 
   await page.keyboard.press("Escape");
 
+  // ── dragging a column, with a real pointer ────────────────────────────────
+  //
+  // `column/resize` and `column/reorder` were typed actions with a reducer case
+  // and no way to reach either with a mouse. Playwright's mouse produces real
+  // pointer events with real capture, which is the half jsdom cannot exercise.
+  const headBox = async (key) =>
+    page.$eval(`[data-panel="roster"] .oxg-head [data-col-key="${key}"]`, (el) => {
+      const b = el.getBoundingClientRect();
+      return { left: b.left, right: b.right, mid: b.left + b.width / 2, y: b.top + b.height / 2, width: Math.round(b.width) };
+    });
+
+  const wardBefore = await headBox("ward");
+  await page.mouse.move(wardBefore.right - 3, wardBefore.y);
+  await page.mouse.down();
+  await page.mouse.move(wardBefore.right + 70, wardBefore.y, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+  const wardAfter = await headBox("ward");
+  check(
+    wardAfter.width > wardBefore.width + 50,
+    "dragging the right edge resizes the column",
+    `${wardBefore.width}px → ${wardAfter.width}px`,
+  );
+
+  const orderNow = () => page.$$eval('[data-panel="roster"] .oxg-head [data-col-key]', (els) => els.map((e) => e.dataset.colKey));
+  const orderBefore = await orderNow();
+  const from = await headBox("status");
+  const onto = await headBox("potassium");
+  await page.mouse.move(from.mid, from.y);
+  await page.mouse.down();
+  await page.mouse.move(onto.right - 6, onto.y, { steps: 12 });
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  const orderAfter = await orderNow();
+  check(
+    orderBefore.join() !== orderAfter.join() &&
+      orderAfter.indexOf("status") > orderAfter.indexOf("potassium"),
+    "dragging a header reorders the column",
+    `${orderBefore.join(" ")} → ${orderAfter.join(" ")}`,
+  );
+  check(
+    orderBefore.length === orderAfter.length && new Set(orderAfter).size === orderAfter.length,
+    "…and no column is lost or duplicated on the way",
+    `${orderAfter.length} columns`,
+  );
+
+  // A drag ends on the header it was dropped on, and that click must not sort.
+  const sortAfterDrag = await page.$eval(
+    '[data-panel="roster"] .oxg-head [data-col-key="potassium"]',
+    (el) => el.getAttribute("aria-sort"),
+  );
+  check(
+    sortAfterDrag === "none" || sortAfterDrag === null,
+    "the click that ends a drag does not also sort",
+    `aria-sort ${sortAfterDrag}`,
+  );
+
   // ── a hidden grid stays still ─────────────────────────────────────────────
   //
   // ResizeObserver reports 0 for every rendered row the moment a grid is

@@ -15,7 +15,9 @@ import {
   initialState,
   DEFAULT_CLIENT_ROW_CEILING,
   sortRows,
+  describeMove,
   isEditable,
+  moveTo,
   notEditable,
   reduce,
   type Comparator,
@@ -128,15 +130,17 @@ interface RosterColumn {
   readonly width?: number;
   readonly editable?: boolean;
   readonly derived?: boolean;
+  readonly resizable?: boolean;
+  readonly movable?: boolean;
 }
 
-const columns: readonly RosterColumn[] = [
-  { key: "name", header: "Patient", sortable: true, width: 262 },
-  { key: "status", header: "Clinical status", sortable: true, width: 150 },
-  { key: "problems", header: "Problem list", width: 210 },
-  { key: "ward", header: "Ward", sortable: true, width: 120 },
-  { key: "potassium", header: "Potassium", sortable: true, width: 250 },
-  { key: "reviewed", header: "Last seen", sortable: true, width: 130 },
+let columns: readonly RosterColumn[] = [
+  { key: "name", header: "Patient", resizable: true, movable: true, sortable: true, width: 262 },
+  { key: "status", header: "Clinical status", resizable: true, movable: true, sortable: true, width: 150 },
+  { key: "problems", header: "Problem list", resizable: true, movable: true, width: 210 },
+  { key: "ward", header: "Ward", resizable: true, movable: true, sortable: true, width: 120 },
+  { key: "potassium", header: "Potassium", resizable: true, movable: true, sortable: true, width: 250 },
+  { key: "reviewed", header: "Last seen", resizable: true, movable: true, sortable: true, width: 130 },
 ];
 
 const comparators: Record<string, Comparator<Patient>> = {
@@ -320,6 +324,16 @@ function onAction(action: GridAction): void {
     case "edit/begin":
       beginCellEdit(action.rowId, action.columnKey);
       return;
+    // The reducer leaves this to the column model — which, here, is this array.
+    case "column/reorder": {
+      const from = columns.findIndex((c) => c.key === action.key);
+      if (from < 0) return;
+      columns = moveTo(columns, from, action.toIndex);
+      note(describeMove(labelFor(action.key), from, action.toIndex, columns.length));
+      render();
+      return;
+    }
+
     case "column/resize":
       widths = { ...widths, [action.key]: action.width };
       note(`${labelFor(action.key)} is now ${action.width}px — Ctrl+Shift+← narrows it`);
