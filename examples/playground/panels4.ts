@@ -36,8 +36,11 @@ interface WideRow { readonly id: string; readonly name: string; readonly ward: s
 const COLUMN_COUNT = 250;
 
 const wideColumns = () => {
-  const cols: { key: string; header: string; width: number; sortable?: boolean }[] = [
-    { key: "name", header: "Patient", width: 190, sortable: true },
+  // The patient's name is pinned, which is the whole case for pinning: a
+  // 250-column flowsheet you scroll sideways is unreadable the moment you can
+  // no longer see whose row you are on.
+  const cols: { key: string; header: string; width: number; sortable?: boolean; pinned?: "start" | "end" }[] = [
+    { key: "name", header: "Patient", width: 190, sortable: true, pinned: "start" },
     { key: "ward", header: "Ward", width: 120, sortable: true },
   ];
   for (let i = 0; i < COLUMN_COUNT - 2; i++) {
@@ -46,6 +49,9 @@ const wideColumns = () => {
       key: `v${i}`,
       header: `${OBSERVATIONS[i % OBSERVATIONS.length]} d${day}`,
       width: 104,
+      // The last observation is frozen to the right edge, so both bands are
+      // exercised rather than only the easy one.
+      ...(i === COLUMN_COUNT - 3 ? { pinned: "end" as const } : {}),
     });
   }
   return cols;
@@ -191,7 +197,8 @@ export function mountColumns(refs: ColumnRefs): void {
 
   refs.note.textContent =
     `${COLUMN_COUNT} columns, 2,000 rows — half a million cells. The renderer builds the ones you ` +
-    `can see. Scroll sideways and watch the per-row count stay flat.`;
+    `can see. Scroll sideways: the per-row count stays flat, and Patient stays with you because it ` +
+    `is pinned — a wide flowsheet is unreadable the moment you cannot see whose row you are on.`;
   paint();
 }
 

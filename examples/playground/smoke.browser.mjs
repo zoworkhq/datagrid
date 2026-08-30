@@ -264,6 +264,52 @@ try {
     `${wide.perRow} cells per row, ${wide.spacers} spacers`,
   );
 
+  // A pinned column has to STAY, in pixels, which is the half jsdom cannot
+  // check — it has no layout, so `position: sticky` resolves to nothing there.
+  const pinned = await page.evaluate(async () => {
+    const p = document.querySelector('[data-panel="columns"]');
+    const vp = p.querySelector(".oxg-viewport");
+    const xOf = (key) => {
+      const el = p.querySelector(`.oxg-body [data-col-key="${key}"]`);
+      return el ? Math.round(el.getBoundingClientRect().left) : null;
+    };
+    const headXOf = (key) => {
+      const el = p.querySelector(`.oxg-head [data-col-key="${key}"]`);
+      return el ? Math.round(el.getBoundingClientRect().left) : null;
+    };
+    vp.scrollLeft = 0;
+    vp.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => setTimeout(r, 200));
+    const before = { name: xOf("name"), head: headXOf("name"), ward: xOf("ward") };
+    vp.scrollLeft = 6_000;
+    vp.dispatchEvent(new Event("scroll"));
+    await new Promise((r) => setTimeout(r, 250));
+    const after = { name: xOf("name"), head: headXOf("name"), ward: xOf("ward") };
+    const last = `v${250 - 3}`;
+    return { before, after, endPinnedPresent: xOf(last) !== null, viewportRight: Math.round(vp.getBoundingClientRect().right) };
+  });
+  check(
+    pinned.after.name !== null && Math.abs((pinned.after.name ?? 0) - (pinned.before.name ?? 0)) <= 1,
+    "a pinned column does not move when the grid scrolls sideways",
+    `Patient at x=${pinned.before.name} → x=${pinned.after.name}, while Ward went ${pinned.before.ward} → ${pinned.after.ward}`,
+  );
+  check(
+    pinned.after.head !== null && Math.abs((pinned.after.head ?? 0) - (pinned.after.name ?? 0)) <= 1,
+    "…and its header stays over it",
+    `header x=${pinned.after.head}, cell x=${pinned.after.name}`,
+  );
+  check(
+    // Either it moved far left, or it left the DOM — both mean it scrolled,
+    // and the second is the stronger result: an unpinned column is windowed
+    // away, while the pinned one is still rendered beside it.
+    pinned.after.ward === null || pinned.after.ward < (pinned.before.ward ?? 0) - 1000,
+    "…while an unpinned column scrolls away entirely",
+    pinned.after.ward === null
+      ? `Ward was at x=${pinned.before.ward} and is now windowed out of the DOM`
+      : `Ward x=${pinned.before.ward} → ${pinned.after.ward}`,
+  );
+  check(pinned.endPinnedPresent, "a column pinned to the end is rendered from the start");
+
   await page.click('[role="tab"][data-tab="fhir"]');
   await page.waitForTimeout(900);
   const fhir = await page.evaluate(async () => {

@@ -1004,3 +1004,15 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 var(--sp-4, 16px) var(--sp-4, 1
 }
 [role="columnheader"][data-drop="before"]::before { left: -1px; }
 [role="columnheader"][data-drop="after"]::before  { right: -1px; }
+
+/* ── frozen columns ─────────────────────────────────────────────────────────
+   The renderer positions them; the ground and the edge are the host's, and
+   they matter: a sticky cell with a transparent background shows the scrolling
+   row straight through it. */
+[role="gridcell"][data-pinned],
+[role="columnheader"][data-pinned] { background: var(--raised, var(--ground)); }
+.oxg-body [role="row"]:hover [role="gridcell"][data-pinned] { background: var(--sunken); }
+[role="gridcell"][data-pinned="start"],
+[role="columnheader"][data-pinned="start"] { box-shadow: 1px 0 0 var(--line); }
+[role="gridcell"][data-pinned="end"],
+[role="columnheader"][data-pinned="end"] { box-shadow: -1px 0 0 var(--line); }

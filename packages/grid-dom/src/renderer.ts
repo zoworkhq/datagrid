@@ -25,6 +25,8 @@ import {
   type SpanFn,
   partitionPinned,
   planSpans,
+  visualOrder,
+  type ColumnSpec,
   type GridAction,
   type GridError,
   type KeyBinding,
@@ -64,6 +66,15 @@ export interface RenderColumn {
   readonly resizable?: boolean;
   /** Draggable header. Opt-in for the same reason: order can be meaningful. */
   readonly movable?: boolean;
+  /**
+   * Frozen against the horizontal scroll.
+   *
+   * A pinned column is ALWAYS rendered — column virtualisation windows the
+   * middle only. That is affordable because pinning is for the one or two
+   * columns that identify the row, and a grid that loses the patient's name
+   * when you scroll right is a grid you cannot read.
+   */
+  readonly pinned?: "start" | "end";
 }
 
 export interface RenderRow<TRow> {
@@ -248,6 +259,114 @@ export function createGridRenderer<TRow>(
   /** Column signature the geometry was measured against, so it re-measures on change. */
   let colGeometrySignature = "";
 
+  /**
+   * Pinned columns first and last, whatever order the caller passed.
+   *
+   * `visualOrder` is the same function the engine's `layoutColumns` uses, so a
+   * host that lays out with one and renders with the other cannot get two
+   * different answers. Sorting here rather than trusting the caller matters
+   * because a `pinned: "end"` column left in the middle does not fail — it
+   * renders sticky in the wrong place, which looks like a bug in the grid.
+   *
+   * `aria-colindex` is assigned AFTER this, because the index a screen reader
+   * announces is the visual one.
+   */
+  let orderedColumns: readonly RenderColumn[] = [];
+  let orderedFor: readonly RenderColumn[] | null = null;
+
+  function inVisualOrder(columns: readonly RenderColumn[]): readonly RenderColumn[] {
+    if (orderedFor === columns) return orderedColumns;
+    orderedFor = columns;
+    orderedColumns = columns.some((c) => c.pinned)
+      ? (visualOrder(columns as unknown as readonly ColumnSpec[]) as unknown as readonly RenderColumn[])
+      : columns;
+    return orderedColumns;
+  }
+
+  interface PinnedBands {
+    startCount: number; endCount: number; startWidth: number; endWidth: number;
+  }
+
+  /** Which columns render, the width either side of them, and what is frozen. */
+  interface ColumnPlan {
+    start: number; end: number; leading: number; trailing: number; total: number;
+    bands: PinnedBands;
+  }
+
+  /**
+   * The columns that actually render, in order.
+   *
+   * `[frozen start] [spacer] [window] [spacer] [frozen end]`. When nothing is
+   * pinned both bands are empty and this is exactly the window, which is why
+   * the un-pinned path costs one slice and no branches.
+   */
+  function renderedColumns(
+    columns: readonly RenderColumn[],
+    cols: ColumnPlan,
+  ): readonly RenderColumn[] {
+    const { startCount, endCount } = cols.bands;
+    if (startCount === 0 && endCount === 0) return columns.slice(cols.start, cols.end);
+    return [
+      ...columns.slice(0, startCount),
+      ...columns.slice(Math.max(cols.start, startCount), Math.min(cols.end, columns.length - endCount)),
+      ...columns.slice(columns.length - endCount),
+    ];
+  }
+
+  /**
+   * Freezes one cell against the horizontal scroll.
+   *
+   * `sticky` rather than a transform: a transform would need updating on every
+   * scroll frame for every pinned cell in every rendered row, and the browser
+   * already does this for free. The z-index is what stops a scrolling cell
+   * passing over the frozen one — without it the text of both is visible at
+   * once and neither is readable.
+   */
+  function applyPin(el: HTMLElement, column: RenderColumn, index: number, cols: ColumnPlan): void {
+    if (!column.pinned) {
+      if (el.dataset["pinned"] !== undefined) {
+        delete el.dataset["pinned"];
+        el.style.position = "";
+        el.style.left = "";
+        el.style.right = "";
+        el.style.zIndex = "";
+      }
+      return;
+    }
+    el.dataset["pinned"] = column.pinned;
+    el.style.position = "sticky";
+    el.style.zIndex = "2";
+    if (column.pinned === "start") {
+      el.style.left = `${colGeometry.offsetOf(index)}px`;
+      el.style.right = "";
+    } else {
+      el.style.right = `${Math.max(0, cols.total - colGeometry.offsetOf(index + 1))}px`;
+      el.style.left = "";
+    }
+  }
+
+  /** Widths of the pinned prefix and suffix. Both are usually zero. */
+  function pinnedBands(columns: readonly RenderColumn[]): PinnedBands {
+    let startCount = 0;
+    while (startCount < columns.length && columns[startCount]?.pinned === "start") startCount++;
+    let endCount = 0;
+    while (
+      endCount < columns.length - startCount &&
+      columns[columns.length - 1 - endCount]?.pinned === "end"
+    ) endCount++;
+    const widthOfRange = (from: number, to: number): number => {
+      let w = 0;
+      for (let i = from; i < to; i++) w += columns[i]?.width ?? DEFAULT_COLUMN_WIDTH;
+      return w;
+    };
+    return {
+      startCount,
+      endCount,
+      startWidth: widthOfRange(0, startCount),
+      endWidth: widthOfRange(columns.length - endCount, columns.length),
+    };
+  }
+
   let current: GridViewModel<TRow> | null = null;
   let columnSignature = "";
   /** Recycled row nodes, in DOM order. Never destroyed while the grid lives. */
@@ -290,7 +409,7 @@ export function createGridRenderer<TRow>(
     model: GridViewModel<TRow>;
     selected: ReadonlySet<string>;
     focus: FocusTarget | null;
-    cols: { start: number; end: number; leading: number; trailing: number; total: number };
+    cols: ColumnPlan;
     render: { entry: RenderRow<TRow>; place: { kind: "flow"; top: number } | { kind: "pinned"; edge: "start" | "end" } }[];
   } | null = null;
 
@@ -347,9 +466,7 @@ export function createGridRenderer<TRow>(
    * away drops focus to the document body, and the body is one tab stop, so
    * there would be nothing to tab back to.
    */
-  function columnWindow(m: GridViewModel<TRow>, focus: FocusTarget | null): {
-    start: number; end: number; leading: number; trailing: number; total: number;
-  } {
+  function columnWindow(m: GridViewModel<TRow>, focus: FocusTarget | null): ColumnPlan {
     const n = m.columns.length;
     const signature = m.columns.map((c) => `${c.key}:${c.width ?? ""}`).join("|");
     if (signature !== colGeometrySignature) {
@@ -361,24 +478,35 @@ export function createGridRenderer<TRow>(
       colGeometrySignature = signature;
     }
     const total = colGeometry.totalHeight();
+    const bands = pinnedBands(m.columns);
 
-    // Spans, or nothing to window: render everything.
+    // Spans, or nothing to window: render everything. The middle IS everything,
+    // so the pinned prefix and suffix are already inside it and must not be
+    // rendered a second time — hence `start`/`end` spanning the whole list.
     if (options.span || n === 0) {
-      return { start: 0, end: n, leading: 0, trailing: 0, total };
+      return { start: 0, end: n, leading: 0, trailing: 0, total, bands };
     }
 
     const width = viewport.clientWidth || 0;
     // A viewport that has not been laid out yet reports 0. Rendering one column
     // then would paint an empty grid that never recovers, because nothing
     // re-paints on layout.
-    if (width === 0) return { start: 0, end: n, leading: 0, trailing: 0, total };
+    if (width === 0) return { start: 0, end: n, leading: 0, trailing: 0, total, bands };
 
-    const w = colGeometry.windowFor(viewport.scrollLeft, width, COLUMN_OVERSCAN);
-    let start = w.start;
-    let end = w.end;
+    // The scrollable band is what is left after the frozen edges, and it starts
+    // at `startWidth` in geometry space — scrolling to 0 shows the first
+    // UNPINNED column, not the first column.
+    const band = Math.max(1, width - bands.startWidth - bands.endWidth);
+    const w = colGeometry.windowFor(viewport.scrollLeft + bands.startWidth, band, COLUMN_OVERSCAN);
+    const lo = bands.startCount;
+    const hi = n - bands.endCount;
+    let start = Math.min(Math.max(w.start, lo), hi);
+    let end = Math.min(Math.max(w.end, start), hi);
 
     const focusColumn = focus ? m.columns.findIndex((c) => c.key === focus.columnKey) : -1;
-    if (focusColumn >= 0) {
+    // A focused column that is pinned is already rendered; forcing it into the
+    // middle window would render it twice.
+    if (focusColumn >= lo && focusColumn < hi) {
       start = Math.min(start, focusColumn);
       end = Math.max(end, focusColumn + 1);
     }
@@ -386,9 +514,10 @@ export function createGridRenderer<TRow>(
     return {
       start,
       end,
-      leading: colGeometry.offsetOf(start),
-      trailing: Math.max(0, total - colGeometry.offsetOf(end)),
+      leading: Math.max(0, colGeometry.offsetOf(start) - bands.startWidth),
+      trailing: Math.max(0, total - bands.endWidth - colGeometry.offsetOf(end)),
       total,
+      bands,
     };
   }
 
@@ -459,7 +588,7 @@ export function createGridRenderer<TRow>(
     /** Where to put it: a geometry offset, or a sticky band. */
     place: { readonly kind: "flow"; readonly top: number } | { readonly kind: "pinned"; readonly edge: "start" | "end" },
     /** Which columns are rendered, and the width either side of them. */
-    cols: { start: number; end: number; leading: number; trailing: number; total: number },
+    cols: ColumnPlan,
   ): void {
     // Absolute, so a screen reader announces "row 19,998" and not the position
     // within a rendered window of fifteen. Pinning does not change which row
@@ -488,14 +617,18 @@ export function createGridRenderer<TRow>(
     // model the last `render` handed over.
     const data = patched.get(entry.id) ?? entry.row;
     const allKeys = m.columns.map((c) => c.key);
-    const windowed = m.columns.slice(cols.start, cols.end);
+    const windowed = renderedColumns(m.columns, cols);
     const columnKeys = windowed.map((c) => c.key);
     const plan = planSpans(data, columnKeys, options.span);
 
     // Spacers stand in for the columns either side, so the row keeps its full
     // width and horizontal scroll extent without materialising the cells.
     const needsSpacers = cols.leading > 0 || cols.trailing > 0;
+    // Spacers sit INSIDE the frozen bands: `[start] [spacer] … [spacer] [end]`,
+    // so a spacer never scrolls over a pinned column.
     const wanted = plan.cells.length + (needsSpacers ? 2 : 0);
+    const pinStart = cols.bands.startCount;
+    const pinEnd = cols.bands.endCount;
 
     // The cell set changes with the span, so reconcile length first and then
     // rebind. A recycled row that spanned three columns must not leave two
@@ -519,10 +652,18 @@ export function createGridRenderer<TRow>(
     // A recycled row may arrive carrying a spacer where a cell now goes, or the
     // reverse. Both slots are addressed by offset, so the leading spacer is
     // always child 0 when spacers are in play.
-    const offset = needsSpacers ? 1 : 0;
+    // Where each of the two spacers sits among the children:
+    //
+    //   [frozen start] [lead] [ window ] [tail] [frozen end]
+    //    0..pinStart-1  ^                 ^
+    //
+    // Both are INSIDE the frozen bands. A spacer outside one would scroll a
+    // blank block across the column it is supposed to be freezing.
+    const leadAt = pinStart;
+    const tailAt = wanted - pinEnd - 1;
     if (needsSpacers) {
-      const lead = row.children[0] as HTMLElement;
-      const tail = row.children[row.childElementCount - 1] as HTMLElement;
+      const lead = row.children[leadAt] as HTMLElement;
+      const tail = row.children[tailAt] as HTMLElement;
       for (const [el, w] of [[lead, cols.leading], [tail, cols.trailing]] as const) {
         // `role="presentation"`: a spacer is not a cell, and announcing it as
         // one would put empty gridcells either side of every row.
@@ -537,10 +678,21 @@ export function createGridRenderer<TRow>(
     }
 
     plan.cells.forEach((planned, i) => {
-      const cell = row.children[i + offset] as HTMLElement | undefined;
+      // The frozen prefix keeps its own indices; the window shifts by one for
+      // the leading spacer; the frozen suffix shifts by two, for both.
+      const middleEnd = plan.cells.length - pinEnd;
+      const slot = !needsSpacers
+        ? i
+        : i < pinStart
+          ? i
+          : i < middleEnd
+            ? i + 1
+            : i + 2;
+      const cell = row.children[slot] as HTMLElement | undefined;
       if (!cell) return;
       const column = m.columns.find((c) => c.key === planned.key);
       if (!column) return;
+      applyPin(cell, column, allKeys.indexOf(planned.key), cols);
 
       cell.setAttribute("role", "gridcell");
       // ABSOLUTE column index, resolved against the full column list. A screen
@@ -583,6 +735,25 @@ export function createGridRenderer<TRow>(
   function syncHeader(trackWidth: string): void {
     const row = headGroup.firstElementChild as HTMLElement | null;
     if (!row) return;
+
+    // ── PINNED HEADERS COUNTER-TRANSLATE ────────────────────────────────────
+    //
+    // The body freezes its pinned cells with `position: sticky`, which the
+    // browser resolves against the scrolling viewport for free. The header has
+    // no scrolling viewport — it is a sibling that this function MOVES — so
+    // sticky there resolves against nothing and a pinned header scrolls away
+    // with the rest.
+    //
+    // The row is translated by -scrollLeft; a pinned header translated by
+    // +scrollLeft therefore stays where it started, which is what pinned means.
+    // Same number, opposite sign, one place each.
+    const left = viewport.scrollLeft;
+    for (const th of row.querySelectorAll<HTMLElement>("[data-pinned]")) {
+      th.style.position = "relative";
+      th.style.zIndex = "2";
+      th.style.transform = `translateX(${left}px)`;
+    }
+
     // The SAME width the canvas got, whatever that is. Two flex containers of
     // different widths distribute slack differently, and the header drifts off
     // its cells — which is exactly how this shipped broken.
@@ -591,6 +762,12 @@ export function createGridRenderer<TRow>(
   }
 
   function paint(m: GridViewModel<TRow>): void {
+    // Pinned columns move to the edges BEFORE anything reads an index, because
+    // `aria-colindex` is the visual position and every offset below is derived
+    // from this order.
+    const ordered = inVisualOrder(m.columns);
+    if (ordered !== m.columns) m = { ...m, columns: ordered };
+
     grid.setAttribute("aria-rowcount", String(ariaRowCount(m.total)));
     grid.setAttribute("aria-colcount", String(m.columns.length));
 
@@ -640,12 +817,18 @@ export function createGridRenderer<TRow>(
         el.style.cssText = `flex:0 0 ${w}px;width:${w}px`;
         return el;
       };
-      if (cols.leading > 0 || cols.trailing > 0) hRow.append(spacer(cols.leading));
-      m.columns.slice(cols.start, cols.end).forEach((column, i) => {
+      const headCols = renderedColumns(m.columns, cols);
+      const allHeadKeys = m.columns.map((c) => c.key);
+      headCols.forEach((column, i) => {
+        // The leading spacer goes after the frozen prefix, so a scrolled column
+        // never passes between a pinned header and the edge.
+        if ((cols.leading > 0 || cols.trailing > 0) && i === cols.bands.startCount) {
+          hRow.append(spacer(cols.leading));
+        }
         const th = doc.createElement("div");
         th.setAttribute("role", "columnheader");
         // Absolute, like the cells: the window is a rendering detail.
-        th.setAttribute("aria-colindex", String(cols.start + i + 1));
+        th.setAttribute("aria-colindex", String(allHeadKeys.indexOf(column.key) + 1));
         th.dataset["colKey"] = column.key;
         th.textContent = column.header;
 
@@ -667,10 +850,16 @@ export function createGridRenderer<TRow>(
           th.append(handle);
         }
         if (column.movable) th.dataset["movable"] = "1";
+        if (column.pinned) th.dataset["pinned"] = column.pinned;
 
         hRow.append(th);
+        if (
+          (cols.leading > 0 || cols.trailing > 0) &&
+          i === headCols.length - cols.bands.endCount - 1
+        ) {
+          hRow.append(spacer(cols.trailing));
+        }
       });
-      if (cols.leading > 0 || cols.trailing > 0) hRow.append(spacer(cols.trailing));
       headGroup.append(hRow);
       // Column identity changed, so every pooled row's cells are stale. The
       // pool itself is kept; bindRow reconciles cell counts per row, which it
