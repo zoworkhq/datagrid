@@ -145,6 +145,16 @@ importers:
       '@oxygenui-design/grid-core':
         specifier: workspace:*
         version: link:../grid-core
+    devDependencies:
+      '@oxygenui-design/grid-clipboard':
+        specifier: workspace:*
+        version: link:../grid-clipboard
+      '@oxygenui-design/grid-dom':
+        specifier: workspace:*
+        version: link:../grid-dom
+      '@oxygenui-design/grid-healthcare':
+        specifier: workspace:*
+        version: link:../grid-healthcare
 
   packages/grid-fhir:
     dependencies:

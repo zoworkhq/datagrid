@@ -7,17 +7,39 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc --build",
     "test": "vitest run --passWithNoTests",
     "size": "size-limit"
   },
-  "oxygen": { "layer": "plugin", "budget": "7 KB", "wave": 2 },
+  "oxygen": {
+    "layer": "plugin",
+    "budget": "7 KB",
+    "wave": 2
+  },
   "size-limit": [
-    { "path": "dist/index.js", "limit": "7 KB", "ignore": ["@oxygenui-design/grid-core"] }
+    {
+      "path": "dist/index.js",
+      "limit": "7 KB",
+      "ignore": [
+        "@oxygenui-design/grid-core"
+      ]
+    }
   ],
-  "dependencies": { "@oxygenui-design/grid-core": "workspace:*" }
+  "dependencies": {
+    "@oxygenui-design/grid-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@oxygenui-design/grid-clipboard": "workspace:*",
+    "@oxygenui-design/grid-dom": "workspace:*",
+    "@oxygenui-design/grid-healthcare": "workspace:*"
+  }
 }

@@ -7,7 +7,17 @@ so that a session with no memory of the research can start correctly.
 - **Source material:** `oxygen-data-grid-brief.html` (product research, partly
   superseded) and `oxygen-datagrid-architecture-review.html` (architecture
   review, current). Both currently live at the root of the `oxygenui` repo.
-- **Status of this repo:** empty. No commit, no branch, no licence, no README.
+- **Status of this repo:** EMPTY, when this was written. It is not any more —
+  thirteen packages, an engine, three adapters and a playground exist. This
+  document is kept as the record of the reasoning the repository was built
+  from, and §2, §8 and §10 are still the live ones. **For what is actually
+  built today, read [`README.md`](README.md), which is generated against
+  measured facts rather than remembered ones.**
+
+> [!NOTE]
+> This is a HANDOVER, not a status page. Where the two disagree, the README is
+> the current one. That was not true for a while, and it is exactly the kind of
+> drift that makes people stop reading both.
 
 ---
 

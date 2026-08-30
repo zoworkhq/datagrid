@@ -11,5 +11,6 @@ export * from "./cells.js";
 export * from "./coverage.js";
 export * from "./disclosure.js";
 export * from "./policy.js";
+export * from "./compose.js";
 export * from "./clinical-cells.js";
 export * from "./clinical-cells-2.js";

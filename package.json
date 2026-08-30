@@ -29,7 +29,9 @@
     "size:composed": "size-limit",
     "profile": "pnpm build && node bench/device-profile.mjs",
     "profile:all": "pnpm build && node bench/device-profile.mjs --browser all",
-    "profile:check": "pnpm build && node bench/device-profile.mjs --browser all --check"
+    "profile:check": "pnpm build && node bench/device-profile.mjs --browser all --check",
+    "badges": "node scripts/badges.mjs",
+    "badges:check": "node scripts/badges.mjs --check"
   },
   "devDependencies": {
     "@angular/core": "22.1.4",

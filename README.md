@@ -8,13 +8,12 @@ A framework-agnostic, virtualised enterprise data grid with a healthcare layer<b
 built in — for EHR, behavioural-health, clinical, operational and billing workflows.
 
 <sub>
-<img alt="engine 7.3 KB of a 22 KB budget" src="https://img.shields.io/badge/engine-7.3%20KB%20%2F%2022%20KB-0E7C66.svg" />
-<img alt="React adapter 456 bytes" src="https://img.shields.io/badge/react%20adapter-456%20B-0E7C66.svg" />
+<img alt="the whole grid, composed, 10.71 kB" src="https://img.shields.io/badge/composed%20bundle-10.71%20kB%20%2F%2016%20kB-0E7C66.svg" />
+<img alt="React adapter 671 bytes" src="https://img.shields.io/badge/react%20adapter-671%20B-0E7C66.svg" />
 <img alt="one external runtime dependency" src="https://img.shields.io/badge/runtime%20deps-1-0E7C66.svg" />
-<img alt="430 tests" src="https://img.shields.io/badge/tests-430-0E7C66.svg" />
+<img alt="1181 tests" src="https://img.shields.io/badge/tests-1181-0E7C66.svg" />
 <img alt="11 accepted decision records" src="https://img.shields.io/badge/ADRs-11%20accepted-0E7C66.svg" />
 <img alt="not published to npm" src="https://img.shields.io/badge/npm-not%20published-b7791f.svg" />
-<img alt="MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" />
 </sub>
 
 </div>
@@ -230,6 +229,23 @@ appears.
 
 Read [`HANDOVER.md`](HANDOVER.md) for the full context, and
 [`docs/decisions/`](docs/decisions/) for the eleven records that gate the code.
+
+### On accessibility
+
+Structural conformance is automated and gated: axe in jsdom, one ARIA tree
+compared across three adapters, one tab stop, absolute row and column indices
+under virtualisation, and every advertised key binding pressed for real in a
+real browser.
+
+**No screen reader has been run against this library.** The
+NVDA / JAWS / VoiceOver × three-engine matrix is nine combinations and zero are
+qualified. Neither is anything that needs layout — contrast ratios, target
+sizes, forced colours, 400% zoom. Those are absent, not failing, and
+[`docs/accessibility.md`](docs/accessibility.md) lists each one with what would
+close it.
+
+Describe this as a **tested accessibility structure with an unqualified
+assistive-technology story**. Any document here that says otherwise is wrong.
 
 ### On the gates
 

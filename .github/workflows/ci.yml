@@ -101,15 +101,27 @@ jobs:
       - name: composed size
         run: pnpm size:composed
 
+      # 9. The README's own numbers. The tests badge said 430 while the suite
+      #    ran 1,002 — nobody lied, the number was true once and nothing made it
+      #    stay true. A README wrong about a fact anyone can check in ten
+      #    seconds costs more trust than the fact was worth, because the reader
+      #    cannot tell which of the OTHER numbers are also months old.
+      #
+      #    Not in `pnpm gate`, deliberately: it re-runs the suite to count, and
+      #    doubling every local gate to catch a documentation drift is a bad
+      #    trade. CI is where the cost is affordable.
+      - name: README badges
+        run: pnpm badges:check
+
   # ── Declared, not yet wired ────────────────────────────────────────────────
   #
-  # accessibility  PARTIAL. Structural axe runs in jsdom on every commit. What
-  #                is NOT covered: every rule needing layout — colour contrast,
-  #                target size, focus-not-obscured — plus the NVDA / JAWS /
-  #                VoiceOver x 3-engine matrix, which cannot be automated and
-  #                governs leaving `experimental`. Plan it as work, not as a
-  #                discovery. The cross-adapter tree assertion becomes
-  #                meaningful when the second adapter exists (wave 4).
+  # accessibility  PARTIAL, and now written down in full: see
+  #                docs/accessibility.md, which lists every automated check and
+  #                every gap with what would close it. Summary: structure is
+  #                gated, ZERO of the nine screen-reader x engine combinations
+  #                are qualified, and nothing needing layout — contrast, target
+  #                size, forced colours, zoom — is tested. The cross-adapter
+  #                tree assertion now covers all three mountable adapters.
   # performance    LIVE, steps 5 and 6. Engine work in node, and paint, sort,
   #                filter and scroll frame time in a CPU-throttled Chromium.
   #                What remains: the ratchet self-skips until a linux-x64
