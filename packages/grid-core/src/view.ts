@@ -200,9 +200,11 @@ export function applyView(view: GridView, base: GridState): GridState {
     ...(view.pageSize !== undefined ? { pageSize: view.pageSize } : {}),
     hidden,
     widths,
-    // A view change is a new query, so an opaque cursor from the old one is
-    // meaningless.
+    // A view change is a new query, so the position in the old one is
+    // meaningless — an opaque cursor most obviously, and a page index for
+    // exactly the same reason: page 7 of a different filter is not page 7.
     cursor: null,
+    page: 0,
   };
 }
 

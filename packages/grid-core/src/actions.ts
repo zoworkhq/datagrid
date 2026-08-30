@@ -29,6 +29,15 @@ export type GridAction =
    */
   | { readonly type: "select/all" }
   | { readonly type: "page/next"; readonly cursor: string }
+  /**
+   * Jump to a page, for a source whose capabilities say `paging: "offset"`.
+   *
+   * A cursor source cannot serve this and should not be sent it: `queryFrom`
+   * only emits an offset when the source declared it can seek, so a grid wired
+   * to a pagination control against a FHIR endpoint asks for page 0 forever
+   * rather than asking for something the server will quietly ignore.
+   */
+  | { readonly type: "page/goto"; readonly page: number }
   | { readonly type: "page/size"; readonly size: number }
   | { readonly type: "focus/cell"; readonly rowId: RowId; readonly columnKey: string }
   | { readonly type: "column/resize"; readonly key: string; readonly width: number }

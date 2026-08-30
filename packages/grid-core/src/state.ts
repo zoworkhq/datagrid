@@ -24,6 +24,16 @@ export interface GridState {
   readonly focus: FocusTarget | null;
   readonly pageSize: number;
   readonly cursor: string | null;
+  /**
+   * Which page, 0-based, for a source that can seek.
+   *
+   * `cursor` and `page` are alternatives, not companions: an opaque cursor is
+   * meaningful only against the query that produced it, and an offset is
+   * meaningful only against a source that has one. Every action that sets one
+   * clears the other, and everything that changes the QUERY resets both —
+   * page 7 of a different filter is not page 7.
+   */
+  readonly page: number;
   readonly hidden: readonly string[];
   readonly widths: Readonly<Record<string, number>>;
 }
@@ -43,6 +53,7 @@ export function initialState(overrides: Partial<GridState> = {}): GridState {
     focus: null,
     pageSize: 50,
     cursor: null,
+    page: 0,
     hidden: [],
     widths: {},
     ...overrides,
@@ -59,15 +70,15 @@ function range(rowIds: readonly RowId[], from: RowId, to: RowId): readonly RowId
 export function reduce(state: GridState, action: GridAction, ctx: ReduceContext): GridState {
   switch (action.type) {
     case "sort/toggle":
-      return { ...state, sort: toggleSort(state.sort, action.key, action.additive), cursor: null };
+      return { ...state, sort: toggleSort(state.sort, action.key, action.additive), cursor: null, page: 0 };
 
     case "sort/set":
-      return { ...state, sort: action.sort, cursor: null };
+      return { ...state, sort: action.sort, cursor: null, page: 0 };
 
     case "filter/set":
       // A new predicate invalidates the cursor: an opaque cursor is only
       // meaningful against the query that produced it.
-      return { ...state, filter: action.node, cursor: null };
+      return { ...state, filter: action.node, cursor: null, page: 0 };
 
     case "select/toggle": {
       const has = state.selection.includes(action.id);
@@ -88,10 +99,19 @@ export function reduce(state: GridState, action: GridAction, ctx: ReduceContext)
       return { ...state, selection: [] };
 
     case "page/next":
-      return { ...state, cursor: action.cursor };
+      // Cursor paging: the server hands over the next cursor and the page
+      // index stops meaning anything, because you cannot count opaque strings.
+      return { ...state, cursor: action.cursor, page: 0 };
+
+    case "page/goto":
+      // Offset paging: an index the caller can compute, for a source that says
+      // it can seek. Clamped at zero rather than throwing — a pagination
+      // control that has drifted one below the start is not an error worth
+      // taking a grid down for.
+      return { ...state, page: Math.max(0, Math.floor(action.page)), cursor: null };
 
     case "page/size":
-      return { ...state, pageSize: action.size, cursor: null };
+      return { ...state, pageSize: action.size, cursor: null, page: 0 };
 
     case "focus/cell":
       return { ...state, focus: { rowId: action.rowId, columnKey: action.columnKey } };

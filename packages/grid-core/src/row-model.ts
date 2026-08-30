@@ -16,7 +16,7 @@
 import { computed, signal, type ReadSignal } from "@oxygenui-design/grid-signals";
 import { gridError, sanitiseError, type GridError } from "./errors.js";
 import { evaluateFilter, type Accessor } from "./filter-eval.js";
-import type { GridDataSource, GridQuery, SortSpec } from "./query.js";
+import type { GridDataSource, GridQuery, SortSpec, SourceCapabilities } from "./query.js";
 import { sortRows, type Comparator } from "./sort.js";
 import { createSortIndex, type SortIndex } from "./sort-index.js";
 import type { GridState } from "./state.js";
@@ -312,16 +312,35 @@ export interface ServerRowModelOptions<TRow> {
   readonly rowKey: (row: TRow) => string;
 }
 
-export function queryFrom(state: GridState, sort: readonly SortSpec[]): GridQuery {
+/**
+ * The query one state produces, against one source.
+ *
+ * `capabilities` is optional and its absence means "we do not know", which is
+ * treated as cursor-only — the safe reading. Cursor is the default and offset
+ * is the special case (ADR 0005): against FHIR there is no offset to choose,
+ * and sending one anyway gets it silently ignored, which is the worst outcome
+ * available because the grid then renders page 1 believing it is page 7.
+ */
+export function queryFrom(
+  state: GridState,
+  sort: readonly SortSpec[],
+  capabilities?: SourceCapabilities,
+): GridQuery {
+  const seekable = capabilities?.paging === "offset";
+  // `page` arrived after `GridState` shipped, so a view saved before it — from
+  // a URL, from storage, from a server — deserialises without the field. Left
+  // alone that makes `undefined * pageSize` into `NaN`, and a NaN offset is
+  // either a 400 from the server or, worse, a silently ignored parameter and a
+  // grid rendering page 1 believing it is page 7.
+  const page = Number.isFinite(state.page) ? Math.max(0, Math.floor(state.page)) : 0;
   return {
     sort,
     filter: state.filter,
     pageSize: state.pageSize,
-    cursor: state.cursor,
-    // Cursor is the default and offset is the special case (ADR 0005): against
-    // FHIR there is no offset to choose. Offset paging arrives with the
-    // pagination control in wave 2, for the non-FHIR sources that support it.
-    offset: null,
+    // The two are alternatives. A source that seeks is sent an offset and no
+    // cursor; everything else is sent its cursor and no offset.
+    cursor: seekable ? null : state.cursor,
+    offset: seekable ? page * state.pageSize : null,
   };
 }
 
@@ -359,7 +378,7 @@ export function createServerRowModel<TRow>(options: ServerRowModelOptions<TRow>)
     }
 
     result.update((r) => ({ ...r, loading: true, errors }));
-    const query = queryFrom(state, sort);
+    const query = queryFrom(state, sort, caps);
 
     try {
       const page = await dataSource.getRows(query, controller.signal);
