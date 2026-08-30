@@ -11,6 +11,7 @@ import {
   toSearchParams, updateDraft, type FilterNode, type ModelProvenance,
 } from "@oxygenui-design/grid-core";
 import { createGridRenderer } from "@oxygenui-design/grid-dom";
+import { liveState } from "./live.js";
 import {
   acceptProposal, aiDerived, compareSourced, compileProposal, describeProvenance,
   verified, type Proposal, type Sourced,
@@ -178,10 +179,11 @@ export interface AiRefs {
 }
 
 export function mountAi(refs: AiRefs): void {
+  const live = liveState({ repaint: () => render(), rowIds: () => SCORED.map((x) => x.id) });
   const r = createGridRenderer<Scored>(refs.host, {
     label: "Risk scores",
     rowHeight: 40,
-    onAction: () => {},
+    onAction: live.onAction,
     fallback: (row, key) => {
       if (key === "name") return text(row.name);
       if (key === "risk") return text(String(row.risk.value));
@@ -202,9 +204,9 @@ export function mountAi(refs: AiRefs): void {
       // verified one are incomparable, and sorting a worklist is triage.
       rows: SCORED.map((row, index) => ({ id: row.id, row, index })),
       total: SCORED.length,
-      sort: [],
-      selection: [],
-      focus: null,
+      sort: live.sort,
+      selection: live.selection,
+      focus: live.focus,
     });
     for (const row of refs.host.querySelectorAll<HTMLElement>('[role="row"]')) {
       const id = row.dataset["rowId"];

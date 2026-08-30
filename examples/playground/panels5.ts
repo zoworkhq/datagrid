@@ -103,7 +103,12 @@ export function mountFrameworks(refs: FrameworkRefs): void {
   //     computed and repaints when it changes. Nothing schedules but the
   //     signal graph.
   const source = signal(rows);
-  const derived = computed(() => bedModel(source()));
+  // The focus goes THROUGH the computed. Reading it outside would repaint from
+  // a model that still says `focus: null`, and the signal path would be the one
+  // adapter that loses focus on every update.
+  const derived = computed(() =>
+    bedModel(source(), { sort: live.sort, selection: live.selection, focus: live.focus }),
+  );
   const signalGrid = createGridRenderer<Bed>(refs.signals, {
     label: "Beds — signals", rowHeight: 40, onAction: live.onAction, fallback: bedFallback,
   });
@@ -124,7 +129,12 @@ export function mountFrameworks(refs: FrameworkRefs): void {
         model, label: "Beds — React", onAction: live.onAction, fallback: bedFallback,
       }),
     );
-    source.set(rows); // signals path repaints itself
+    // `live` is not a signal, so reading it inside the computed creates no
+    // dependency and a focus change alone would never re-run the effect. The
+    // signal path gets the same explicit render as the others; `source.set`
+    // still drives it when the ROWS change, which is what it is there to show.
+    source.set(rows);
+    signalGrid.render(bedModel(rows, { sort: live.sort, selection: live.selection, focus: live.focus }));
   }
 
   refs.shuffle.addEventListener("click", () => {
@@ -141,10 +151,19 @@ export function mountFrameworks(refs: FrameworkRefs): void {
     label: "Beds — server rendered", firstPage: 6, rowHeight: 40, fallback: bedFallback,
   });
   refs.ssr.innerHTML = html;
+  // The adopted grid gets its own live state: it shows a different six rows
+  // from the four above, so sharing one focus would point at a row it does not
+  // have.
+  const ssrRows = BEDS.slice(0, 6);
+  const ssrLive = liveState({ repaint: () => paintSsr(), rowIds: () => ssrRows.map((b) => b.id) });
   const adopted = createGridRenderer<Bed>(refs.ssr, {
-    label: "Beds — server rendered", rowHeight: 40, onAction: () => {}, fallback: bedFallback,
+    label: "Beds — server rendered", rowHeight: 40, onAction: ssrLive.onAction, fallback: bedFallback,
   });
-  adopted.render(bedModel(BEDS.slice(0, 6)));
+  const paintSsr = (): void =>
+    adopted.render(
+      bedModel(ssrRows, { sort: ssrLive.sort, selection: ssrLive.selection, focus: ssrLive.focus }),
+    );
+  paintSsr();
   // Two sentences, joined as two sentences. Lowercasing the first word of a
   // quoted note produces "…50 rows. never the whole set."
   refs.ssrNote.textContent =

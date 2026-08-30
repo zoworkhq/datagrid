@@ -123,8 +123,13 @@ export function mountDisclosure(refs: DisclosureRefs): void {
   // Hoisted above the rebuild: this panel recreates its renderer whenever the
   // policy changes, and focus that lives inside the renderer would be lost
   // every time a checkbox moved.
-  const live = liveState({ repaint: () => render(), rowIds: () => PATIENTS.map((p) => p.id) });
+  // A focus change repaints; a POLICY change rebuilds, because the fallback
+  // closes over the policy. Rebuilding on focus took the focused node with it,
+  // so a click landed focus and the repaint it caused immediately dropped it.
+  const live = liveState({ repaint: () => paint(), rowIds: () => PATIENTS.map((p) => p.id) });
   let granted = false;
+  let disclosureGrid: ReturnType<typeof createGridRenderer<Patient>> | null = null;
+  let paint: () => void = () => {};
 
   const render = (): void => {
     const policy: DisclosurePolicy = {
@@ -151,6 +156,11 @@ export function mountDisclosure(refs: DisclosureRefs): void {
 
     const rows = resolveRows(PATIENTS, (p) => p.id, policy);
 
+    // Created ONCE. Tearing the renderer down on every repaint took the
+    // focused node with it, so a click landed focus and the repaint it caused
+    // immediately dropped it — the panel could not be used from a keyboard.
+    // The renderer is built for this: it recycles nodes across renders.
+    disclosureGrid?.destroy();
     refs.host.textContent = "";
     const r = createGridRenderer<Patient>(refs.host, {
       label: "Patient notes",
@@ -167,14 +177,21 @@ export function mountDisclosure(refs: DisclosureRefs): void {
           : text(maskedCell.read({ reason: verdict.masked.label, legalBasis: "42 CFR §2.31" }));
       },
     });
-    r.render({
-      columns: cols.visible.map((c) => ({ key: c.key, header: c.header, width: c.key === "notes" ? 420 : 170 })),
-      rows: rows.rows.map((row, index) => ({ id: row.id, row, index })),
-      total: rows.rows.length,
-      sort: live.sort,
-      selection: live.selection,
-      focus: live.focus,
-    });
+    disclosureGrid = r;
+    paint = () =>
+      r.render({
+        columns: cols.visible.map((c) => ({
+          key: c.key,
+          header: c.header,
+          width: c.key === "notes" ? 420 : 170,
+        })),
+        rows: rows.rows.map((row, index) => ({ id: row.id, row, index })),
+        total: rows.rows.length,
+        sort: live.sort,
+        selection: live.selection,
+        focus: live.focus,
+      });
+    paint();
 
     // Restricted rows keep their slot and are marked, never filtered out.
     for (const [id] of rows.restricted) {
@@ -232,8 +249,12 @@ export interface GroupRefs {
 export function mountGrouping(refs: GroupRefs): void {
   // Group entries are addressed by position, so the ids the selection algebra
   // works over are the row indices this panel renders.
-  const live = liveState({ repaint: () => render(), rowIds: () => lastIds });
+  // Same split as the disclosure panel: expanding a branch rebuilds, because
+  // the row set changes; moving focus only repaints.
+  const live = liveState({ repaint: () => paint(), rowIds: () => lastIds });
   let lastIds: readonly string[] = [];
+  let groupGrid: ReturnType<typeof createGridRenderer<GroupEntry<Dose>>> | null = null;
+  let paint: () => void = () => {};
   const expanded = new Set<string>(["ward=Ashgrove"]);
   // A branch the demo never resolves, to show that unfetched is not empty.
   const branches = createBranchStore<Dose>({
@@ -276,6 +297,7 @@ export function mountGrouping(refs: GroupRefs): void {
 
     lastIds = withPending.map((_entry, index) => `${index}`);
 
+    groupGrid?.destroy();
     refs.host.textContent = "";
     const r = createGridRenderer<GroupEntry<Dose>>(refs.host, {
       label: "Doses by ward",
@@ -302,7 +324,10 @@ export function mountGrouping(refs: GroupRefs): void {
         return text(agg ? describeAggregate(agg) : "");
       },
     });
-    r.render(model);
+    groupGrid = r;
+    paint = () =>
+      r.render({ ...model, sort: live.sort, selection: live.selection, focus: live.focus });
+    paint();
 
     refs.host.querySelectorAll<HTMLElement>('[role="row"]').forEach((el, i) => {
       if (withPending[i]?.kind === "group") el.classList.add("grouprow");

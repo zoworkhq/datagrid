@@ -616,6 +616,47 @@ try {
     `aria-sort ${sortAfterDrag}`,
   );
 
+  // ── every grid in the demo answers a keyboard ─────────────────────────────
+  //
+  // Eleven of the fourteen were built with `onAction: () => {}`. A renderer
+  // that emits into nothing has no focus: the model's focus stays null, every
+  // paint resolves it to the header's first column, and the tab stop never
+  // leaves the header row. The panels LOOKED right and could not be used
+  // without a mouse.
+  //
+  // So: open every panel, click a body cell in every grid, press ArrowDown, and
+  // require the tab stop to have moved into the body. This is the check that
+  // would have caught it.
+  const keyboardDead = [];
+  for (const name of TABS) {
+    await page.click(`[role="tab"][data-tab="${name}"]`);
+    await page.waitForTimeout(name === "scale" ? 3500 : 450);
+
+    const grids = await page.$$(`[data-panel="${name}"] [role="grid"]`);
+    for (let g = 0; g < grids.length; g++) {
+      const cell = await page.$(
+        `[data-panel="${name}"] [role="grid"] >> nth=${g} >> .oxg-body [role="gridcell"] >> nth=0`,
+      );
+      if (!cell) continue;
+      await cell.click();
+      await page.keyboard.press("ArrowDown");
+      await page.waitForTimeout(120);
+      const where = await grids[g].evaluate((grid) => {
+        const stop = grid.querySelector('[tabindex="0"]');
+        return stop?.getAttribute("role") ?? "none";
+      });
+      if (where !== "gridcell") keyboardDead.push(`${name}[${g}] → ${where}`);
+    }
+  }
+  check(
+    keyboardDead.length === 0,
+    "every grid in the demo moves focus into the body on ArrowDown",
+    keyboardDead.join(", ") || `${TABS.length} panels swept`,
+  );
+
+  await page.click('[role="tab"][data-tab="roster"]');
+  await page.waitForTimeout(300);
+
   // ── a hidden grid stays still ─────────────────────────────────────────────
   //
   // ResizeObserver reports 0 for every rendered row the moment a grid is
