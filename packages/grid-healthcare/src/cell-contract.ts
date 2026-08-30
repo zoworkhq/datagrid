@@ -28,7 +28,7 @@
  * @see ../../../docs/decisions/0008-what-a-cell-may-decide.md
  */
 import type { ExportValue, PrintValue } from "@oxygenui-design/grid-core";
-import type { Absent } from "./absence.js";
+import { isAbsenceReason, type Absent } from "./absence.js";
 
 /** What a host cell must be able to answer about itself. */
 export interface CellHost<TValue> {
@@ -80,8 +80,32 @@ export const VISIBLE: MaskState = { masked: false };
  */
 export type CellValue<T> = T | Absent;
 
+/**
+ * Whether a cell value is an absence.
+ *
+ * ── WHY IT CHECKS THE VALUE AND NOT JUST THE KEY ────────────────────────────
+ *
+ * This used to be `"reason" in v`, and `reason` is not a rare word.
+ * `Medication.reason` is the reason a drug is held or stopped — "patient
+ * safety", "pre-procedure" — so a valid held medication tested TRUE here. Its
+ * comparator then returned `"incomparable"` for a row against itself while the
+ * text reader, which does not use this guard, printed the medication happily.
+ * Sort semantics and read semantics disagreed about the same value.
+ *
+ * The absence reasons are a closed set of eight literals, so membership is the
+ * discriminant rather than the key's presence. That is narrower than the
+ * `{ kind: "absent" }` shape the review suggested, and deliberately: it needs
+ * no change at any of the several hundred construction sites, and it survives
+ * JSON — a symbol brand would not, and these values come off the wire.
+ *
+ * An open business field can still collide, but only by holding one of the
+ * eight exact tokens, and "not-ordered" is not a reason anyone gives for
+ * holding a drug.
+ */
 export const isAbsent = <T>(v: CellValue<T>): v is Absent =>
-  typeof v === "object" && v !== null && "reason" in v;
+  typeof v === "object" &&
+  v !== null &&
+  isAbsenceReason((v as { reason?: unknown }).reason);
 
 /**
  * When the caller says the value was current. Never computed.

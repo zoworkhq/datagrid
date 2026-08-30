@@ -152,3 +152,65 @@ describe("applying a view to state", () => {
     expect(next.cursor).toBeNull();
   });
 });
+
+describe("applyView merges visibility rather than replacing it", () => {
+  /**
+   * `applyView` documented "everything not named by the view is left alone" and
+   * `hidden` did not honour it: it was recomputed from the view's `hidden:true`
+   * columns and then replaced the base outright. A personal view that changed
+   * one column's width unhid every column the base had hidden — including ones
+   * hidden by a policy layer.
+   */
+  const base = (hidden: string[]) => ({ ...initialState(), hidden });
+  const view = (columns: { key: string; hidden?: boolean; width?: number }[]): GridView => ({
+    version: 1, id: "v", label: "v", scope: "personal", columns,
+  });
+
+  it("leaves a hidden column alone when the view does not mention it", () => {
+    expect(applyView(view([{ key: "a", width: 200 }]), base(["secret"])).hidden).toEqual(["secret"]);
+  });
+
+  it("unhides only the column the view explicitly names false", () => {
+    expect(applyView(view([{ key: "a", hidden: false }]), base(["a", "b"])).hidden).toEqual(["b"]);
+  });
+
+  it("adds a column the view hides", () => {
+    expect(applyView(view([{ key: "b", hidden: true }]), base(["a"])).hidden).toEqual(["a", "b"]);
+  });
+
+  it("does both at once, and does not duplicate", () => {
+    const out = applyView(
+      view([{ key: "a", hidden: false }, { key: "b", hidden: true }, { key: "c", hidden: true }]),
+      base(["a", "c"]),
+    );
+    expect(out.hidden).toEqual(["c", "b"]);
+  });
+
+  it("treats an absent `hidden` as 'no opinion', not as false", () => {
+    // This is the whole reason the merge cannot be a filter over the view.
+    expect(applyView(view([{ key: "a" }]), base(["a"])).hidden).toEqual(["a"]);
+  });
+
+  it("keeps a view with no columns from touching visibility at all", () => {
+    const v: GridView = { version: 1, id: "v", label: "v", scope: "personal", sort: [] };
+    expect(applyView(v, base(["a", "b"])).hidden).toEqual(["a", "b"]);
+  });
+
+  it("is stable across a repeated application", () => {
+    const v = view([{ key: "a", hidden: false }, { key: "b", hidden: true }]);
+    const once = applyView(v, base(["a", "c"]));
+    expect(applyView(v, once).hidden).toEqual(once.hidden);
+  });
+
+  it("still applies widths, sort and page size beside the merge", () => {
+    const out = applyView(
+      { version: 1, id: "v", label: "v", scope: "personal",
+        columns: [{ key: "a", width: 240, hidden: false }], sort: [{ key: "a", direction: "desc" }], pageSize: 40 },
+      base(["a", "b"]),
+    );
+    expect(out.hidden).toEqual(["b"]);
+    expect(out.widths["a"]).toBe(240);
+    expect(out.sort).toEqual([{ key: "a", direction: "desc" }]);
+    expect(out.pageSize).toBe(40);
+  });
+});

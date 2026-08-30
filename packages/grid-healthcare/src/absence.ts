@@ -23,6 +23,30 @@ export type Absent =
 
 export type AbsenceReason = Absent["reason"];
 
+/**
+ * The eight, as values.
+ *
+ * Kept beside the type so a ninth reason cannot be added to one and not the
+ * other: `describeAbsence` switches exhaustively over the type, and this array
+ * is checked against that switch in `absence.test.ts`.
+ */
+export const ABSENCE_REASONS = [
+  "not-ordered",
+  "not-resulted",
+  "not-measured",
+  "not-applicable",
+  "declined",
+  "specimen-problem",
+  "withheld",
+  "source-unreachable",
+] as const satisfies readonly AbsenceReason[];
+
+const REASONS: ReadonlySet<string> = new Set(ABSENCE_REASONS);
+
+/** Whether a string is one of the eight. */
+export const isAbsenceReason = (v: unknown): v is AbsenceReason =>
+  typeof v === "string" && REASONS.has(v);
+
 /** A source that could not be reached makes the whole coverage claim conditional. */
 export function escalatesToCoverage(absent: Absent): boolean {
   return absent.reason === "source-unreachable";

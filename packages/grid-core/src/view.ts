@@ -187,9 +187,31 @@ export function resolveViews(layers: readonly GridView[], ctx: ViewContext): Vie
   return { view: merged, applied, problems };
 }
 
-/** Projects a resolved view onto grid state. Everything not named by the view is left alone. */
+/**
+ * Projects a resolved view onto grid state.
+ *
+ * ── "EVERYTHING NOT NAMED BY THE VIEW IS LEFT ALONE" ────────────────────────
+ *
+ * That was the documented contract and `hidden` did not honour it. It was
+ * recomputed from scratch — every column with `hidden: true` in the view, and
+ * nothing else — and then REPLACED `base.hidden`. So a personal view that
+ * changed one column's width unhid every column the base had hidden, silently,
+ * including ones hidden by a policy layer. In healthcare that is a disclosure
+ * footgun, not a layout bug.
+ *
+ * It also made `hidden: false` unexpressible: a view could not say "show this
+ * one" without also saying "and show everything else".
+ *
+ * Visibility is merged BY KEY now:
+ *
+ *   · a key the view does not mention keeps whatever the base said
+ *   · `hidden: true`  adds it
+ *   · `hidden: false` removes it — which is the whole point of writing `false`
+ *
+ * Order is preserved from the base so a round trip is stable.
+ */
 export function applyView(view: GridView, base: GridState): GridState {
-  const hidden = (view.columns ?? []).filter((c) => c.hidden).map((c) => c.key);
+  const hidden = mergeHidden(base.hidden, view.columns ?? []);
   const widths = { ...base.widths };
   for (const c of view.columns ?? []) if (c.width !== undefined) widths[c.key] = c.width;
 
@@ -206,6 +228,25 @@ export function applyView(view: GridView, base: GridState): GridState {
     cursor: null,
     page: 0,
   };
+}
+
+/**
+ * Merges a view's visibility onto the base, by key.
+ *
+ * `hidden: false` is meaningfully different from the field being absent, which
+ * is why this cannot be a filter over the view alone.
+ */
+function mergeHidden(base: readonly string[], columns: readonly ColumnView[]): readonly string[] {
+  const shown = new Set<string>();
+  const added: string[] = [];
+  for (const c of columns) {
+    if (c.hidden === true) added.push(c.key);
+    else if (c.hidden === false) shown.add(c.key);
+  }
+
+  const out = base.filter((key) => !shown.has(key));
+  for (const key of added) if (!out.includes(key)) out.push(key);
+  return out;
 }
 
 /** The round-trip a saved view must survive: state -> document -> state. */

@@ -20,7 +20,7 @@
  * So: every step in `gate` must appear in CI. Adding one to the local gate and
  * forgetting CI now fails here, naming the step.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -60,6 +60,33 @@ describe("CI runs what the local gate runs", () => {
     const workflow = ci();
     const runs = [...workflow.matchAll(/run:\s*(.+)/g)].map((m) => m[1] ?? "");
     expect(runs.some((r) => /\bpnpm gate\b/.test(r))).toBe(false);
+  });
+});
+
+describe("the gate runs from a clean checkout", () => {
+  /**
+   * `brief.generated.css` is derived from the product brief and git-ignored,
+   * correctly. `copyStatic` copied it without ever making it, and the smoke
+   * test calls `copyStatic` directly — so on a clean checkout `pnpm gate`
+   * failed with ENOENT before Chromium started. A release gate that cannot run
+   * from the state a release is cut from is not a gate.
+   */
+  it("derives the generated CSS rather than assuming someone made it", async () => {
+    const generated = join(ROOT, "examples", "playground", "brief.generated.css");
+    rmSync(generated, { force: true });
+    expect(existsSync(generated)).toBe(false);
+
+    const { copyStatic } = await import("./build.mjs");
+    copyStatic();
+
+    expect(existsSync(generated), "copyStatic left the generated file missing").toBe(true);
+    expect(readFileSync(generated, "utf8").length).toBeGreaterThan(1_000);
+  });
+
+  it("keeps the generated file out of the repository", () => {
+    // The other tempting fix is committing it, which makes the repo the cache.
+    const ignore = readFileSync(join(ROOT, ".gitignore"), "utf8");
+    expect(ignore).toMatch(/brief\.generated\.css/);
   });
 });
 

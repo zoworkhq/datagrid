@@ -4,7 +4,7 @@
  * locally and what deploys are the same artifact.
  */
 import { context, build as esbuild } from "esbuild";
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -187,6 +187,23 @@ export function liftDesignSystem(brief) {
   };
 }
 
+/**
+ * Generates the lifted CSS when it is missing or older than the brief.
+ *
+ * Cheap when it is current — one `statSync` each — so callers can simply ask
+ * rather than knowing whether someone else already did it.
+ */
+export function ensureBriefCss() {
+  const out = join(HERE, "brief.generated.css");
+  const source = join(HERE, "..", "..", "docs", "research", "2026-08-27-product-brief.html");
+  try {
+    if (statSync(out).mtimeMs >= statSync(source).mtimeMs) return;
+  } catch {
+    // Missing, which is the clean-checkout case and the whole reason for this.
+  }
+  extractBriefCss();
+}
+
 /** The IO half. Everything decidable lives in `liftDesignSystem`. */
 function extractBriefCss() {
   const brief = readFileSync(
@@ -198,8 +215,28 @@ function extractBriefCss() {
   console.log(`lifted ${rules.length} rules from the brief — ${(css.length / 1024).toFixed(0)} kB`);
 }
 
+/**
+ * Copies the static files, GENERATING the ones that are generated.
+ *
+ * ── WHY THE DERIVATION IS HERE ──────────────────────────────────────────────
+ *
+ * `brief.generated.css` is derived from the product brief and is git-ignored,
+ * correctly — generated output does not belong in the repository. But this
+ * function copied it without ever making it, and `smoke.browser.mjs` calls this
+ * function directly. So on a clean checkout `pnpm gate` failed with ENOENT
+ * before Chromium ever started: a release gate that could not run from the
+ * state a release is cut from.
+ *
+ * The tempting fixes are both wrong. Committing the generated file makes the
+ * repository the cache. Documenting "run playground:build first" makes the gate
+ * depend on a step nothing enforces — which is how it got here.
+ *
+ * So: derive what is missing, here, where the copy happens. Idempotent, and the
+ * regeneration is skipped when the file is already current with its source.
+ */
 export function copyStatic() {
   mkdirSync(DIST, { recursive: true });
+  ensureBriefCss();
   for (const f of ["index.html", "style.css", "brief.generated.css"]) {
     copyFileSync(join(HERE, f), join(DIST, f));
   }
