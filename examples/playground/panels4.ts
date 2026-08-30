@@ -239,6 +239,13 @@ export interface ViewRefs {
   readonly bulkOut: HTMLElement;
 }
 
+/** What each refusal means, in the words a person would use for it. */
+const PROBLEM_VERB: Readonly<Record<string, string>> = {
+  "unknown-column": "reference a column that does not exist:",
+  "required-column-hidden": "hide the column that identifies the row:",
+  "unsortable-column": "sort on a column that cannot be sorted:",
+};
+
 export function mountViews(refs: ViewRefs): void {
   // ── layered views ─────────────────────────────────────────────────────────
   const enabled = new Set(["default", "role", "team", "personal"]);
@@ -268,7 +275,12 @@ export function mountViews(refs: ViewRefs): void {
       `widths           ${Object.entries(state.widths).map(([k, v]) => `${k}=${v}`).join(" ") || "(none)"}`,
       "",
       `problems         ${resolution.problems.length === 0 ? "none" : ""}`,
-      ...resolution.problems.map((p) => `  · ${p.kind}: ${"detail" in p ? p.detail : JSON.stringify(p)}`),
+      // Every problem has the same three fields, so say them in a sentence
+      // rather than dumping the object — which repeated the kind twice and
+      // buried which layer was responsible, the one thing worth knowing.
+      ...resolution.problems.map(
+        (p) => `  · the "${p.viewId}" layer tried to ${PROBLEM_VERB[p.kind]} "${p.key}"`,
+      ),
       "",
       `round trip       viewFromState → JSON (${encoded.length} bytes) → parseView: ` +
         (parsed.ok ? "ok" : `refused — ${JSON.stringify(parsed)}`),
