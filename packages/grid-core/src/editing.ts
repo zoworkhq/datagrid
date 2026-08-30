@@ -140,4 +140,4 @@ export function isEditable(column: { readonly derived?: boolean; readonly editab
 
 /** The refusal a caller renders when an edit is attempted on a derived column. */
 export const notEditable = (columnKey: string): GridError =>
-  gridError({ code: "disclosure-refused", phase: "reduce", columnKey });
+  gridError({ code: "not-editable", phase: "reduce", columnKey });

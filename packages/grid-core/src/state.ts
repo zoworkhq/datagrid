@@ -112,9 +112,22 @@ export function reduce(state: GridState, action: GridAction, ctx: ReduceContext)
       return { ...state, hidden };
     }
 
+    case "select/all":
+      // Every row the CONTEXT knows about — the filtered set under a client
+      // model, the loaded rows under a paged one. Deduplicated against nothing,
+      // because `rowIds` is already the row order and already unique.
+      return { ...state, selection: [...ctx.rowIds] };
+
     case "column/reorder":
     case "rows/upsert":
       return state; // owned by the column model and the row store respectively
+
+    case "column/menu":
+    case "edit/begin":
+      // Owned by the application. A menu is chrome and an edit is a session
+      // that can fail; neither is grid state, and holding a half of either
+      // here would mean two places disagreeing about whether one is open.
+      return state;
 
     case "rows/remove": {
       const gone = new Set(action.ids);

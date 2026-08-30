@@ -47,7 +47,16 @@ export const DEFAULT_KEYMAP: readonly KeyBinding[] = [
   { id: "sort.additive", keys: "Shift+Enter", context: "header", description: "Add this column to the sort" },
   { id: "column.menu", keys: "Alt+ArrowDown", context: "header", description: "Open the column menu" },
   { id: "column.resize", keys: "Control+Shift+ArrowRight", context: "header", description: "Widen this column" },
+  // Widening with no way back is not a resize, it is a one-way ratchet — and a
+  // keyboard user who overshoots has no pointer to drag it back with.
+  { id: "column.narrow", keys: "Control+Shift+ArrowLeft", context: "header", description: "Narrow this column" },
 ];
+
+/** How much one keyboard resize moves a column. */
+export const COLUMN_RESIZE_STEP = 24;
+
+/** Below this a column cannot show a value, only that it has one. */
+export const MIN_COLUMN_WIDTH = 56;
 
 export function assertUniqueBindings(keymap: readonly KeyBinding[]): void {
   const seen = new Map<string, string>();

@@ -21,6 +21,16 @@ export type GridErrorCode =
   | "filter-not-compilable"
   | "export-refused"
   | "disclosure-refused"
+  /**
+   * A column that cannot be written, which is NOT a disclosure refusal.
+   *
+   * These shared a code until the playground put both on screen. "Policy
+   * withheld this from you" and "this column is derived" have different
+   * audiences, different remedies, and — in a setting where disclosure
+   * refusals are reviewed — a log where every read-only column looks like a
+   * withheld one is a log nobody can audit.
+   */
+  | "not-editable"
   | "client-mode-refused"
   /**
    * A block was asked for that a cursor-paged source cannot reach.

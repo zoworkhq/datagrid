@@ -355,6 +355,109 @@ try {
   check(scale.strategy === "columnar", "100,000 rows chooses the columnar store", scale.strategy);
   check(/MB in/.test(scale.store), "the store reports real bytes", scale.store);
 
+  // ── every advertised shortcut does something ──────────────────────────────
+  //
+  // The unit tests dispatch synthetic KeyboardEvents at a node they focused
+  // themselves. This presses the keys, on a real focus ring, through the
+  // browser's own dispatch — which is where the difference between "the
+  // handler exists" and "the handler is reachable" shows up.
+  await page.click('[role="tab"][data-tab="roster"]');
+  // An earlier check scrolled this grid to row 500,000; the rows named below
+  // are the first few, so put it back before asking for them.
+  await page.evaluate(() => {
+    const vp = document.querySelector('[data-panel="roster"] .oxg-viewport');
+    if (vp) vp.scrollTop = 0;
+  });
+  await page.waitForTimeout(500);
+
+  const cell = (rowId, columnKey) =>
+    `[data-panel="roster"] [data-row-id="${rowId}"] [data-col-key="${columnKey}"]`;
+  const selectedIds = () =>
+    page.$$eval('[data-panel="roster"] [aria-selected="true"]', (els) => els.map((e) => e.dataset.rowId));
+
+  // Control+A — was dead, left the selection at whatever it was.
+  await page.click(cell("p2", "ward"));
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Control+a");
+  await page.waitForTimeout(250);
+  const allSelected = await selectedIds();
+  const allNote = await page.textContent("#roster-hint");
+  check(allSelected.length > 5, "Control+A selects every row", `${allSelected.length} rendered rows marked`);
+  check(
+    /every row this filter matches/.test(allNote ?? ""),
+    "…and says what “all” meant",
+    (allNote ?? "").slice(0, 60),
+  );
+
+  // Shift+ArrowDown — was dead. Grows the selection AND carries focus.
+  await page.keyboard.press("Escape");
+  await page.click(cell("p2", "ward"));
+  await page.keyboard.press("Shift+ArrowDown");
+  await page.keyboard.press("Shift+ArrowDown");
+  await page.waitForTimeout(250);
+  const extended = await selectedIds();
+  const focusRow = await page.$eval(
+    '[data-panel="roster"] [role="grid"] [tabindex="0"]',
+    (el) => el.closest("[data-row-id]")?.dataset.rowId,
+  );
+  check(
+    extended.includes("p2") && extended.includes("p3") && extended.includes("p4"),
+    "Shift+ArrowDown extends the selection",
+    extended.join(", "),
+  );
+  check(focusRow === "p4", "…and focus travels with it, so the chord can be held", `focus on ${focusRow}`);
+
+  // Shift+Space — was dead. Extends from the last selected row to this one.
+  await page.keyboard.press("Escape");
+  await page.click(cell("p1", "ward"));
+  await page.keyboard.press(" ");
+  await page.click(cell("p5", "ward"));
+  await page.keyboard.press("Shift+ ");
+  await page.waitForTimeout(250);
+  const spanned = await selectedIds();
+  check(
+    ["p1", "p2", "p3", "p4", "p5"].every((id) => spanned.includes(id)),
+    "Shift+Space extends from the anchor to this row",
+    spanned.join(", "),
+  );
+
+  // F2 — was dead. The grid names the cell; it does not open an editor.
+  await page.keyboard.press("Escape");
+  await page.click(cell("p2", "reviewed"));
+  await page.keyboard.press("F2");
+  await page.waitForTimeout(250);
+  const editNote = await page.textContent("#roster-hint");
+  check(/not editable/.test(editNote ?? ""), "F2 asks to edit, and the host answers", (editNote ?? "").slice(0, 70));
+  check(
+    (await page.$('[data-panel="roster"] [role="grid"] input, [data-panel="roster"] [role="grid"] textarea')) === null,
+    "…and the grid opens no editor of its own",
+  );
+
+  // Alt+ArrowDown and the resize pair, on a header.
+  await page.click('[data-panel="roster"] .oxg-head [data-col-key="ward"]');
+  await page.keyboard.press("Alt+ArrowDown");
+  await page.waitForTimeout(250);
+  const menu = await page.$$eval('.colmenu [role="menuitem"]', (els) => els.map((e) => e.textContent));
+  check(menu.length >= 3, "Alt+ArrowDown opens the column menu the host renders", menu.join(" · "));
+  await page.keyboard.press("Escape");
+
+  const wardWidth = () =>
+    page.$eval('[data-panel="roster"] .oxg-head [data-col-key="ward"]', (el) =>
+      Math.round(el.getBoundingClientRect().width),
+    );
+  await page.click('[data-panel="roster"] .oxg-head [data-col-key="ward"]');
+  const w0 = await wardWidth();
+  await page.keyboard.press("Control+Shift+ArrowRight");
+  await page.waitForTimeout(200);
+  const w1 = await wardWidth();
+  await page.keyboard.press("Control+Shift+ArrowLeft");
+  await page.waitForTimeout(200);
+  const w2 = await wardWidth();
+  check(w1 > w0, "Control+Shift+ArrowRight widens the column", `${w0}px → ${w1}px`);
+  check(w2 === w0, "Control+Shift+ArrowLeft puts it back", `${w1}px → ${w2}px`);
+
+  await page.keyboard.press("Escape");
+
   // ── a hidden grid stays still ─────────────────────────────────────────────
   //
   // ResizeObserver reports 0 for every rendered row the moment a grid is

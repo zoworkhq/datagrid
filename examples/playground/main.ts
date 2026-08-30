@@ -15,7 +15,9 @@ import {
   initialState,
   DEFAULT_CLIENT_ROW_CEILING,
   sortRows,
-  toggleSort,
+  isEditable,
+  notEditable,
+  reduce,
   type Comparator,
   type GridAction,
   type GridState,
@@ -114,7 +116,21 @@ function makePatients(n: number): Patient[] {
 
 // ── the grid ────────────────────────────────────────────────────────────────
 
-const columns = [
+/**
+ * `editable` is declared nowhere below, and that is the roster's answer: it is
+ * a read-only view. F2 asks anyway, and the refusal it gets is the library's
+ * own — see `beginCellEdit`.
+ */
+interface RosterColumn {
+  readonly key: string;
+  readonly header: string;
+  readonly sortable?: boolean;
+  readonly width?: number;
+  readonly editable?: boolean;
+  readonly derived?: boolean;
+}
+
+const columns: readonly RosterColumn[] = [
   { key: "name", header: "Patient", sortable: true, width: 262 },
   { key: "status", header: "Clinical status", sortable: true, width: 150 },
   { key: "problems", header: "Problem list", width: 210 },
@@ -218,9 +234,15 @@ function recompute(): void {
   render();
 }
 
+/** Widths the user has changed, over the declared ones. */
+let widths: Readonly<Record<string, number>> = {};
+
+const labelFor = (key: string): string =>
+  columns.find((c) => c.key === key)?.header ?? key;
+
 function viewModel(): GridViewModel<Patient> {
   return {
-    columns,
+    columns: columns.map((c) => (widths[c.key] === undefined ? c : { ...c, width: widths[c.key] as number })),
     rows: visible.map((row, index) => ({ id: row.id, row, index })),
     total: refused ? 0 : "unknown",
     sort: state.sort,
@@ -277,28 +299,44 @@ function onAction(action: GridAction): void {
   devtools.action(action, performance.now() - started);
   devtools.state(state);
 
+  // The library's own reducer, rather than a hand-written copy of it. The
+  // playground reimplemented four cases and silently ignored the rest, so
+  // every binding wired later arrived here and fell through `default`.
+  const before = state;
+  state = reduce(state, action, { rowIds: visible.map((p) => p.id) });
+
   switch (action.type) {
+    // Sorting changes the row ORDER, which the reducer does not compute.
     case "sort/toggle":
-      state = { ...state, sort: toggleSort(state.sort, action.key, action.additive) };
+    case "sort/set":
       recompute();
       return;
-    case "focus/cell":
-      state = { ...state, focus: { rowId: action.rowId, columnKey: action.columnKey } };
+
+    // Chrome and sessions the grid deliberately does not own. The demo owns
+    // them, which is the point of the action existing at all.
+    case "column/menu":
+      openColumnMenu(action.key);
       return;
-    case "select/toggle": {
-      const has = state.selection.includes(action.id);
-      state = {
-        ...state,
-        selection: has ? state.selection.filter((id) => id !== action.id) : [...state.selection, action.id],
-      };
+    case "edit/begin":
+      beginCellEdit(action.rowId, action.columnKey);
+      return;
+    case "column/resize":
+      widths = { ...widths, [action.key]: action.width };
+      note(`${labelFor(action.key)} is now ${action.width}px — Ctrl+Shift+← narrows it`);
       render();
       return;
-    }
-    case "select/clear":
-      state = { ...state, selection: [] };
+
+    case "select/all":
+      note(
+        `Selected ${state.selection.length.toLocaleString()} rows — every row this filter matches. ` +
+          `A paged source would say “and an unknown number not loaded” instead.`,
+      );
       render();
       return;
+
     default:
+      // Repaint only when something the grid draws actually moved.
+      if (state !== before) render();
       return;
   }
 }
@@ -661,6 +699,90 @@ document.addEventListener("keydown", (e) => {
     }
   }
 });
+
+/**
+ * The column menu the grid refuses to render.
+ *
+ * Sorting, hiding and pinning already have actions; a menu is the chrome that
+ * collects them, and chrome is the application's. This one is deliberately
+ * plain — it exists to prove the action arrives and that a host can act on it.
+ */
+function openColumnMenu(key: string): void {
+  document.querySelector(".colmenu")?.remove();
+  const th = document.querySelector<HTMLElement>(
+    `.oxg-head [data-col-key="${CSS.escape(key)}"]`,
+  );
+  if (!th) return;
+
+  const menu = document.createElement("div");
+  menu.className = "colmenu";
+  menu.setAttribute("role", "menu");
+  menu.setAttribute("aria-label", `${labelFor(key)} column`);
+  const box = th.getBoundingClientRect();
+  menu.style.top = `${Math.round(box.bottom + 4)}px`;
+  menu.style.left = `${Math.round(box.left)}px`;
+
+  const sortable = columns.find((c) => c.key === key)?.sortable === true;
+  const entries: readonly (readonly [string, () => void])[] = [
+    ...(sortable
+      ? ([["Sort by this column", () => onAction({ type: "sort/toggle", key, additive: false })]] as const)
+      : []),
+    ["Widen", () => onAction({ type: "column/resize", key, width: (widths[key] ?? 140) + 40 })],
+    ["Narrow", () => onAction({ type: "column/resize", key, width: Math.max(56, (widths[key] ?? 140) - 40) })],
+    ["Reset width", () => { const { [key]: _drop, ...rest } = widths; widths = rest; render(); }],
+  ];
+
+  for (const [label, run] of entries) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.setAttribute("role", "menuitem");
+    item.textContent = label;
+    item.addEventListener("click", () => {
+      menu.remove();
+      run();
+    });
+    menu.append(item);
+  }
+
+  const close = (e: Event): void => {
+    if (menu.contains(e.target as Node)) return;
+    menu.remove();
+    document.removeEventListener("pointerdown", close);
+  };
+  document.addEventListener("pointerdown", close);
+  menu.addEventListener("keydown", (e) => {
+    // Escape returns focus to the header it came from, rather than to nowhere.
+    if (e.key === "Escape") {
+      menu.remove();
+      th.focus();
+    }
+  });
+
+  document.body.append(menu);
+  (menu.firstElementChild as HTMLElement | null)?.focus();
+}
+
+/**
+ * What F2 opens.
+ *
+ * `beginEdit` hands back a SESSION rather than mutating anything, because a
+ * commit can fail and the failure belongs to whoever asked for it. The roster
+ * is read-only, so this reports the refusal the library already produces
+ * instead of inventing an editor for a column that cannot be edited.
+ */
+function beginCellEdit(rowId: string, columnKey: string): void {
+  const column = columns.find((c) => c.key === columnKey);
+  if (!column || !isEditable(column)) {
+    const err = notEditable(columnKey);
+    devtools.error(err);
+    note(
+      `${labelFor(columnKey)} is not editable — refused as ${err.code}, naming the column and not the value. ` +
+        `The “Working on a row” tab has the editable one.`,
+    );
+    return;
+  }
+  note(`Editing ${labelFor(columnKey)} on row ${rowId}`);
+}
 
 function note(message: string): void {
   const el = document.getElementById("roster-hint") as HTMLElement;

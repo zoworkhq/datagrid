@@ -17,12 +17,41 @@ export type GridAction =
   | { readonly type: "select/toggle"; readonly id: RowId }
   | { readonly type: "select/range"; readonly from: RowId; readonly to: RowId }
   | { readonly type: "select/clear" }
+  /**
+   * Every row the grid HAS, which is not always every row that matches.
+   *
+   * The reducer resolves this against `ctx.rowIds`, so under a client model it
+   * is the whole filtered set and under a paged model it is what has loaded.
+   * That difference is real and is not papered over: an application that means
+   * "everything matching, including rows nobody has seen" wants
+   * `selectMatching` and the bulk-review path, which counts the unnamed rows
+   * and refuses rather than guessing.
+   */
+  | { readonly type: "select/all" }
   | { readonly type: "page/next"; readonly cursor: string }
   | { readonly type: "page/size"; readonly size: number }
   | { readonly type: "focus/cell"; readonly rowId: RowId; readonly columnKey: string }
   | { readonly type: "column/resize"; readonly key: string; readonly width: number }
   | { readonly type: "column/reorder"; readonly key: string; readonly toIndex: number }
   | { readonly type: "column/visibility"; readonly key: string; readonly visible: boolean }
+  /**
+   * The column menu was asked for. The grid does not own the menu.
+   *
+   * Sorting, hiding, pinning and filtering all already have their own actions;
+   * a menu is the chrome that collects them, and chrome belongs to the
+   * application — the same reason the grid emits events rather than rendering
+   * a toolbar.
+   */
+  | { readonly type: "column/menu"; readonly key: string }
+  /**
+   * F2 on a cell. The grid does not own the editor either.
+   *
+   * `beginEdit` returns a SESSION the application holds, because a commit can
+   * fail and the failure belongs to whoever made the request. The renderer's
+   * job is to say which cell, and to say it in the one place that knows where
+   * focus is.
+   */
+  | { readonly type: "edit/begin"; readonly rowId: RowId; readonly columnKey: string }
   /** Live updates are pushed in by the application. The grid has no socket. */
   | { readonly type: "rows/upsert"; readonly rows: readonly unknown[] }
   | { readonly type: "rows/remove"; readonly ids: readonly RowId[] };

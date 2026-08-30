@@ -937,3 +937,34 @@ main { flex: 1 1 auto; min-height: 0; padding: 0 var(--sp-4, 16px) var(--sp-4, 1
 .panel[data-panel="views"] .devtools,
 .panel[data-panel="fhir"] .devtools,
 .panel[data-panel="frameworks"] .devtools { flex: 0 0 auto; max-height: 260px; }
+
+/* ── the column menu ────────────────────────────────────────────────────────
+   Rendered by the DEMO, not by the grid. The grid emits `column/menu` and stops
+   there: sorting, hiding and pinning already have their own actions, and the
+   menu that collects them is chrome the application owns. */
+.colmenu {
+  position: fixed;
+  z-index: 40;
+  min-width: 190px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  background: var(--raised, var(--ground));
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 6px);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08);
+}
+.colmenu button {
+  appearance: none;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-size: var(--fs-sm, 12.5px);
+  color: var(--ink);
+  padding: 7px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.colmenu button:hover { background: var(--sunken); }
+.colmenu button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }

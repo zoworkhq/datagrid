@@ -30,7 +30,9 @@ import {
   type KeyBinding,
   type SortSpec,
   createGeometry,
+  COLUMN_RESIZE_STEP,
   DEFAULT_KEYMAP,
+  MIN_COLUMN_WIDTH,
   sanitiseError,
 } from "@oxygenui-design/grid-core";
 import { ariaRowCount, ariaRowIndex } from "./aria.js";
@@ -858,9 +860,82 @@ export function createGridRenderer<TRow>(
           options.onAction({ type: "focus/cell", rowId: focus.rowId, columnKey: focus.columnKey });
         }
         return;
+
+      case "select.all":
+        if (context === "body") {
+          e.preventDefault(); // Control+A would otherwise select the whole page
+          options.onAction({ type: "select/all" });
+        }
+        return;
+
+      // Shift+Arrow grows the selection AND carries focus with it, which is
+      // what makes holding the chord work. Emitting the range before moving
+      // means both ends are already selected when focus lands.
+      case "select.up":
+      case "select.down": {
+        if (context !== "body") return;
+        const next = moveFocus(shapeOf(current), focus, binding.id === "select.up" ? "up" : "down", pageRows);
+        if (!next || next.rowId === focus.rowId || next.rowId === HEADER_ROW_ID) return;
+        e.preventDefault();
+        options.onAction({ type: "select/range", from: focus.rowId, to: next.rowId });
+        moveTo(next);
+        return;
+      }
+
+      // From wherever the run started to here. The anchor is the last row the
+      // user selected, so Shift+Space after a click behaves the way a click
+      // then a shift-click does — and with nothing selected it is a plain
+      // toggle rather than a range of one, which would read as doing nothing.
+      case "row.selectExtend": {
+        if (context !== "body") return;
+        e.preventDefault();
+        const anchor = current.selection[current.selection.length - 1];
+        if (anchor === undefined || anchor === focus.rowId) {
+          options.onAction({ type: "select/toggle", id: focus.rowId });
+        } else {
+          options.onAction({ type: "select/range", from: anchor, to: focus.rowId });
+        }
+        return;
+      }
+
+      case "cell.edit":
+        if (context === "body") {
+          e.preventDefault();
+          options.onAction({ type: "edit/begin", rowId: focus.rowId, columnKey: focus.columnKey });
+        }
+        return;
+
+      case "column.menu":
+        if (context === "header") {
+          e.preventDefault(); // Alt+Down opens the browser's own menu on some platforms
+          options.onAction({ type: "column/menu", key: focus.columnKey });
+        }
+        return;
+
+      // A width the renderer computes rather than one the caller guesses: the
+      // declared width when there is one, the measured width when there is
+      // not, so the first press moves from where the column actually is.
+      case "column.resize":
+      case "column.narrow": {
+        if (context !== "header") return;
+        e.preventDefault();
+        const step = binding.id === "column.narrow" ? -COLUMN_RESIZE_STEP : COLUMN_RESIZE_STEP;
+        const width = Math.max(MIN_COLUMN_WIDTH, widthOf(focus.columnKey) + step);
+        options.onAction({ type: "column/resize", key: focus.columnKey, width });
+        return;
+      }
+
       default:
         return;
     }
+  }
+
+  /** A column's current width: what it declares, or what it measures. */
+  function widthOf(columnKey: string): number {
+    const declared = current?.columns.find((c) => c.key === columnKey)?.width;
+    if (declared !== undefined) return declared;
+    const th = headGroup.querySelector<HTMLElement>(`[data-col-key="${CSS.escape(columnKey)}"]`);
+    return Math.round(th?.getBoundingClientRect().width ?? DEFAULT_COLUMN_WIDTH);
   }
 
   /**
