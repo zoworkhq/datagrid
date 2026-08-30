@@ -28,6 +28,15 @@ export type GridAction =
    * and refuses rather than guessing.
    */
   | { readonly type: "select/all" }
+  /**
+   * The exact set, replacing whatever was selected.
+   *
+   * Added for undo. `select/clear` used to invert to a `select/range` built
+   * from the first and last ids of the old selection, which turns a
+   * non-contiguous selection into a larger contiguous one — and the next bulk
+   * action then targets rows the user never picked.
+   */
+  | { readonly type: "select/set"; readonly ids: readonly RowId[] }
   | { readonly type: "page/next"; readonly cursor: string }
   /**
    * Jump to a page, for a source whose capabilities say `paging: "offset"`.

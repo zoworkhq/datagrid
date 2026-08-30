@@ -132,6 +132,11 @@ export function reduce(state: GridState, action: GridAction, ctx: ReduceContext)
       return { ...state, hidden };
     }
 
+    case "select/set":
+      // Deduplicated, because a selection is a SET and a caller replaying an
+      // undo entry should not be able to make it stop being one.
+      return { ...state, selection: [...new Set(action.ids)] };
+
     case "select/all":
       // Every row the CONTEXT knows about — the filtered set under a client
       // model, the loaded rows under a paged one. Deduplicated against nothing,

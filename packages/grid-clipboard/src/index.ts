@@ -18,7 +18,15 @@
  *      spreadsheet is executed exactly like a CSV one, and the same
  *      patient-supplied name is on the other end of it.
  */
-import { gridError, type ExportValue, type GridAction, type GridError, type RowId } from "@oxygenui-design/grid-core";
+import {
+  gridError,
+  type ExportValue,
+  type FilterNode,
+  type GridAction,
+  type GridError,
+  type RowId,
+  type SortSpec,
+} from "@oxygenui-design/grid-core";
 
 // ── range selection ─────────────────────────────────────────────────────────
 
@@ -174,19 +182,82 @@ export interface UndoStack {
 
 export const emptyUndo = (): UndoStack => ({ past: [], future: [] });
 
-/** `null` when an action cannot be undone. Guessing an inverse is worse than refusing. */
-export function invert(action: GridAction, before: { readonly selection?: readonly RowId[] }): GridAction | null {
+/**
+ * The state an inverse needs to restore.
+ *
+ * Every field is optional, and OMITTING one is meaningfully different from
+ * passing an empty value: `filter: null` means "there was no filter", while
+ * leaving `filter` out means "I did not record what the filter was". The second
+ * makes the action un-undoable, and this now says so instead of guessing.
+ */
+export interface UndoContext {
+  readonly selection?: readonly RowId[];
+  readonly sort?: readonly SortSpec[];
+  readonly filter?: FilterNode | null;
+}
+
+/**
+ * The inverse of an action, or `null` when there isn't one.
+ *
+ * ── WHAT THIS USED TO GUESS ─────────────────────────────────────────────────
+ *
+ * The docstring said only cleanly invertible actions were undoable, and three
+ * of the five were not clean:
+ *
+ *   · `sort/set` always inverted to an EMPTY sort. Undoing a sort change did
+ *     not restore the previous sort, it removed sorting altogether.
+ *   · `filter/set` always inverted to a NULL filter, with the same result.
+ *   · `select/clear` rebuilt a `select/range` from the first and last id of
+ *     the old selection — so undoing a clear over a non-contiguous selection
+ *     handed back a LARGER, contiguous one, and the next bulk action then
+ *     targeted rows the user never picked.
+ *
+ * None of them announced itself. Undo appeared to work and changed the state.
+ *
+ * Now each reads the prior value from `before`, and returns `null` when it was
+ * not supplied — because an undo that is unavailable is a nuisance, and one
+ * that silently does something else is a hazard.
+ */
+export function invert(action: GridAction, before: UndoContext): GridAction | null {
   switch (action.type) {
     case "select/toggle":
-      return action; // its own inverse
+      // NOT simply its own inverse, and the property test found it.
+      //
+      // Toggling twice restores MEMBERSHIP and not ORDER: the id comes back at
+      // the end of the list rather than where it was. Order is observable —
+      // `row.selectExtend` anchors on the last selected row — so a
+      // toggle-and-undo can move where the next Shift+Space range starts from.
+      //
+      // With the prior selection recorded, restore it exactly. Without it,
+      // toggling back is still membership-correct, which is the best available
+      // answer and better than refusing an undo people expect to work.
+      return before.selection
+        ? { type: "select/set", ids: before.selection }
+        : action;
+
     case "select/clear":
-      return { type: "select/range", from: before.selection?.[0] ?? "", to: before.selection?.at(-1) ?? "" };
+    case "select/all":
+    case "select/range":
+      // Restore the exact set. `select/range` and `select/all` are additive, so
+      // their inverse is not "clear" either — it is whatever was selected.
+      return before.selection ? { type: "select/set", ids: before.selection } : null;
+
+    case "select/set":
+      return before.selection ? { type: "select/set", ids: before.selection } : null;
+
     case "sort/set":
-      return { type: "sort/set", sort: [] };
+    case "sort/toggle":
+      // `sort/toggle` derives a new sort from the old one, so its inverse is
+      // the old one — which the caller has to have recorded.
+      return before.sort ? { type: "sort/set", sort: before.sort } : null;
+
     case "filter/set":
-      return { type: "filter/set", node: null };
+      // `null` is a valid prior filter, so presence of the KEY is the test.
+      return "filter" in before ? { type: "filter/set", node: before.filter ?? null } : null;
+
     case "column/visibility":
       return { ...action, visible: !action.visible };
+
     default:
       // page/next, rows/upsert, focus/cell and anything that touched a server.
       return null;

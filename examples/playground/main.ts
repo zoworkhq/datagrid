@@ -298,7 +298,14 @@ let undoStack = emptyUndo();
 
 function onAction(action: GridAction): void {
   const started = performance.now();
-  const inverse = invert(action, { selection: state.selection });
+  // The WHOLE prior state an inverse might need. Passing only the selection
+  // made every sort undo to "no sort" and every filter undo to "no filter" —
+  // silently, because `invert` used to guess rather than refuse.
+  const inverse = invert(action, {
+    selection: state.selection,
+    sort: state.sort,
+    filter: state.filter,
+  });
   if (inverse) undoStack = record(undoStack, { action, inverse });
   devtools.action(action, performance.now() - started);
   devtools.state(state);
