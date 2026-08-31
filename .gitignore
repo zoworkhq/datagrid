@@ -25,3 +25,6 @@ examples/playground/brief.generated.css
 
 # scratch probes
 *.tmp.mjs
+
+# Built output for GitHub Pages — assembled by `pnpm pages:build`.
+dist-pages/

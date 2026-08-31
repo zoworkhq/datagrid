@@ -13,7 +13,7 @@
     "test:watch": "pnpm build && vitest",
     "lint:layers": "pnpm build && depcruise packages --config .dependency-cruiser.cjs",
     "size": "turbo run size",
-    "gate": "pnpm typecheck && pnpm test && pnpm lint:layers && pnpm size && pnpm contrast && pnpm size:composed && pnpm typecheck:playground && pnpm smoke:playground",
+    "gate": "pnpm typecheck && pnpm test && pnpm lint:layers && pnpm size && pnpm contrast && pnpm size:composed && pnpm typecheck:playground && pnpm smoke:playground && pnpm pages:build",
     "changeset": "changeset",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo .turbo",
     "bench": "pnpm build && node --expose-gc bench/run.mjs",
@@ -34,7 +34,10 @@
     "badges:check": "node scripts/badges.mjs --check",
     "site": "pnpm build && node examples/site/build.mjs --watch",
     "site:build": "pnpm build && node examples/site/build.mjs",
-    "contrast": "node scripts/contrast.mjs"
+    "contrast": "node scripts/contrast.mjs",
+    "docs": "pnpm build && node examples/docs/build.mjs --watch",
+    "docs:build": "pnpm build && node examples/docs/build.mjs",
+    "pages:build": "pnpm site:build && pnpm docs:build && node scripts/pages.mjs"
   },
   "devDependencies": {
     "@angular/core": "22.1.4",

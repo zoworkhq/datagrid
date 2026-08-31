@@ -41,6 +41,9 @@ export default defineConfig({
     include: [
       "packages/*/src/**/*.test.{ts,tsx}",
       "examples/playground/**/*.test.{ts,mts}",
+      // Build tooling is code too. The docs renderer escapes untrusted text
+      // into a published page, so it is gated like anything else.
+      "scripts/**/*.test.mjs",
     ],
     exclude: ["**/dist/**", "**/node_modules/**"],
     pool: "forks",

@@ -18,13 +18,28 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const CSS = readFileSync(join(HERE, "..", "examples", "site", "style.css"), "utf8");
 
-/** Pulls one theme's token block out of the stylesheet. */
-function tokens(selector) {
-  const at = CSS.indexOf(selector);
+/**
+ * ── SHARED PALETTE ──────────────────────────────────────────────────────────
+ *
+ * The marketing site and the documentation carry the same tokens in two
+ * stylesheets, because they are two independent bundles and neither should
+ * pull the other's CSS over the network to render its first paint.
+ *
+ * Two copies is a drift risk, so BOTH are gated here. A palette edit that
+ * lands in one file and not the other fails the build the moment either copy
+ * drops a pairing below AA.
+ */
+const SHEETS = [
+  ["site", join(HERE, "..", "examples", "site", "style.css")],
+  ["docs", join(HERE, "..", "examples", "docs", "docs.css")],
+];
+
+/** Pulls one theme's token block out of a stylesheet. */
+function tokens(css, selector) {
+  const at = css.indexOf(selector);
   if (at < 0) throw new Error(`no block for ${selector}`);
-  const body = CSS.slice(at, CSS.indexOf("}", at));
+  const body = css.slice(at, css.indexOf("}", at));
   const out = {};
   for (const [, name, value] of body.matchAll(/(--[\w-]+):\s*(#[0-9a-fA-F]{6})/g)) out[name] = value;
   return out;
@@ -59,16 +74,31 @@ const PAIRS = [
 ];
 
 let failures = 0;
-for (const [label, selector] of [["dark", ":root {"], ["light", ':root[data-theme="light"] {']]) {
-  const t = tokens(selector);
-  console.log(`\n${label}`);
-  for (const [fg, bg] of PAIRS) {
-    if (!t[fg] || !t[bg]) { console.log(`  ?? ${fg} on ${bg} — token missing`); failures++; continue; }
-    const r = ratio(t[fg], t[bg]);
-    const ok = r >= 4.5;
-    if (!ok) failures++;
-    console.log(`  ${ok ? "pass" : "FAIL"}  ${r.toFixed(2).padStart(5)}:1  ${fg} on ${bg}  (${t[fg]} / ${t[bg]})`);
+let checked = 0;
+const themes = [["dark", ":root {"], ["light", ':root[data-theme="light"] {']];
+
+for (const [sheet, path] of SHEETS) {
+  const css = readFileSync(path, "utf8");
+  for (const [theme, selector] of themes) {
+    const t = tokens(css, selector);
+    const bad = [];
+    for (const [fg, bg] of PAIRS) {
+      if (!t[fg] || !t[bg]) { bad.push(`     ?? ${fg} on ${bg} — token missing`); failures++; continue; }
+      const r = ratio(t[fg], t[bg]);
+      checked++;
+      if (r < 4.5) {
+        failures++;
+        bad.push(`     FAIL ${r.toFixed(2).padStart(5)}:1  ${fg} on ${bg}  (${t[fg]} / ${t[bg]})`);
+      }
+    }
+    console.log(`  ${bad.length === 0 ? "pass" : "FAIL"}  ${sheet} · ${theme}  (${PAIRS.length} pairings)`);
+    for (const line of bad) console.log(line);
   }
 }
-console.log(`\n${failures === 0 ? "all pairings meet AA 4.5:1" : `${failures} pairing(s) below AA`}`);
+
+console.log(
+  failures === 0
+    ? `\n${checked} pairings across ${SHEETS.length} stylesheets meet AA 4.5:1`
+    : `\n${failures} pairing(s) below AA`,
+);
 process.exit(failures === 0 ? 0 : 1);

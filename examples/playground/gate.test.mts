@@ -46,7 +46,15 @@ describe("CI runs what the local gate runs", () => {
 
   it("runs every gate step in CI", () => {
     const workflow = ci();
-    const missing = gateSteps().filter((step) => !workflow.includes(step));
+    // Matched against `run:` lines, not against the whole file.
+    //
+    // A bare `includes` looks at comments too, and `pnpm contrast` was added to
+    // the gate and NOT to CI while this test stayed green — because the word
+    // "contrast" happened to appear in a comment about accessibility fifty
+    // lines further down. A check that a passing prose mention can satisfy is
+    // not checking anything.
+    const runs = [...workflow.matchAll(/^\s*run:\s*(.+)$/gm)].map((m) => m[1] ?? "");
+    const missing = gateSteps().filter((step) => !runs.some((r) => r.includes(`pnpm ${step}`)));
     expect(
       missing,
       `in \`pnpm gate\` and absent from ci.yml — CI would go green without them:\n  ${missing.join("\n  ")}`,

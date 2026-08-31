@@ -96,12 +96,25 @@ jobs:
       - name: playground (real browser)
         run: pnpm smoke:playground
 
-      # 8. The composed bundle. Per-package budgets pass while the thing an
+      # 8. The palette. Both stylesheets, both themes, every pairing the design
+      #    renders text in. `--ink-3` shipped at 3.1:1 against a 4.5:1 floor and
+      #    carried the absence sentences — the one line on the marketing site
+      #    that the whole library is an argument for.
+      - name: contrast
+        run: pnpm contrast
+
+      # 9. The published tree, and every internal link in it. The site and the
+      #    docs link to each other, and built separately they cannot be checked:
+      #    in development you only ever open one of them.
+      - name: pages and link check
+        run: pnpm pages:build
+
+      # 10. The composed bundle. Per-package budgets pass while the thing an
       #    application actually ships — every package together — is unmeasured.
       - name: composed size
         run: pnpm size:composed
 
-      # 9. The README's own numbers. The tests badge said 430 while the suite
+      # 11. The README's own numbers. The tests badge said 430 while the suite
       #    ran 1,002 — nobody lied, the number was true once and nothing made it
       #    stay true. A README wrong about a fact anyone can check in ten
       #    seconds costs more trust than the fact was worth, because the reader
