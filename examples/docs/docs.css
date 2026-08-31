@@ -199,7 +199,18 @@ body {
   .nav { display: none; position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--rule); }
   .nav[data-open] { display: block; }
   .navtoggle { display: inline-block; }
-  .searchbox { margin-left: 0; }
+
+  /* Search takes its own row rather than the leftovers. Sharing one row with
+     the wordmark, the menu button, the theme toggle and the GitHub link left
+     the input 51px wide — present, focusable, and too narrow to read a query
+     back in. */
+  .dtop { flex-wrap: wrap; row-gap: 0.6rem; }
+  .searchbox { order: 3; flex: 1 0 100%; max-width: none; margin-left: 0; }
+  .dtopright { order: 2; }
+}
+@media (max-width: 420px) {
+  .gh { display: none; }
+  .tlabel { display: none; }
 }
 
 .navgroup + .navgroup { margin-top: 1.75rem; }

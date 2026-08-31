@@ -216,6 +216,19 @@ code { font-family: var(--mono); font-size: 0.88em; }
 .topright { display: flex; align-items: center; gap: 0.55rem; }
 @media (max-width: 1040px) { .topright { margin-left: auto; } }
 
+/* On a phone the bar held a wordmark, a theme toggle with its label, a Docs
+   link and the primary action — about 40px more than the viewport. `body` has
+   `overflow-x: hidden`, so nothing scrolled and nothing warned: the CTA was
+   simply clipped off the right edge and unreachable. It drops what it can
+   spare rather than what the reader came for. */
+@media (max-width: 640px) {
+  .top { gap: 0.6rem; padding-inline: 1rem; }
+  .wordmark-2 { display: none; }
+  .tlabel { display: none; }
+  #theme { padding-inline: 0.55rem; }
+  .cta, .ghost { font-size: 12.5px; padding: 0.45rem 0.7rem; }
+}
+
 /* A hairline progress rule along the very bottom of the sticky bar. */
 .progress {
   position: absolute; left: 0; bottom: -1px; height: 2px;

@@ -160,7 +160,7 @@ function shell(page, all) {
     <button id="theme" class="ghost" type="button" aria-live="polite">
       <span class="ticon" aria-hidden="true"></span><span class="tlabel">System</span>
     </button>
-    <a class="ghost" href="https://github.com/zoworkhq/datagrid">GitHub</a>
+    <a class="ghost gh" href="https://github.com/zoworkhq/datagrid">GitHub</a>
   </div>
 </header>
 
