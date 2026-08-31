@@ -11,6 +11,35 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Display:wght@600;700;800&family=Noto+Sans+Mono:wght@400;500;600&display=swap" />
 <link rel="stylesheet" href="./style.css" />
 <link rel="stylesheet" href="./atmosphere.css" />
+
+<!--
+  Everything below the fold starts at `opacity: 0` and is revealed by an
+  IntersectionObserver. That is fine until `main.js` does not arrive — a
+  blocked CDN, a dropped connection, a corporate proxy — and then the page
+  renders a hero and nothing else, with no error to explain it. The worst
+  possible moment for that is the one this page exists for.
+
+  Both stanzas below are the same instruction to two different failures:
+  script disabled, and script that never loaded.
+-->
+<noscript><style>[data-reveal]{opacity:1!important;transform:none!important}</style></noscript>
+<script>
+  /*
+    The second failure, which <noscript> does not cover: the script tag IS
+    there and the module never ran — a 404, a parse error, an extension that
+    blocks module scripts. `main.js` reveals these as they scroll into view and
+    would normally have done so long before this fires; if it did not, the page
+    stops hiding its own content rather than waiting forever.
+
+    Inline and classic (not a module) so it runs even when the module pipeline
+    is what broke.
+  */
+  setTimeout(function () {
+    var hidden = document.querySelectorAll("[data-reveal]:not(.shown)");
+    if (hidden.length === 0) return;
+    for (var i = 0; i < hidden.length; i++) hidden[i].classList.add("shown");
+  }, 4000);
+</script>
 </head>
 <body>
 
