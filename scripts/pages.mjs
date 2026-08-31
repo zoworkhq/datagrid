@@ -11,12 +11,13 @@
  *
  *   /              the site
  *   /docs/         the documentation
+ *   /playground/   the interactive demo
  *
- * and both are checked, after the build, by following every internal link and
- * confirming a file exists at the other end. A link checker that runs on the
- * OUTPUT is the only kind that can catch a path assembled at build time.
+ * and all three are checked, after the build, by following every internal link
+ * and confirming a file exists at the other end. A link checker that runs on
+ * the OUTPUT is the only kind that can catch a path assembled at build time.
  */
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, normalize, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -24,18 +25,24 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
 const OUT = join(ROOT, "dist-pages");
 
-const SITE = join(ROOT, "examples", "site", "dist");
-const DOCS = join(ROOT, "examples", "docs", "dist");
+const PARTS = [
+  ["examples/site/dist", ""],
+  ["examples/docs/dist", "docs"],
+  ["examples/playground/dist", "playground"],
+];
 
 function assemble() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
-  for (const [from, to] of [[SITE, OUT], [DOCS, join(OUT, "docs")]]) {
-    if (!existsSync(from)) {
-      throw new Error(`${from} is missing — run the site and docs builds first`);
+  for (const [from, to] of PARTS) {
+    const src = join(ROOT, from);
+    if (!existsSync(src)) {
+      throw new Error(`${from} is missing — run its build first (pnpm pages:build does all three)`);
     }
-    cpSync(from, to, { recursive: true });
+    cpSync(src, join(OUT, to), { recursive: true });
   }
+  // Pages serves this tree as-is; without it, Jekyll eats anything underscored.
+  writeFileSync(join(OUT, ".nojekyll"), "");
 }
 
 /** Every HTML file in the output, as paths relative to the output root. */

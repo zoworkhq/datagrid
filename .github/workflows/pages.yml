@@ -1,21 +1,38 @@
-# Deploys the playground to GitHub Pages.
+# Deploys the site, the documentation and the playground to GitHub Pages.
 #
-# ── READ THIS BEFORE ENABLING ───────────────────────────────────────────────
+# ── READ THIS BEFORE RUNNING IT ─────────────────────────────────────────────
 #
 # A GitHub Pages site is PUBLIC even when the repository is private (outside
-# GitHub Enterprise with access control). Enabling this publishes the demo to
+# GitHub Enterprise with access control). Running this publishes all three to
 # the open internet.
 #
-# Two decisions are still open that bear on that, both recorded in HANDOVER.md:
-# the licence and support posture, and the fact that NO CLINICIAN HAS REVIEWED
-# the clinical rules the demo shows. The page states both, but stating them is
-# not the same as having settled them.
+# Two decisions bear on that and are recorded in HANDOVER.md: the licence and
+# support posture, and the fact that NO CLINICIAN HAS REVIEWED the clinical
+# rules these pages demonstrate. Every page states both. Stating them is not
+# the same as having settled them.
+#
+# Nothing published here contains PHI. Every row on every page is synthetic
+# and generated at build time from `examples/*/data.ts`.
 #
 # Pages on a private repository also requires a paid plan. On a free plan the
 # deploy step fails with a clear message rather than silently publishing.
 #
-# It is deliberately NOT triggered by push. Run it from the Actions tab when
-# you have decided to publish.
+# ── WHY IT IS NOT TRIGGERED BY PUSH ─────────────────────────────────────────
+#
+# Publishing is a decision, and a decision that happens automatically on every
+# merge is a decision nobody makes. Run it from the Actions tab — or with
+# `gh workflow run pages.yml` — when you have decided to publish.
+#
+# ── WHAT IT PUBLISHES ───────────────────────────────────────────────────────
+#
+#   /              the marketing site
+#   /docs/         the documentation, rendered from docs/
+#   /playground/   the interactive demo
+#
+# The layout lives in `scripts/pages.mjs`, which also follows every internal
+# link in the built output and fails on a broken one. Paths are all relative,
+# so this works under a project subpath (`/datagrid/`) or a custom domain
+# without a rebuild.
 name: pages
 
 on:
@@ -42,19 +59,22 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      # The playground is a consumer of the built packages, so the gate runs
-      # first: a demo built from code that does not pass its own gate is worse
-      # than no demo.
+      # Chromium, because the gate's playground smoke test drives a real
+      # browser — several of the defect classes it catches are invisible to
+      # jsdom, which has no layout.
+      - name: browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      # The gate runs first. Publishing something built from code that does
+      # not pass its own gate is worse than publishing nothing, and the gate's
+      # last step IS this build plus the link check.
       - name: gate
         run: pnpm gate
-
-      - name: build playground
-        run: pnpm playground:build
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: examples/playground/dist
+          path: dist-pages
 
   deploy:
     needs: build
