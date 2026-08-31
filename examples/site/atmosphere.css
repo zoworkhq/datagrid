@@ -1,0 +1,166 @@
+/**
+ * Depth, light and motion.
+ *
+ * ── WHAT THE FIRST PASS WAS MISSING ─────────────────────────────────────────
+ *
+ * Restraint without craft is just plainness. The first version of this page had
+ * correct spacing, a defensible palette and nothing anyone would look at twice:
+ * five sections with the same rhythm, flat planes, and no sense that light falls
+ * on anything.
+ *
+ * Everything here is atmosphere in service of the subject rather than decoration
+ * on top of it. A ward at night is lit by the screens in it, so surfaces glow
+ * faintly from their own content rather than from a brand gradient. A telemetry
+ * trace never stops moving, so the backdrop never quite settles. And a grid is a
+ * lattice, so the lattice is the texture.
+ */
+
+/* ── the backdrop ───────────────────────────────────────────────────────────
+   A lattice, at very low contrast, that drifts. It reads as texture rather than
+   as a pattern, and it is the subject's own geometry rather than a mesh
+   gradient that could belong to any product. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, transparent, var(--paper) 82%),
+    repeating-linear-gradient(90deg, var(--rule) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, var(--rule) 0 1px, transparent 1px 72px);
+  background-size: 100% 100%, 72px 72px, 72px 72px;
+  opacity: 0.55;
+  mask-image: radial-gradient(120% 80% at 50% 0%, #000 0%, transparent 72%);
+  animation: drift 60s linear infinite;
+}
+@keyframes drift {
+  to { background-position: 0 0, 72px 0, 0 72px; }
+}
+
+/* A single slow sweep of light across the top, the colour of a monitor's own
+   glow. One gradient, once, and never a blob. */
+.glow {
+  position: fixed;
+  top: -30vh; left: 50%;
+  width: min(120rem, 160vw); height: 70vh;
+  transform: translateX(-50%);
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    color-mix(in srgb, var(--signal) 12%, transparent) 0%,
+    transparent 68%
+  );
+  opacity: 0.85;
+}
+
+/* ── surfaces that catch light ──────────────────────────────────────────── */
+.lift {
+  position: relative;
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--ink) 2.5%, transparent), transparent 40%),
+    var(--raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+}
+/* The hairline at the top edge is what makes a panel read as lit rather than
+   drawn. One pixel, and the difference is the whole feel. */
+.lift::before {
+  content: "";
+  position: absolute; inset: 0 0 auto; height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, #fff 62%, transparent), transparent);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  pointer-events: none;
+}
+:root[data-theme="dark"] .lift::before,
+:root:not([data-theme="light"]) .lift::before { opacity: 0.14; }
+
+/* ── cursor-aware cards ─────────────────────────────────────────────────── */
+.reactive { position: relative; overflow: hidden; }
+.reactive::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 260ms var(--ease);
+  background: radial-gradient(
+    18rem 18rem at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--signal) 9%, transparent),
+    transparent 70%
+  );
+}
+.reactive:hover::after { opacity: 1; }
+
+/* ── page-load choreography ─────────────────────────────────────────────── */
+/* Each element declares its own place in the sequence; nothing is timed by a
+   script, so a slow connection cannot desynchronise it. */
+[data-enter] {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: enter 760ms var(--ease) forwards;
+}
+[data-enter="1"] { animation-delay: 60ms; }
+[data-enter="2"] { animation-delay: 150ms; }
+[data-enter="3"] { animation-delay: 240ms; }
+[data-enter="4"] { animation-delay: 330ms; }
+[data-enter="5"] { animation-delay: 430ms; }
+[data-enter="6"] { animation-delay: 540ms; }
+@keyframes enter { to { opacity: 1; transform: none; } }
+
+/* The headline arrives a line at a time, from under its own baseline. */
+.line { display: block; overflow: hidden; }
+.line > span {
+  display: block;
+  transform: translateY(105%);
+  animation: linein 900ms var(--ease) forwards;
+}
+.line:nth-child(1) > span { animation-delay: 80ms; }
+.line:nth-child(2) > span { animation-delay: 175ms; }
+.line:nth-child(3) > span { animation-delay: 270ms; }
+.line:nth-child(4) > span { animation-delay: 365ms; }
+@keyframes linein { to { transform: none; } }
+
+/* ── buttons with weight ────────────────────────────────────────────────── */
+.cta, .ghost, .switch, .codetab, .runner {
+  position: relative;
+  transition:
+    transform 220ms var(--ease),
+    box-shadow 220ms var(--ease),
+    background 160ms var(--ease),
+    border-color 160ms var(--ease),
+    color 160ms var(--ease);
+}
+.cta:active, .ghost:active, .runner:active { transform: translateY(1px) scale(0.994); }
+
+/* A press ripples from where it was pressed, not from the middle. */
+.cta::after, .runner::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(6rem 6rem at var(--px, 50%) var(--py, 50%), rgb(255 255 255 / 0.22), transparent 60%);
+  opacity: 0;
+  transition: opacity 420ms var(--ease);
+  pointer-events: none;
+}
+.cta:hover::after, .runner:hover::after { opacity: 1; }
+
+/* ── scroll reveal, with direction ──────────────────────────────────────── */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 700ms var(--ease), transform 700ms var(--ease);
+}
+[data-reveal].shown { opacity: 1; transform: none; }
+[data-reveal][data-delay="1"] { transition-delay: 70ms; }
+[data-reveal][data-delay="2"] { transition-delay: 140ms; }
+[data-reveal][data-delay="3"] { transition-delay: 210ms; }
+[data-reveal][data-delay="4"] { transition-delay: 280ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop { animation: none; }
+  [data-enter], .line > span { opacity: 1; transform: none; animation: none; }
+  [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .reactive::after { display: none; }
+}

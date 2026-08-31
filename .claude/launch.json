@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["examples/playground/build.mjs", "--watch"],
       "port": 5173
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["examples/site/build.mjs", "--watch"],
+      "port": 5174
     }
   ]
 }

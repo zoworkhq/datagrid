@@ -31,6 +31,22 @@ export const setMode = (next: AbsenceMode): void => {
 };
 export const currentMode = (): AbsenceMode => mode;
 
+/**
+ * Publishes a grid's row height to CSS.
+ *
+ * The renderer places each row with `style.top` at the configured pitch and
+ * deliberately does not set a height — that is the host page's call, since a
+ * row may want to be taller than its slot. But nothing in this page's skin set
+ * one either, so every row collapsed to the 25px its text needed while sitting
+ * in a 44px slot: a nineteen-pixel gap under every row, all the way down.
+ *
+ * Passing the number through a custom property keeps one source of truth. The
+ * value that positions the row is the value that sizes it.
+ */
+export function setRowHeight(host: HTMLElement, rowHeight: number): void {
+  host.style.setProperty("--row-h", `${rowHeight}px`);
+}
+
 const span = (cls: string, text: string): HTMLElement => {
   const s = document.createElement("span");
   s.className = cls;
@@ -41,11 +57,13 @@ const span = (cls: string, text: string): HTMLElement => {
 /** The absence treatment, and the whole argument of the page. */
 function paintAbsence(el: HTMLElement, absent: Absent): void {
   el.textContent = "";
-  el.append(
-    mode === "blank"
-      ? span("c-blank", "")
-      : span("c-absent", describeAbsence(absent)),
-  );
+  const sentence = describeAbsence(absent);
+  // A narrow column ellipses "Ordered 07:15, not yet resulted" down to
+  // something that argues against this page, so the full sentence stays
+  // reachable on hover. `read()` already gives it to a screen reader whole,
+  // and the export writes it in full — this is only for the pointer.
+  el.title = mode === "blank" ? "" : sentence;
+  el.append(mode === "blank" ? span("c-blank", "") : span("c-absent", sentence));
 }
 
 interface Spec {
@@ -69,8 +87,15 @@ const raw = (row: Patient, key: string): unknown =>
 export function cell(key: string, spec: Spec): CellRenderer<Patient> {
   const paint = (el: HTMLElement, row: Patient): void => {
     const value = raw(row, key);
-    if (isAbsent(value)) paintAbsence(el, value as Absent);
-    else spec.paint(el, row);
+    if (isAbsent(value)) {
+      paintAbsence(el, value as Absent);
+      return;
+    }
+    // Clearing the title matters as much as painting it: `update` recycles a
+    // node that may have held an absence, and a stale tooltip on a real value
+    // is a cell telling you about a different patient.
+    el.title = "";
+    spec.paint(el, row);
   };
 
   const read = (row: Patient): string => {
@@ -112,7 +137,12 @@ export function cell(key: string, spec: Spec): CellRenderer<Patient> {
 const chips = (el: HTMLElement, items: readonly string[]): void => {
   el.textContent = "";
   if (items.length === 0) {
-    el.append(span("c-absent", "No known allergies"));
+    // NOT `c-absent`. An empty allergy list is a POSITIVE finding — somebody
+    // asked and the answer was none — and this page's own copy says so two
+    // sections further down. Rendering it in the absence style contradicted
+    // that: it made a recorded fact look like a gap in the record, which is
+    // the exact confusion the library exists to remove.
+    el.append(span("c-negative", "No known allergies"));
     return;
   }
   const wrap = document.createElement("span");

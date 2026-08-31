@@ -33,7 +33,7 @@ export const options = {
 
 export function copyStatic() {
   mkdirSync(DIST, { recursive: true });
-  for (const f of ["index.html", "style.css"]) copyFileSync(join(HERE, f), join(DIST, f));
+  for (const f of ["index.html", "style.css", "atmosphere.css"]) copyFileSync(join(HERE, f), join(DIST, f));
   writeFileSync(join(DIST, ".nojekyll"), "");
 }
 

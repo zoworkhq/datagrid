@@ -4,13 +4,18 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Oxygen Data Grid — the grid that never shows a blank cell</title>
-<meta name="description" content="A virtualised data grid for healthcare software. Eight typed reasons a value can be absent, a disclosure model that reaches every output, and numbers measured against AG Grid on the same fixture." />
+<meta name="description" content="A virtualised data grid for healthcare software. Eight typed reasons a value can be absent, a disclosure model that reaches every output, and a live head-to-head you can run in this page." />
+<meta name="theme-color" content="#06080b" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Display:wght@600;700;800&family=Noto+Sans+Mono:wght@400;500;600&display=swap" />
 <link rel="stylesheet" href="./style.css" />
+<link rel="stylesheet" href="./atmosphere.css" />
 </head>
 <body>
+
+<div class="backdrop" aria-hidden="true"></div>
+<div class="glow" aria-hidden="true"></div>
 
 <!-- ── chrome ────────────────────────────────────────────────────────────── -->
 <header class="top">
@@ -20,71 +25,80 @@
   </a>
   <nav class="topnav" aria-label="Sections">
     <a href="#absence">The blank cell</a>
+    <a href="#race">The race</a>
+    <a href="#scale">Scale</a>
+    <a href="#work">Workstations</a>
     <a href="#evidence">Evidence</a>
-    <a href="#surface">Surfaces</a>
-    <a href="#integrate">Integration</a>
     <a href="#start">Start</a>
   </nav>
   <div class="topright">
     <button id="theme" class="ghost" type="button" aria-live="polite">
       <span class="ticon" aria-hidden="true"></span><span class="tlabel">System</span>
     </button>
-    <a class="cta" href="#start">Read the docs</a>
+    <a class="cta" href="#start">Start building</a>
   </div>
+  <span class="progress" id="progress" aria-hidden="true"></span>
 </header>
 
 <main id="top">
 
-<!-- ── hero: the product makes its own argument ──────────────────────────── -->
+<!-- ── hero ──────────────────────────────────────────────────────────────── -->
 <section class="hero">
-  <div class="hero-copy">
-    <p class="eyebrow">A data grid for healthcare software</p>
-    <h1>
-      Every other grid<br />
-      shows you <span class="strike">nothing</span>.<br />
-      <em>This one<br />tells you why.</em>
-    </h1>
-    <p class="lede">
-      A blank cell in a patient record is not information — it is the absence of it, and a
-      clinician cannot tell "not ordered" from "the lab is down" from "the patient said no".
-      Oxygen types all eight, everywhere a value can go, including the export.
-    </p>
-    <div class="hero-actions">
-      <a class="cta lg" href="#start">Start in five minutes</a>
-      <a class="ghost lg" href="#evidence">See the measurements</a>
-    </div>
-    <p class="hero-note">
-      MIT · 10.71 kB for the whole grid · React, Angular, Vue, or none
-    </p>
+  <a class="chip" href="#evidence" data-enter="1"><b>Measured</b> 14× faster re-sort at 100,000 rows</a>
+
+  <h1 data-hero>
+    <span class="line"><span>Every other grid</span></span>
+    <span class="line"><span>shows you <span class="strike">nothing</span>.</span></span>
+    <span class="line"><span><em>This one tells you why.</em></span></span>
+  </h1>
+
+  <p class="lede" data-enter="4">
+    A blank cell in a patient record is not information — it is the absence of it, and no
+    clinician can tell "not ordered" from "the lab is down" from "the patient said no". Oxygen
+    types all eight, in the renderer, the sort, the export, the print sheet and the screen reader.
+  </p>
+
+  <div class="hero-actions" data-enter="5">
+    <a class="cta lg" href="#start">Start in five minutes</a>
+    <a class="ghost lg" href="#race">Run the head-to-head</a>
   </div>
 
-  <!-- The signature. A real renderer, running, arguing for itself. -->
-  <figure class="hero-grid" aria-labelledby="hero-grid-caption">
-    <div class="switchbar" role="group" aria-label="What a grid does with a missing value">
-      <button class="switch is-on" type="button" data-mode="typed">Oxygen</button>
-      <button class="switch" type="button" data-mode="blank">Every other grid</button>
-      <span class="switch-note" id="switch-note">Eight reasons, never a blank</span>
+  <p class="hero-note" data-enter="6">MIT · 10.71 kB brotlied · React, Angular, Vue, or none</p>
+
+  <!-- The signature: a real renderer, running, arguing for itself. -->
+  <div class="stage" data-enter="6">
+    <div class="stage-inner">
+      <figure aria-labelledby="hero-grid-caption">
+        <div class="switchbar" role="group" aria-label="What a grid does with a missing value">
+          <button class="switch is-on" type="button" data-mode="typed">Oxygen</button>
+          <button class="switch" type="button" data-mode="blank">Every other grid</button>
+          <span class="switch-note" id="switch-note">Eight reasons, never a blank</span>
+        </div>
+        <div class="gridframe"><div class="grid-slot" id="hero-host"></div></div>
+        <figcaption id="hero-grid-caption">
+          A live grid, not a screenshot — 50,000 synthetic rows, virtualised, sortable, keyboard
+          navigable. <span class="dim">No PHI appears anywhere on this page.</span>
+        </figcaption>
+      </figure>
     </div>
-    <div class="gridframe"><div class="grid-slot" id="hero-host"></div></div>
-    <figcaption id="hero-grid-caption">
-      A live grid, not a screenshot. 50,000 synthetic rows, virtualised.
-      <span class="dim">No PHI appears anywhere on this page.</span>
-    </figcaption>
-  </figure>
+  </div>
 </section>
+
+<!-- ── the measured ticker ───────────────────────────────────────────────── -->
+<div class="ticker" aria-hidden="true"><div class="ticker-track" id="ticker"></div></div>
 
 <!-- ── the eight ─────────────────────────────────────────────────────────── -->
 <section class="band" id="absence">
-  <div class="section-head">
+  <div class="section-head" data-reveal>
     <p class="eyebrow">The absence taxonomy</p>
     <h2>Eight ways a cell can be empty.<br />Only one of them is a bug.</h2>
     <p class="section-lede">
-      Every one of these renders differently, exports differently, sorts differently, and is
-      announced differently by a screen reader. Pick one and watch the cell rewrite itself.
+      Each renders differently, exports differently, sorts differently, and is announced
+      differently by a screen reader. Pick one and watch the cell rewrite itself.
     </p>
   </div>
 
-  <div class="absence-lab">
+  <div class="lab" data-reveal>
     <div class="reasons" role="tablist" aria-label="Absence reasons" id="reasons"></div>
     <div class="reason-stage">
       <div class="stage-grid" id="absence-host"></div>
@@ -96,18 +110,105 @@
   </div>
 </section>
 
+<!-- ── the race ──────────────────────────────────────────────────────────── -->
+<section class="band alt" id="race">
+  <div class="section-head" data-reveal>
+    <p class="eyebrow">Not a benchmark table</p>
+    <h2>Two grids. Same rows,<br />same frame, your machine.</h2>
+    <p class="section-lede">
+      Left is Oxygen. Right is a grid that renders what it was handed — one node per cell, which
+      is what an unvirtualised grid does, and what a virtualised one does the moment a stylesheet
+      gives its viewport no height. Press the button and watch both scroll on the same clock.
+    </p>
+    <p class="section-lede">
+      A render-everything grid does not only make itself slow. Its nodes are in <em>your</em>
+      document, so every unrelated mutation on the page — a toast, a menu, a form — pays to have
+      style and layout recalculated across them. That is what the frame counter below is showing.
+    </p>
+  </div>
+
+  <div class="race" data-reveal>
+    <div class="lane" data-side="ours">
+      <div class="lane-head">
+        <span class="lane-name">Oxygen</span>
+        <span class="lane-sub">windowed · node recycling</span>
+      </div>
+      <div class="lane-body" id="race-ours"></div>
+    </div>
+    <div class="lane" data-side="theirs">
+      <div class="lane-head">
+        <span class="lane-name">Render-everything</span>
+        <span class="lane-sub">every row, every cell</span>
+      </div>
+      <div class="lane-body" id="race-theirs"></div>
+    </div>
+  </div>
+
+  <div class="race-bar" data-reveal>
+    <button class="runner" type="button" id="race-go">Run the race</button>
+    <span class="race-hint">
+      5,000 rows × 6 columns, scrolling together on one clock.
+      Frame time is reported for the page rather than per grid — with both mounted, neither
+      number would be the grid's own. The per-grid frame figures are in
+      <a href="#evidence">Evidence</a>, taken one grid at a time.
+    </span>
+  </div>
+
+  <div class="race-read" id="race-read" data-reveal>
+    <p class="race-empty">Press <b>Run the race</b> to build both grids and measure them here.</p>
+  </div>
+</section>
+
+<!-- ── scale ─────────────────────────────────────────────────────────────── -->
+<section class="band" id="scale">
+  <div class="section-head" data-reveal>
+    <p class="eyebrow">What the window costs</p>
+    <h2>A million rows is<br />the same amount of&nbsp;DOM<br />as thirty.</h2>
+    <p class="section-lede">
+      The renderer keeps a window of rows and a window of columns — two Fenwick trees and a node
+      pool — so the DOM stops growing at the size of the viewport and stays there.
+    </p>
+  </div>
+  <div class="counts" id="counts" data-reveal></div>
+</section>
+
+<!-- ── workstations ──────────────────────────────────────────────────────── -->
+<section class="band alt" id="work">
+  <div class="section-head" data-reveal>
+    <p class="eyebrow">Four surfaces, one renderer</p>
+    <h2>A health system does not<br />buy one grid.</h2>
+    <p class="section-lede">
+      A MAR, a flowsheet, a denials queue and a bed board disagree about what a row is, what a
+      column means, and what an empty cell means. All four below are live, on the same renderer,
+      configured the way they would actually be configured.
+    </p>
+  </div>
+
+  <div data-reveal>
+    <div class="wsbar" role="tablist" aria-label="Clinical surfaces" id="wsbar"></div>
+    <div class="wsframe">
+      <div class="wshead">
+        <h3 id="ws-title"></h3>
+        <span class="wsmeta" id="ws-meta"></span>
+      </div>
+      <div class="wsgrid" id="ws-host"></div>
+      <p class="wsfoot" id="ws-note"></p>
+    </div>
+  </div>
+</section>
+
 <!-- ── evidence ──────────────────────────────────────────────────────────── -->
-<section class="band alt" id="evidence">
-  <div class="section-head">
+<section class="band" id="evidence">
+  <div class="section-head" data-reveal>
     <p class="eyebrow">Measured, not claimed</p>
     <h2>Against AG&nbsp;Grid.<br />Same fixture, same browser,<br />same afternoon.</h2>
     <p class="section-lede">
-      Same Chromium, same viewport, same 100,000-row fixture, same driver. The harness is in
-      the repository and the numbers move when you run it — which is what makes them numbers.
+      Same Chromium, same viewport, same 100,000-row fixture, same driver. The harness is in the
+      repository and the numbers move when you run it — which is what makes them numbers.
     </p>
   </div>
-  <div class="bench" id="bench"></div>
-  <p class="fineprint">
+  <div class="bench" id="bench" data-reveal></div>
+  <p class="fineprint" data-reveal>
     Measured on a developer laptop under 4× CPU throttling, against
     <code>ag-grid-community 36.1.0</code>. A throttled laptop is a floor on how bad things get,
     not a prediction for your hardware. <a href="#start">The harness</a> is one command.
@@ -115,27 +216,26 @@
 </section>
 
 <!-- ── surfaces ──────────────────────────────────────────────────────────── -->
-<section class="band" id="surface">
-  <div class="section-head">
-    <p class="eyebrow">What it already knows how to be</p>
-    <h2>The surfaces a health&nbsp;system<br />actually builds.</h2>
+<section class="band alt" id="surface">
+  <div class="section-head" data-reveal>
+    <p class="eyebrow">Cell types</p>
+    <h2>Eighteen clinical cells,<br />each with its own opinion.</h2>
     <p class="section-lede">
-      Eighteen clinical cell types, each with its own truncation, comparison, export and mask
-      behaviour. These are not skins — a lab result knows it must never infer abnormality from
-      a reference range it was not given.
+      These are not skins. A lab result knows it must never infer abnormality from a reference
+      range it was not given; a dose knows its own units; an identifier knows it is not a number.
     </p>
   </div>
-  <div class="surfaces" id="surfaces"></div>
+  <div class="surfaces" id="surfaces" data-reveal></div>
 </section>
 
 <!-- ── integration ───────────────────────────────────────────────────────── -->
-<section class="band alt" id="integrate">
-  <div class="section-head">
+<section class="band" id="integrate">
+  <div class="section-head" data-reveal>
     <p class="eyebrow">Integration</p>
     <h2>It consumes your client.<br />It never goes looking<br />for a server.</h2>
   </div>
-  <div class="integrate">
-    <article class="card">
+  <div class="integrate" data-reveal>
+    <article class="card lift reactive">
       <h3>FHIR, with the awkward parts</h3>
       <p>
         Opaque <code>link.next</code> carried verbatim. <code>Bundle.total</code> that may be
@@ -145,7 +245,7 @@
         part it could not compile.
       </p>
     </article>
-    <article class="card">
+    <article class="card lift reactive">
       <h3>Disclosure that reaches every output</h3>
       <p>
         One call applies the policy to the renderer, CSV, XLSX, the print sheet, the clipboard
@@ -153,15 +253,15 @@
         not appear in the <em>bytes</em> of any of them.
       </p>
     </article>
-    <article class="card">
+    <article class="card lift reactive">
       <h3>Errors that cannot leak</h3>
       <p>
         A grid error carries a code, a phase, a column and a row <em>index</em>. No message, no
-        stack, no cause, no row id — a row key is commonly an MRN. What a log can hold is
-        decided by the type, not by a reviewer's attention.
+        stack, no cause, no row id — a row key is commonly an MRN. What a log can hold is decided
+        by the type, not by a reviewer's attention.
       </p>
     </article>
-    <article class="card">
+    <article class="card lift reactive">
       <h3>Coverage, stated or refused</h3>
       <p>
         Every set says what it reached and what it did not. A source that timed out is named in
@@ -173,12 +273,12 @@
 </section>
 
 <!-- ── start ─────────────────────────────────────────────────────────────── -->
-<section class="band" id="start">
-  <div class="section-head">
+<section class="band alt" id="start">
+  <div class="section-head" data-reveal>
     <p class="eyebrow">Start</p>
     <h2>Five minutes to a grid<br />that refuses to&nbsp;lie.</h2>
   </div>
-  <div class="start">
+  <div class="start" data-reveal>
     <div class="steps" id="steps"></div>
     <div class="codeframe">
       <div class="codebar" role="tablist" aria-label="Framework">
@@ -193,12 +293,25 @@
   </div>
 </section>
 
+<!-- ── closing ───────────────────────────────────────────────────────────── -->
+<section class="closer">
+  <h2 data-reveal>The empty cell was always telling you something.</h2>
+  <p class="lede" data-reveal data-delay="1">
+    Now it says what. Read the docs, run the benchmark harness yourself, or open the playground
+    and press a key.
+  </p>
+  <div class="hero-actions" data-reveal data-delay="2">
+    <a class="cta lg" href="#start">Start building</a>
+    <a class="ghost lg" href="#absence">See the eight reasons</a>
+  </div>
+</section>
+
 </main>
 
 <footer class="foot">
   <div class="foot-in">
     <div>
-      <p class="foot-mark">Oxygen Data Grid</p>
+      <p class="foot-mark"><span class="mark" aria-hidden="true"></span> Oxygen Data Grid</p>
       <p class="foot-sub">Built at Zowork. MIT licensed.</p>
     </div>
     <p class="foot-note">
